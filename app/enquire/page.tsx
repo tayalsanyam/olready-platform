@@ -32,6 +32,12 @@ export default async function Enquire({ searchParams }: P) {
       <Notice error={q.error} />
       <form action={submitEnquiry} className="space-y-5">
         <input type="hidden" name="_back" value={self} />
+        <div aria-hidden className="absolute -left-[9999px] h-0 overflow-hidden">
+          <label>
+            Company
+            <input name="company" tabIndex={-1} autoComplete="off" />
+          </label>
+        </div>
         {vendor ? <input type="hidden" name="vendor" value={vendor.slug} /> : null}
         <Card className="grid gap-4 sm:grid-cols-2">
           <Field label="Your name *">

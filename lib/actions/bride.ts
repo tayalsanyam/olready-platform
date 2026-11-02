@@ -1,7 +1,9 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { sql, DomainError } from '../db';
+import { sql, DomainError, getSetting } from '../db';
+import { buyRm, engagementFromPerk } from '../rm';
+import type { Gateway } from '../payments';
 import { requireProfile } from '../auth';
 import { activatePerk, closeNeedByBride, reportBooking } from '../leads';
 import { threadAccess } from '../threads';
@@ -44,6 +46,7 @@ export async function saveWeddingAction(fd: FormData) {
       cityId: num(fd, 'city_id'),
     };
     if (str(fd, 'full_name')) await sql`update mkt.profiles set full_name = ${str(fd, 'full_name')} where id = ${p.id}`;
+    await sql`update mkt.profiles set notify_email = ${fd.get('notify_email') === 'on'} where id = ${p.id}`;
     const w = await weddingFor(sql, p.id);
     if (w) await updateWedding(sql, w.id, p.id, input);
     else await createWedding(sql, p.id, input);
@@ -78,8 +81,22 @@ export async function closeNeedAction(fd: FormData) {
 export async function activatePerkAction(fd: FormData) {
   await attempt('/me', async () => {
     const p = await requireBride();
-    await activatePerk(sql, str(fd, 'perk_id'), p.id);
-    return { ok: 'Your relationship manager will call you within one working day.' };
+    const w = await weddingFor(sql, p.id);
+    const days = await getSetting(sql, 'bride_perk_length_days', 7);
+    await sql.begin(async (tx) => {
+      await activatePerk(tx, str(fd, 'perk_id'), p.id);
+      await engagementFromPerk(tx, p.id, str(fd, 'perk_id'), w?.id ?? null, days);
+    });
+    return { to: '/me/rm', ok: 'Your relationship manager will call you within one working day.' };
+  });
+}
+
+export async function buyRmAction(fd: FormData) {
+  await attempt('/me/rm', async () => {
+    const p = await requireBride('/me/rm');
+    const w = await weddingFor(sql, p.id);
+    const order = await buyRm(sql, { profileId: p.id, weddingId: w?.id ?? null, gateway: str(fd, 'gateway') as Gateway });
+    return `/pay/${order.id}`;
   });
 }
 

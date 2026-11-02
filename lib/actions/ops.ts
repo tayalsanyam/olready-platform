@@ -18,7 +18,9 @@ import { activateSubscription, markOrderPaid, setGateway, type Gateway } from '.
 import { decideDispute, markContacted } from '../reviews';
 import { moderateRealWedding, tagVendor } from '../realWeddings';
 import { queueEmail } from '../email';
+import { notifyNewLead, notifyRmAssigned } from '../notify';
 import { slugify } from '../catalog';
+import { addRmNote, approveEngagement, reassign, rejectEngagement } from '../rm';
 import { attempt, attrsFromForm, back, num, str } from './run';
 
 const OPS: Role[] = ['ops', 'admin'];
@@ -51,6 +53,7 @@ export async function opsAdvance(fd: FormData) {
     if (stage === 3) {
       const [l] = await sql<{ email: string | null; bride_name: string }[]>`select email, bride_name from mkt.leads where id = ${leadId}`;
       if (l?.email) await queueEmail(sql, l.email, 'lead_verified', { name: l.bride_name.split(' ')[0] }, `verified:${leadId}`);
+      await notifyNewLead(sql, leadId);
     }
     return { ok: stage === 3 ? 'Verified. Vendors can now see this lead.' : `Stage ${stage} recorded` };
   });
@@ -105,6 +108,8 @@ export async function opsReopen(fd: FormData) {
   await attempt(back(fd, '/ops/needs'), async () => {
     const p = await requireRole(OPS);
     await reopenNeed(sql, str(fd, 'need_id'), p.id);
+    const [n] = await sql<{ lead_id: string }[]>`select lead_id from mkt.lead_needs where id = ${str(fd, 'need_id')}`;
+    if (n) await notifyNewLead(sql, n.lead_id);
     return { ok: 'Reopened for more vendors' };
   });
 }
@@ -368,5 +373,40 @@ export async function opsSaveSetting(fd: FormData) {
     if (!row) throw new DomainError('not_found', 'Unknown setting');
     await audit(sql, p.id, 'setting.update', 'setting', key, { value });
     return { ok: 'Saved' };
+  });
+}
+
+// ---------------------------------------------------------------- relationship managers
+export async function opsApproveRm(fd: FormData) {
+  await attempt('/ops/rm', async () => {
+    const p = await requireRole(OPS);
+    await approveEngagement(sql, str(fd, 'id'), str(fd, 'rm_profile_id'), p.id);
+    await notifyRmAssigned(sql, str(fd, 'id'));
+    return { ok: 'Relationship manager assigned' };
+  });
+}
+
+export async function opsRejectRm(fd: FormData) {
+  await attempt('/ops/rm', async () => {
+    const p = await requireRole(OPS);
+    await rejectEngagement(sql, str(fd, 'id'), str(fd, 'note'), p.id);
+    return { ok: 'Request declined. Arrange the refund if the bride paid.' };
+  });
+}
+
+export async function opsReassignRm(fd: FormData) {
+  await attempt('/ops/rm', async () => {
+    const p = await requireRole(OPS);
+    await reassign(sql, str(fd, 'id'), str(fd, 'rm_profile_id'), p.id);
+    return { ok: 'Reassigned' };
+  });
+}
+
+export async function rmAddNote(fd: FormData) {
+  const id = str(fd, 'id');
+  await attempt(`/ops/rm/${id}`, async () => {
+    const p = await requireRole(['rm', 'ops', 'admin']);
+    await addRmNote(sql, id, p, str(fd, 'body'));
+    return { ok: 'Note saved' };
   });
 }

@@ -1,6 +1,7 @@
 import type { Db, Sql } from './db';
 import { DomainError, audit } from './db';
 import { brideCanAccessLead } from './leads';
+import { rmAssignedToLead } from './rm';
 
 export type ThreadRow = {
   id: string;
@@ -60,7 +61,8 @@ export async function threadAccess(db: Db, threadId: string, profile: { id: stri
   if (!t) throw new DomainError('not_found', 'Conversation not found');
   if (t.owner === profile.id) return { side: 'vendor' };
   if (await brideCanAccessLead(db, t.lead_id, profile.id)) return { side: 'bride' };
-  if (['ops', 'rm', 'admin'].includes(profile.role)) return { side: 'staff' };
+  if (['ops', 'admin'].includes(profile.role)) return { side: 'staff' };
+  if (profile.role === 'rm' && (await rmAssignedToLead(db, profile.id, t.lead_id))) return { side: 'staff' };
   throw new DomainError('forbidden', 'You cannot open this conversation');
 }
 

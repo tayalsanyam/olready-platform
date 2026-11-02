@@ -23,6 +23,7 @@ export type Order = {
   vendor_id: string | null;
   profile_id: string;
   pack_id: number | null;
+  service_code: string | null;
   amount_inr: number;
   gateway: Gateway;
   gateway_order_id: string | null;
@@ -101,6 +102,10 @@ export async function markOrderPaid(sql: Sql, orderId: string, paymentId: string
         if (!pack.requires_contract) await activate(tx, sub.id, null, null, actor);
       }
     }
+    if (order.service_code) {
+      // Bride paid first; the team approves and assigns a relationship manager next.
+      await tx`update mkt.rm_engagements set status = 'pending_approval' where order_id = ${order.id} and status = 'pending_payment'`;
+    }
     await audit(tx, actor, 'order.paid', 'order', orderId, { paymentId });
     return { order: paid, alreadyPaid: false };
   });
@@ -165,11 +170,21 @@ export function razorpayWebhookValid(rawBody: string, signature: string) {
 }
 
 // ---------------------------------------------------------------- PayU
-export function payuRequestFields(order: Order, pack: Pack, buyer: { name: string; email: string; phone: string }, site: string) {
+/** What the order buys, for receipts and gateway screens. */
+export async function orderProduct(db: Db, order: Order) {
+  if (order.pack_id) {
+    const [p] = await db<{ name: string }[]>`select name from mkt.packs where id = ${order.pack_id}`;
+    return { name: p?.name ?? 'Pack', kind: 'pack' as const, done: '/vendor/packs' };
+  }
+  const [s] = await db<{ name: string }[]>`select name from mkt.services where code = ${order.service_code}`;
+  return { name: s?.name ?? 'Service', kind: 'service' as const, done: '/me/rm' };
+}
+
+export function payuRequestFields(order: Order, productName: string, buyer: { name: string; email: string; phone: string }, site: string) {
   const key = process.env.PAYU_KEY ?? '';
   const salt = process.env.PAYU_SALT ?? '';
   const amount = order.amount_inr.toFixed(2);
-  const productinfo = `OLReady ${pack.name}`;
+  const productinfo = `OLReady ${productName}`;
   const firstname = buyer.name.split(' ')[0] || 'Vendor';
   const hash = createHash('sha512')
     .update(`${key}|${order.id}|${amount}|${productinfo}|${firstname}|${buyer.email}|||||||||||${salt}`)
@@ -199,4 +214,31 @@ export function payuResponseValid(p: Record<string, string>) {
   ].join('|');
   const expected = createHash('sha512').update(seq).digest('hex');
   return safeEqual(expected, (p.hash ?? '').toLowerCase());
+}
+
+/**
+ * Ends plans past their end date. When a vendor has no active plan left, the unused
+ * plan credits are written off in the ledger so balances stay honest.
+ */
+export async function expirePlans(sql: Sql) {
+  return sql.begin(async (tx) => {
+    const ended = await tx<{ vendor_id: string }[]>`
+      update mkt.vendor_subscriptions set status = 'expired'
+      where status = 'active' and ends_at is not null and ends_at <= now() returning vendor_id`;
+    let writtenOff = 0;
+    for (const vendorId of new Set(ended.map((e) => e.vendor_id))) {
+      const [still] = await tx`
+        select 1 from mkt.vendor_subscriptions where vendor_id = ${vendorId} and status = 'active' and (ends_at is null or ends_at > now())`;
+      if (still) continue;
+      const [{ left }] = await tx<{ left: number }[]>`
+        select coalesce(sum(delta), 0)::int as left from mkt.credit_ledger where vendor_id = ${vendorId} and credit_kind = 'plan'`;
+      if (left > 0) {
+        await tx`
+          insert into mkt.credit_ledger (vendor_id, credit_kind, delta, reason, note)
+          values (${vendorId}, 'plan', ${-left}, 'expiry', 'Plan ended')`;
+        writtenOff += left;
+      }
+    }
+    return { ended: ended.length, writtenOff };
+  });
 }

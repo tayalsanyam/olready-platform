@@ -1,6 +1,7 @@
 import type { City } from '@/lib/catalog';
 import { submitRealWeddingAction } from '@/lib/actions/content';
 import { Card, Field } from './ui';
+import { PhotoInput } from './PhotoInput';
 
 export function RealWeddingForm({ cities, backPath, defaultVendorSlug }: { cities: City[]; backPath: string; defaultVendorSlug?: string }) {
   return (
@@ -32,14 +33,14 @@ export function RealWeddingForm({ cities, backPath, defaultVendorSlug }: { citie
             <textarea name="story" rows={4} className="input" />
           </Field>
         </div>
-        <Field label="Cover photo link">
-          <input name="cover_image_url" className="input" placeholder="https://…" />
-        </Field>
+        <div className="sm:col-span-2">
+          <PhotoInput name="photos" multiple label="Photos (the first is the cover)" />
+        </div>
         <Field label="Vendors (OLReady profile links)" hint="Separate with spaces or commas.">
           <input name="vendor_slugs" className="input" defaultValue={defaultVendorSlug} />
         </Field>
         <div className="sm:col-span-2">
-          <Field label="More photo links" hint="One per line.">
+          <Field label="Or photo links" hint="One per line.">
             <textarea name="photo_urls" rows={3} className="input" />
           </Field>
         </div>

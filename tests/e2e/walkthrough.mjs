@@ -324,6 +324,77 @@ await step('content team publishes the real wedding', async () => {
   await see('Simran & Arjun: A February wedding');
 });
 
+await step('vendor uploads work photos and the first becomes the cover', async () => {
+  await signInAs('Glow by Kirti owner');
+  await go('/vendor/profile');
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64'
+  );
+  await page.locator('input[type=file][name=photos]').setInputFiles([
+    { name: 'look1.png', mimeType: 'image/png', buffer: png },
+    { name: 'look2.png', mimeType: 'image/png', buffer: png },
+  ]);
+  await see('2 photos ready');
+  await submit(page.getByRole('button', { name: 'Add photos' }));
+  await see('Added 2 photos');
+  await see('Cover');
+  const fake = Buffer.from('this is not an image');
+  await page.locator('input[type=file][name=photos]').setInputFiles([{ name: 'bad.png', mimeType: 'image/png', buffer: fake }]);
+  await submit(page.getByRole('button', { name: 'Add photos' }));
+  await see('Photos must be JPEG, PNG or WebP');
+  await go('/v/glow-by-kirti-demo');
+  if (!(await page.locator('img[src^="/uploads/vendors/"]').count())) throw new Error('uploaded photo not on profile');
+});
+
+await step('bride starts her booking perk and Ops assigns an RM who can read her chats', async () => {
+  await signInAs('Simran Kaur');
+  await go('/me');
+  await submit(page.getByRole('button', { name: 'Start now' }));
+  await see('within one working day');
+  await signInAs('Rohit (ops)');
+  await go('/ops/rm');
+  await see('booking perk');
+  const rmSelect = page.locator('select[name=rm_profile_id]').first();
+  await rmSelect.selectOption(await rmSelect.locator('option', { hasText: 'Tanya' }).getAttribute('value'));
+  await submit(page.getByRole('button', { name: 'Assign' }));
+  await see('Relationship manager assigned');
+  await signInAs('Tanya (RM)');
+  await go('/ops/rm');
+  await page.getByRole('link', { name: /Simran Kaur/ }).click();
+  await page.waitForLoadState('networkidle');
+  await see('Glow by Kirti');
+  await page.locator('textarea[name=body]').fill('Called Simran. Wants a candid photographer under 1 lakh.');
+  await submit(page.getByRole('button', { name: 'Save' }));
+  await see('Note saved');
+  await page.getByRole('link', { name: 'Glow by Kirti' }).first().click();
+  await page.waitForLoadState('networkidle');
+  await see('read only');
+  await shot('rm-thread');
+  await signInAs('Simran Kaur');
+  await go('/me/rm');
+  await see('is your relationship manager');
+});
+
+await step('a second bride buys the RM service, pays, and waits for approval', async () => {
+  await signInAs('Neha Gupta');
+  await go('/me');
+  await submit(page.getByRole('button', { name: 'Start planning' }));
+  await go('/me/rm');
+  await page.locator('select[name=gateway]').selectOption('test');
+  await submit(page.getByRole('button', { name: 'Get a relationship manager' }));
+  await see('Pay for Relationship manager');
+  await submit(page.getByRole('button', { name: 'Complete test payment' }));
+  await see('Payment received');
+  await see('assigns your relationship manager within one working day');
+});
+
+await step('emails were queued for the key events', async () => {
+  const res = await page.request.get(BASE + '/api/cron/daily', { headers: { authorization: 'Bearer local-cron' } });
+  const j = await res.json();
+  if (typeof j.rmEnded !== 'number' || !j.expiredPlans) throw new Error('cron response missing fields');
+});
+
 await step('ops employee cannot export; admin can', async () => {
   await signInAs('Rohit (ops)');
   const denied = await page.request.get(BASE + '/ops/export?table=leads');

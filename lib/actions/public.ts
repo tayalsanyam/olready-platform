@@ -3,7 +3,7 @@
 import { sql } from '../db';
 import { DomainError } from '../db';
 import { currentProfile } from '../auth';
-import { createEnquiry } from '../leads';
+import { createEnquiry, normalisePhone } from '../leads';
 import { getVendorBySlug } from '../vendors';
 import { toggleShortlist, weddingFor } from '../weddings';
 import { acceptClaim } from '../vendors';
@@ -12,6 +12,12 @@ import { attempt, back, num, str } from './run';
 
 export async function submitEnquiry(fd: FormData) {
   await attempt(back(fd, '/enquire'), async () => {
+    // Bots fill every field, including this one, which people never see.
+    if (str(fd, 'company')) return '/enquire/thanks';
+    const phone = normalisePhone(str(fd, 'phone'));
+    const [{ n }] = await sql<{ n: number }[]>`
+      select count(*)::int as n from mkt.leads where phone = ${phone} and created_at > now() - interval '24 hours'`;
+    if (n >= 3) throw new DomainError('too_many', 'We already have your requests from today. Our team will call you shortly.');
     const profile = await currentProfile();
     const wedding = profile ? await weddingFor(sql, profile.id) : null;
     const cityId = num(fd, 'city_id');

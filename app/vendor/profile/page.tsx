@@ -3,7 +3,8 @@ import { sql } from '@/lib/db';
 import { requireVendor } from '@/lib/vendorSession';
 import { fieldsFor } from '@/lib/catalog';
 import { vendorMedia } from '@/lib/vendors';
-import { addMedia, removeMedia, saveVendorProfile } from '@/lib/actions/vendor';
+import { addMedia, removeMedia, saveVendorProfile, setCoverAction } from '@/lib/actions/vendor';
+import { PhotoInput } from '@/components/PhotoInput';
 import { AttributeInputs } from '@/components/AttributeInputs';
 import { Badge, Card, Field, Notice, PageTitle } from '@/components/ui';
 
@@ -22,7 +23,8 @@ const statusText: Record<string, string> = {
 
 export default async function ProfilePage({ searchParams }: P) {
   const q = await searchParams;
-  const { vendor } = await requireVendor('/vendor/profile');
+  const { profile, vendor } = await requireVendor('/vendor/profile');
+  const [{ notify_email: notify }] = await sql<{ notify_email: boolean }[]>`select notify_email from mkt.profiles where id = ${profile.id}`;
   const [fields, media] = await Promise.all([fieldsFor(sql, vendor.category_id), vendorMedia(sql, vendor.id)]);
   return (
     <>
@@ -64,9 +66,7 @@ export default async function ProfilePage({ searchParams }: P) {
           <Field label="Years of experience">
             <input name="years_experience" className="input" inputMode="numeric" defaultValue={vendor.years_experience ?? ''} />
           </Field>
-          <Field label="Cover photo link" hint="An https link to your best photo.">
-            <input name="cover_image_url" className="input" defaultValue={vendor.cover_image_url ?? ''} />
-          </Field>
+          <input type="hidden" name="cover_image_url" value={vendor.cover_image_url ?? ''} />
         </Card>
         <Card>
           <h2 className="mb-3 font-semibold">Details brides filter by</h2>
@@ -87,14 +87,22 @@ export default async function ProfilePage({ searchParams }: P) {
             <input name="website" className="input" defaultValue={vendor.website ?? ''} />
           </Field>
         </Card>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="notify_email" defaultChecked={notify} className="h-4 w-4 accent-[var(--color-gold)]" />
+          Email me about new leads, messages and accepted quotes
+        </label>
         <button className="btn btn-gold">Save profile</button>
       </form>
 
       <Card className="mt-6">
         <h2 className="font-semibold">Work photos</h2>
-        <p className="hint">Only photos you own or have the right to use. Paste https links, one per line.</p>
-        <form action={addMedia} className="mt-3 space-y-2">
-          <textarea name="urls" rows={3} className="input" placeholder="https://…" />
+        <p className="hint">Only photos you own or have the right to use. Your first photo becomes the cover.</p>
+        <form action={addMedia} className="mt-3 space-y-3">
+          <PhotoInput name="photos" multiple label="Upload photos" />
+          <details>
+            <summary className="hint cursor-pointer">Or paste links</summary>
+            <textarea name="urls" rows={2} className="input mt-1" placeholder="https://…" />
+          </details>
           <button className="btn btn-sm">Add photos</button>
         </form>
         {media.length ? (
@@ -103,6 +111,14 @@ export default async function ProfilePage({ searchParams }: P) {
               <li key={m.id} className="relative aspect-square overflow-hidden rounded-lg">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={m.url} alt="" className="h-full w-full object-cover" />
+                {vendor.cover_image_url === m.url ? (
+                  <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 text-[0.7rem] text-white">Cover</span>
+                ) : (
+                  <form action={setCoverAction} className="absolute bottom-1 left-1">
+                    <input type="hidden" name="media_id" value={m.id} />
+                    <button className="rounded bg-white/90 px-1.5 text-[0.7rem] font-semibold">Make cover</button>
+                  </form>
+                )}
                 <form action={removeMedia} className="absolute right-1 top-1">
                   <input type="hidden" name="media_id" value={m.id} />
                   <button className="btn btn-sm btn-danger px-2 py-0.5" aria-label="Remove photo">

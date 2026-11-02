@@ -100,11 +100,11 @@ export default async function Packs({ searchParams }: P) {
                   <td>{o.status}</td>
                   <td>
                     {o.status === 'paid' ? (
-                      <Link className="underline" href={`/vendor/orders/${o.id}/invoice`}>
+                      <Link className="underline" href={`/receipt/${o.id}`}>
                         Receipt
                       </Link>
                     ) : o.status === 'created' ? (
-                      <Link className="underline" href={`/vendor/pay/${o.id}`}>
+                      <Link className="underline" href={`/pay/${o.id}`}>
                         Pay
                       </Link>
                     ) : null}

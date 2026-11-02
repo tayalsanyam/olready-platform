@@ -19,6 +19,7 @@ export default async function OpsHome() {
       (select count(*) from mkt.review_disputes where status = 'open' and contact_due_at < now())::int as disputes_overdue,
       (select count(*) from mkt.review_disputes where status = 'proof_submitted')::int as disputes_decide,
       (select count(*) from mkt.real_weddings where status = 'submitted')::int as weddings,
+      (select count(*) from mkt.rm_engagements where status = 'pending_approval')::int as rm_pending,
       (select count(*) from mkt.leads where verified_at > now() - interval '7 days')::int as verified_7d,
       (select count(*) from mkt.unlocks where created_at > now() - interval '7 days' and not refunded)::int as unlocks_7d,
       (select count(*) from mkt.booking_reports where created_at > now() - interval '7 days')::int as bookings_7d`;
@@ -32,6 +33,7 @@ export default async function OpsHome() {
     ['Disputes to contact', c.disputes_contact, '/ops/reviews', c.disputes_overdue ? `${c.disputes_overdue} past 48 hours` : undefined],
     ['Disputes to decide', c.disputes_decide, '/ops/reviews'],
     ['Real weddings to review', c.weddings, '/ops/content'],
+    ['Relationship-manager requests', c.rm_pending, '/ops/rm'],
   ];
   return (
     <>

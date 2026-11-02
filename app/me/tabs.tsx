@@ -10,6 +10,7 @@ const items = [
   { href: '/me/guests', label: 'Guests and RSVP' },
   { href: '/me/invite', label: 'E-invite' },
   { href: '/me/family', label: 'Family' },
+  { href: '/me/rm', label: 'Relationship manager' },
   { href: '/me/reviews', label: 'Reviews' },
   { href: '/me/real-wedding', label: 'Share our wedding' },
 ];

@@ -52,7 +52,7 @@ export async function submitRealWedding(
         ${input.story.trim()}, ${input.coverImageUrl || null}, true, ${profileId}, 'submitted')
       returning id, slug`;
     let i = 0;
-    for (const url of input.photoUrls.map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u)).slice(0, 40)) {
+    for (const url of input.photoUrls.map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u) || u.startsWith("/uploads/")).slice(0, 40)) {
       await tx`insert into mkt.real_wedding_photos (real_wedding_id, url, sort) values (${rw.id}, ${url}, ${i++})`;
     }
     const vendors = input.vendorSlugs.length

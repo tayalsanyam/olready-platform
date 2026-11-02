@@ -1,6 +1,15 @@
 import type { Db } from './db';
 
-export type EmailTemplate = 'post_event_feedback' | 'lead_verified' | 'claim_invite' | 'booking_confirmed';
+export type EmailTemplate =
+  | 'post_event_feedback'
+  | 'lead_verified'
+  | 'claim_invite'
+  | 'booking_confirmed'
+  | 'vendor_new_lead'
+  | 'new_message'
+  | 'quote_received'
+  | 'quote_accepted'
+  | 'rm_assigned';
 
 const site = () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
@@ -34,6 +43,31 @@ function render(template: EmailTemplate, p: Record<string, string>) {
       return {
         subject: `Claim your ${p.business} profile on OLReady`,
         text: `Hello,\n\nWe have prepared a profile for ${p.business} on OLReady. It stays private until you claim it and check the details:\n\n${site()}/claim/${p.token}\n\nOLReady`,
+      };
+    case 'vendor_new_lead':
+      return {
+        subject: `New verified ${p.category} lead in ${p.city}`,
+        text: `Hello ${p.business},\n\nA verified bride in ${p.city} needs a ${p.category}${p.date ? ` for ${p.date}` : ''}. It is shared with a limited number of vendors.\n\nSee it and unlock it here:\n${site()}/vendor\n\nOLReady`,
+      };
+    case 'new_message':
+      return {
+        subject: `New message from ${p.from}`,
+        text: `Hi ${p.name},\n\n${p.from} sent you a message on OLReady:\n\n"${p.preview}"\n\nReply here: ${site()}${p.path}\n\nOLReady`,
+      };
+    case 'quote_received':
+      return {
+        subject: `${p.vendor} sent you a quote`,
+        text: `Hi ${p.name},\n\n${p.vendor} quoted ${p.amount} for your ${p.category}. Compare and accept it here:\n\n${site()}${p.path}\n\nOLReady`,
+      };
+    case 'quote_accepted':
+      return {
+        subject: `${p.bride} accepted your quote`,
+        text: `Hello ${p.business},\n\n${p.bride} accepted your quote of ${p.amount}. Confirm the details with her, and report the booking on OLReady to get your bonus credit:\n\n${site()}${p.path}\n\nOLReady`,
+      };
+    case 'rm_assigned':
+      return {
+        subject: 'Your OLReady relationship manager',
+        text: `Hi ${p.name},\n\n${p.rm} is your relationship manager and will call you within one working day. Details are here:\n\n${site()}/me/rm\n\nOLReady`,
       };
     case 'booking_confirmed':
       return {

@@ -5,10 +5,11 @@ import { requireProfile } from '../auth';
 import { requireVendor } from '../vendorSession';
 import { createVendor, updateVendorProfile, vendorForOwner } from '../vendors';
 import { reportBooking, unlockNeed } from '../leads';
-import { createOrder, markOrderPaid, razorpayCheckoutValid, type Gateway } from '../payments';
+import { createOrder, type Gateway } from '../payments';
 import { openDispute, replyToReview, submitProof } from '../reviews';
 import { confirmTag } from '../realWeddings';
 import { attempt, attrsFromForm, back, num, str } from './run';
+import { filesFrom, storeImage } from '../storage';
 
 export async function onboardVendor(fd: FormData) {
   await attempt('/vendor/onboard', async () => {
@@ -43,6 +44,7 @@ export async function onboardVendor(fd: FormData) {
 export async function saveVendorProfile(fd: FormData) {
   await attempt('/vendor/profile', async () => {
     const { profile, vendor } = await requireVendor();
+    await sql`update mkt.profiles set notify_email = ${fd.get('notify_email') === 'on'} where id = ${profile.id}`;
     await updateVendorProfile(
       sql,
       vendor.id,
@@ -68,16 +70,31 @@ export async function saveVendorProfile(fd: FormData) {
 export async function addMedia(fd: FormData) {
   await attempt('/vendor/profile', async () => {
     const { vendor } = await requireVendor();
+    const files = filesFrom(fd, 'photos');
     const urls = str(fd, 'urls')
       .split(/\s+/)
       .filter((u) => /^https:\/\/\S+$/.test(u))
       .slice(0, 30);
-    if (!urls.length) throw new DomainError('no_urls', 'Paste one or more https image links');
-    let i = 0;
+    if (!files.length && !urls.length) throw new DomainError('no_photos', 'Choose photos to upload');
+    for (const f of files) urls.push(await storeImage(f, 'vendors'));
+    const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from mkt.vendor_media where vendor_id = ${vendor.id}`;
+    let i = n;
     for (const url of urls) {
-      await sql`insert into mkt.vendor_media (vendor_id, url, sort) values (${vendor.id}, ${url}, ${100 + i++})`;
+      await sql`insert into mkt.vendor_media (vendor_id, url, sort) values (${vendor.id}, ${url}, ${i++})`;
     }
+    // The first photo becomes the cover until the vendor picks one.
+    await sql`update mkt.vendors set cover_image_url = ${urls[0]} where id = ${vendor.id} and cover_image_url is null`;
     return { ok: `Added ${urls.length} photo${urls.length > 1 ? 's' : ''}` };
+  });
+}
+
+export async function setCoverAction(fd: FormData) {
+  await attempt('/vendor/profile', async () => {
+    const { vendor } = await requireVendor();
+    const [m] = await sql<{ url: string }[]>`select url from mkt.vendor_media where id = ${str(fd, 'media_id')} and vendor_id = ${vendor.id}`;
+    if (!m) throw new DomainError('not_found', 'Photo not found');
+    await sql`update mkt.vendors set cover_image_url = ${m.url}, updated_at = now() where id = ${vendor.id}`;
+    return { ok: 'Cover photo updated' };
   });
 }
 
@@ -118,35 +135,7 @@ export async function buyPack(fd: FormData) {
       gateway: str(fd, 'gateway') as Gateway,
       buyerGstin: str(fd, 'gstin') || null,
     });
-    return `/vendor/pay/${order.id}`;
-  });
-}
-
-/** Local development only: completes a payment on the test gateway. */
-export async function completeTestPayment(fd: FormData) {
-  const orderId = str(fd, 'order_id');
-  await attempt(`/vendor/pay/${orderId}`, async () => {
-    if (process.env.NODE_ENV === 'production') throw new DomainError('no_test', 'Test payments are off');
-    const { profile } = await requireVendor();
-    const [o] = await sql<{ gateway: string }[]>`select gateway from mkt.orders where id = ${orderId} and profile_id = ${profile.id}`;
-    if (o?.gateway !== 'test') throw new DomainError('bad_order', 'Not a test order');
-    await markOrderPaid(sql, orderId, `test-${Date.now()}`, profile.id);
-    return { to: '/vendor/packs', ok: 'Payment received' };
-  });
-}
-
-/** Razorpay Checkout posts back here; the webhook is the backstop if this never arrives. */
-export async function razorpayVerifyAction(fd: FormData) {
-  const orderId = str(fd, 'order_id');
-  await attempt(`/vendor/pay/${orderId}`, async () => {
-    const { profile } = await requireVendor();
-    const [o] = await sql<{ gateway_order_id: string | null }[]>`
-      select gateway_order_id from mkt.orders where id = ${orderId} and profile_id = ${profile.id}`;
-    if (!o?.gateway_order_id) throw new DomainError('bad_order', 'Order not found');
-    const ok = razorpayCheckoutValid(o.gateway_order_id, str(fd, 'razorpay_payment_id'), str(fd, 'razorpay_signature'));
-    if (!ok) throw new DomainError('bad_signature', 'We could not confirm this payment. If money left your account, contact support.');
-    await markOrderPaid(sql, orderId, str(fd, 'razorpay_payment_id'), profile.id);
-    return { to: '/vendor/packs', ok: 'Payment received' };
+    return `/pay/${order.id}`;
   });
 }
 

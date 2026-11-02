@@ -51,6 +51,7 @@ export default async function MyWedding({ searchParams }: P) {
        or exists (select 1 from mkt.wedding_members m where m.wedding_id = l.wedding_id and m.profile_id = ${p.id}))
       and ln.status <> 'removed'
     order by l.created_at desc, c.sort`;
+  const [{ notify_email: notify }] = await sql<{ notify_email: boolean }[]>`select notify_email from mkt.profiles where id = ${p.id}`;
   const perks = await sql<{ id: string; perk: string; claim_by: Date; activated_at: Date | null; expires_at: Date | null }[]>`
     select id, perk, claim_by, activated_at, expires_at from mkt.bride_perks where profile_id = ${p.id} order by created_at desc`;
   return (
@@ -90,6 +91,10 @@ export default async function MyWedding({ searchParams }: P) {
               ))}
             </select>
           </Field>
+          <label className="flex items-center gap-2 self-end py-2 text-sm">
+            <input type="checkbox" name="notify_email" defaultChecked={notify} className="h-4 w-4 accent-[var(--color-gold)]" />
+            Email me when vendors reply or quote
+          </label>
           <div className="self-end">
             <button className="btn">{wedding ? 'Save' : 'Start planning'}</button>
           </div>

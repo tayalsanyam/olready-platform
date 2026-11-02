@@ -1,6 +1,8 @@
 import 'server-only';
 import { redirect } from 'next/navigation';
-import { DomainError } from '../db';
+import { after } from 'next/server';
+import { DomainError, sql } from '../db';
+import { flushOutbox } from '../email';
 
 export function withParam(path: string, key: string, value: string) {
   const [base, query = ''] = path.split('?');
@@ -23,6 +25,8 @@ export async function attempt(back: string, fn: () => Promise<string | { to?: st
     if (typeof r === 'string') to = r;
     else if (r && (r.to || r.ok)) to = r.ok ? withParam(r.to ?? back, 'ok', r.ok) : (r.to ?? back);
     else to = back;
+    // Send any emails this action queued, after the response is on its way.
+    if (process.env.RESEND_API_KEY) after(() => flushOutbox(sql, 20).then(() => undefined, () => undefined));
   } catch (e) {
     if (e instanceof DomainError) to = withParam(back, 'error', e.message);
     else throw e;

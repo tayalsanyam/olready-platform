@@ -1,12 +1,13 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
 import { sql } from '@/lib/db';
-import { requireVendor } from '@/lib/vendorSession';
+import { requireProfile } from '@/lib/auth';
 import { formatInr } from '@/lib/catalog';
-import { type Order, type Pack, payuRequestFields, razorpayCreateOrder } from '@/lib/payments';
+import { type Order, orderProduct, payuRequestFields, razorpayCreateOrder } from '@/lib/payments';
 import { siteUrl } from '@/lib/seo';
-import { completeTestPayment, razorpayVerifyAction } from '@/lib/actions/vendor';
-import { Card, Notice, PageTitle } from '@/components/ui';
+import { completeTestPayment, razorpayVerifyAction } from '@/lib/actions/payments';
+import { Card, Container, Notice, PageTitle } from '@/components/ui';
 import { RazorpayButton } from './razorpay';
 
 export const dynamic = 'force-dynamic';
@@ -14,14 +15,19 @@ export const metadata = { title: 'Pay', robots: { index: false } };
 
 type P = { params: Promise<{ orderId: string }>; searchParams: Promise<Record<string, string | string[]>> };
 
+/** Checkout for any order: vendor packs and bride services. */
 export default async function Pay({ params, searchParams }: P) {
   const { orderId } = await params;
   const q = await searchParams;
-  const { profile, vendor } = await requireVendor(`/vendor/pay/${orderId}`);
+  const profile = await requireProfile(`/pay/${orderId}`);
   if (!/^[0-9a-f-]{36}$/.test(orderId)) notFound();
   const [order] = await sql<Order[]>`select * from mkt.orders where id = ${orderId} and profile_id = ${profile.id}`;
   if (!order) notFound();
-  const [pack] = await sql<Pack[]>`select * from mkt.packs where id = ${order.pack_id}`;
+  const product = await orderProduct(sql, order);
+  const [vendor] = order.vendor_id
+    ? await sql<{ business_name: string; phone: string | null }[]>`select business_name, phone from mkt.vendors where id = ${order.vendor_id}`
+    : [];
+  const buyerName = vendor?.business_name ?? profile.full_name ?? 'OLReady customer';
   let razorpayOrderId = order.gateway_order_id;
   if (order.status === 'created' && order.gateway === 'razorpay' && !razorpayOrderId) {
     razorpayOrderId = (await razorpayCreateOrder(order)).id;
@@ -29,15 +35,20 @@ export default async function Pay({ params, searchParams }: P) {
   }
   const payu =
     order.gateway === 'payu'
-      ? payuRequestFields(order, pack, { name: profile.full_name || vendor.business_name, email: profile.email ?? '', phone: vendor.phone ?? '' }, siteUrl())
+      ? payuRequestFields(order, product.name, { name: buyerName, email: profile.email ?? '', phone: vendor?.phone ?? profile.phone ?? '' }, siteUrl())
       : null;
   return (
-    <div className="mx-auto max-w-lg">
-      <PageTitle title={`Pay for ${pack.name}`} sub={`${formatInr(order.amount_inr)} · GST included`} />
+    <Container className="max-w-lg">
+      <PageTitle title={`Pay for ${product.name}`} sub={`${formatInr(order.amount_inr)} · GST included`} />
       <Notice error={q.error} />
       <Card className="space-y-3">
         {order.status !== 'created' ? (
-          <p>This order is {order.status}.</p>
+          <p>
+            This order is {order.status}.{' '}
+            <Link href={product.done} className="underline">
+              Back
+            </Link>
+          </p>
         ) : order.gateway === 'razorpay' ? (
           <>
             <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
@@ -46,7 +57,7 @@ export default async function Pay({ params, searchParams }: P) {
               gatewayOrderId={razorpayOrderId!}
               orderId={order.id}
               amountPaise={order.amount_inr * 100}
-              name={vendor.business_name}
+              name={buyerName}
               email={profile.email ?? ''}
               verify={razorpayVerifyAction}
             />
@@ -73,6 +84,6 @@ export default async function Pay({ params, searchParams }: P) {
           </form>
         ) : null}
       </Card>
-    </div>
+    </Container>
   );
 }

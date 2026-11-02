@@ -180,3 +180,34 @@ describe('real weddings', () => {
     expect(pub.vendors).toEqual([expect.objectContaining({ slug: v.slug, vendor_confirmed: true })]);
   });
 });
+
+describe('notifications', () => {
+  it('queues one new-lead email per eligible vendor and deduplicates messages per hour', async () => {
+    const { notifyNewLead, notifyMessage } = await import('@/lib/notify');
+    const ops = await profile(sql, 'ops');
+    const bride = await profile(sql, 'bride', 'Mehak Arora');
+    const owner = await profile(sql, 'vendor', 'Notify Owner');
+    const v = await liveVendor(sql, owner.id, 'djs-dhol', 'chandigarh', 'Notify DJ');
+    const far = await liveVendor(sql, (await profile(sql, 'vendor')).id, 'djs-dhol', 'ludhiana', 'Far DJ');
+    const lead = await createEnquiry(sql, {
+      brideProfileId: bride.id, name: 'Mehak Arora', phone: '9833333333', email: 'mehak@demo.in', cityId: await cityId(sql, 'chandigarh'),
+      needs: [{ categoryId: await categoryId(sql, 'djs-dhol') }],
+    });
+    for (const s of [1, 2, 3] as const) await advanceVerification(sql, lead.id, s, ops.id);
+    await notifyNewLead(sql, lead.id);
+    await notifyNewLead(sql, lead.id);
+    const mails = await sql`select to_email from mkt.email_outbox where template = 'vendor_new_lead' and dedupe_key like ${'newlead:%'}`;
+    expect(mails.map((m) => m.to_email)).toContain(owner.email);
+    expect(mails.filter((m) => m.to_email === owner.email)).toHaveLength(1);
+    const [farOwner] = await sql`select p.email from mkt.vendors v join mkt.profiles p on p.id = v.owner_profile_id where v.id = ${far.id}`;
+    expect(mails.map((m) => m.to_email)).not.toContain(farOwner.email);
+    await topup(sql, v.id, 1);
+    const [need] = await sql`select id from mkt.lead_needs where lead_id = ${lead.id}`;
+    const { threadId } = await unlockNeed(sql, need.id, v.id, owner.id);
+    await notifyMessage(sql, threadId, owner.id, 'Hello!');
+    await notifyMessage(sql, threadId, owner.id, 'Are you there?');
+    const msgs = await sql`select to_email from mkt.email_outbox where template = 'new_message'`;
+    expect(msgs).toHaveLength(1);
+    expect(msgs[0].to_email).toBe(bride.email);
+  });
+});

@@ -23,6 +23,8 @@ try {
   const admin = await person('admin@demo.olready.in', 'Asha (admin)', 'admin');
   await person('ops@demo.olready.in', 'Rohit (ops)', 'ops');
   await person('content@demo.olready.in', 'Meera (content)', 'content');
+  const rmId = await person('rm@demo.olready.in', 'Tanya (RM)', 'rm');
+  await sql`update mkt.profiles set phone = '+919800099999' where id = ${rmId}`;
   const bride = await person('simran@demo.in', 'Simran Kaur', 'bride');
   const bride2 = await person('neha@demo.in', 'Neha Gupta', 'bride');
 

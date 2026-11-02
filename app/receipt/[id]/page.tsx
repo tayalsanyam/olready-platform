@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
-import { requireVendor } from '@/lib/vendorSession';
+import { requireProfile } from '@/lib/auth';
 import { formatInr } from '@/lib/catalog';
-import { Card } from '@/components/ui';
+import { Card, Container } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Payment receipt', robots: { index: false } };
@@ -12,17 +12,22 @@ type P = { params: Promise<{ id: string }> };
 /** A transaction receipt confirming payment. The tax invoice is issued separately from Zoho. */
 export default async function Receipt({ params }: P) {
   const { id } = await params;
-  const { profile, vendor } = await requireVendor();
+  const profile = await requireProfile(`/receipt/${id}`);
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
-  const [o] = await sql<{ id: string; amount_inr: number; gateway: string; gateway_payment_id: string | null; paid_at: Date; buyer_gstin: string | null; pack: string }[]>`
-    select o.id, o.amount_inr, o.gateway, o.gateway_payment_id, o.paid_at, o.buyer_gstin, p.name as pack
-    from mkt.orders o join mkt.packs p on p.id = o.pack_id
+  const [o] = await sql<{ id: string; amount_inr: number; gateway: string; gateway_payment_id: string | null; paid_at: Date; buyer_gstin: string | null; product: string; billed_to: string }[]>`
+    select o.id, o.amount_inr, o.gateway, o.gateway_payment_id, o.paid_at, o.buyer_gstin,
+      coalesce(p.name, s.name) as product, coalesce(v.business_name, pr.full_name) as billed_to
+    from mkt.orders o
+    left join mkt.packs p on p.id = o.pack_id
+    left join mkt.services s on s.code = o.service_code
+    left join mkt.vendors v on v.id = o.vendor_id
+    join mkt.profiles pr on pr.id = o.profile_id
     where o.id = ${id} and o.profile_id = ${profile.id} and o.status = 'paid'`;
   if (!o) notFound();
   return (
-    <div className="mx-auto max-w-xl">
+    <Container className="max-w-xl">
       <Card className="space-y-4 p-6">
-        <div className="flex justify-between">
+        <div className="flex justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">Payment receipt</h1>
             <p className="hint">Receipt no. {o.id.slice(0, 8).toUpperCase()}</p>
@@ -34,7 +39,7 @@ export default async function Receipt({ params }: P) {
           </div>
         </div>
         <div className="text-sm">
-          <div>Billed to: {vendor.business_name}</div>
+          <div>Billed to: {o.billed_to}</div>
           {o.buyer_gstin ? <div>GSTIN {o.buyer_gstin}</div> : null}
           <div>Paid on: {o.paid_at.toISOString().slice(0, 10)}</div>
           <div>
@@ -45,7 +50,7 @@ export default async function Receipt({ params }: P) {
         <table className="data">
           <tbody>
             <tr>
-              <td>OLReady {o.pack}</td>
+              <td>OLReady {o.product}</td>
               <td className="text-right">{formatInr(o.amount_inr)}</td>
             </tr>
             <tr>
@@ -54,8 +59,8 @@ export default async function Receipt({ params }: P) {
             </tr>
           </tbody>
         </table>
-        <p className="hint">This receipt confirms your payment. Your tax invoice is issued separately with your service contract.</p>
+        <p className="hint">This receipt confirms your payment. Your tax invoice is issued separately.</p>
       </Card>
-    </div>
+    </Container>
   );
 }
