@@ -60,7 +60,7 @@ export default async function MyWedding({ searchParams }: P) {
         title={wedding ? wedding.title : 'Welcome to OLReady'}
         sub={wedding ? [wedding.wedding_date, cities.find((c) => c.id === wedding.city_id)?.name].filter(Boolean).join(' · ') : 'Tell us a little about your wedding to start planning.'}
         action={
-          <Link href="/enquire" className="btn btn-gold btn-sm">
+          <Link href="/enquire" className="btn btn-pink btn-sm">
             Get more quotes
           </Link>
         }
@@ -92,7 +92,7 @@ export default async function MyWedding({ searchParams }: P) {
             </select>
           </Field>
           <label className="flex items-center gap-2 self-end py-2 text-sm">
-            <input type="checkbox" name="notify_email" defaultChecked={notify} className="h-4 w-4 accent-[var(--color-gold)]" />
+            <input type="checkbox" name="notify_email" defaultChecked={notify} className="h-4 w-4 accent-[var(--color-pink)]" />
             Email me when vendors reply or quote
           </label>
           <div className="self-end">
@@ -116,7 +116,7 @@ export default async function MyWedding({ searchParams }: P) {
                 {!k.activated_at && k.claim_by > new Date() ? (
                   <form action={activatePerkAction}>
                     <input type="hidden" name="perk_id" value={k.id} />
-                    <button className="btn btn-sm btn-gold">Start now</button>
+                    <button className="btn btn-sm btn-pink">Start now</button>
                   </form>
                 ) : null}
               </li>
@@ -125,7 +125,7 @@ export default async function MyWedding({ searchParams }: P) {
         </Card>
       ) : null}
 
-      <h2 className="mb-3 font-[family-name:var(--font-display)] text-xl">Your requests</h2>
+      <h2 className="mb-3 font-semibold text-xl">Your requests</h2>
       {needs.length ? (
         <ul className="space-y-3">
           {needs.map((n) => {

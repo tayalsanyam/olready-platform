@@ -57,10 +57,10 @@ export default async function InviteEditor({ searchParams }: P) {
             <textarea name="message" rows={4} className="input" defaultValue={full?.message ?? 'With the blessings of our families, we invite you to celebrate with us.'} />
           </Field>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="publish" defaultChecked={current?.published ?? true} className="h-4 w-4 accent-[var(--color-gold)]" />
+            <input type="checkbox" name="publish" defaultChecked={current?.published ?? true} className="h-4 w-4 accent-[var(--color-pink)]" />
             Publish (anyone with the link can see it)
           </label>
-          <button className="btn btn-gold">Save invite</button>
+          <button className="btn btn-pink">Save invite</button>
         </form>
       </Card>
       <p className="hint mt-3">Functions and times come from Guests and RSVP. Each guest still answers on their own RSVP link.</p>

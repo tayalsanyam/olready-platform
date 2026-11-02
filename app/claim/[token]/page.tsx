@@ -23,7 +23,7 @@ export default async function Claim({ params, searchParams }: P) {
   return (
     <Container className="max-w-md">
       <Card className="p-6">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl">Claim {c.business_name}</h1>
+        <h1 className="font-semibold text-2xl">Claim {c.business_name}</h1>
         <p className="mt-1 text-sm text-[var(--color-muted)]">
           {c.category} · {c.city}. The profile stays private until you claim it and our team confirms you own the business.
         </p>
@@ -33,7 +33,7 @@ export default async function Claim({ params, searchParams }: P) {
         {c.status === 'invited' ? (
           <form action={claimAction}>
             <input type="hidden" name="token" value={token} />
-            <button className="btn btn-gold w-full">{me ? 'Claim this profile' : 'Sign in to claim'}</button>
+            <button className="btn btn-pink w-full">{me ? 'Claim this profile' : 'Sign in to claim'}</button>
           </form>
         ) : (
           <p className="text-sm">This claim is {c.status}.</p>

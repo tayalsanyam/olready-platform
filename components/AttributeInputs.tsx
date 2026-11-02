@@ -12,7 +12,7 @@ export function AttributeInputs({ fields, values = {} }: { fields: CategoryField
           case 'bool':
             return (
               <label key={f.key} className="flex items-center gap-2 self-end py-2">
-                <input type="checkbox" name={name} defaultChecked={Boolean(v)} className="h-4 w-4 accent-[var(--color-gold)]" />
+                <input type="checkbox" name={name} defaultChecked={Boolean(v)} className="h-4 w-4 accent-[var(--color-pink)]" />
                 <span className="text-sm font-semibold">{f.label}</span>
               </label>
             );
@@ -43,7 +43,7 @@ export function AttributeInputs({ fields, values = {} }: { fields: CategoryField
                         name={name}
                         value={o.value}
                         defaultChecked={Array.isArray(v) && v.includes(o.value)}
-                        className="h-4 w-4 accent-[var(--color-gold)]"
+                        className="h-4 w-4 accent-[var(--color-pink)]"
                       />
                       {o.label}
                     </label>

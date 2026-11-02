@@ -42,7 +42,7 @@ export function RazorpayButton(p: Props) {
   }
   return (
     <>
-      <button type="button" onClick={open} className="btn btn-gold w-full">
+      <button type="button" onClick={open} className="btn btn-pink w-full">
         Pay with Razorpay
       </button>
       <form ref={form} action={p.verify} hidden>

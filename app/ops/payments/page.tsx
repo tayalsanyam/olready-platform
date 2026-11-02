@@ -119,7 +119,10 @@ export default async function OpsPayments({ searchParams }: P) {
       {admin ? (
         <Card className="mt-5 overflow-x-auto">
           <h2 className="font-semibold">Packs</h2>
-          <p className="hint">Changes apply to new purchases only.</p>
+          <p className="hint">
+            Prices include GST and apply to new purchases only. Pro, Phoenix and Privy prices here are also the prices the sales
+            site shows and charges; it picks up a change within a few minutes.
+          </p>
           <div className="mt-2 space-y-2">
             {packs.map((p) => (
               <form key={p.id} action={opsSavePack} className="grid items-center gap-2 sm:grid-cols-[1fr_90px_110px_100px_2fr_70px_auto]">

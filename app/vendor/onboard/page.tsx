@@ -78,7 +78,7 @@ export default async function Onboard({ searchParams }: P) {
             <h2 className="mb-3 font-semibold">Details brides filter by</h2>
             <AttributeInputs fields={fields} />
           </Card>
-          <button className="btn btn-gold">Create my profile</button>
+          <button className="btn btn-pink">Create my profile</button>
         </form>
       )}
     </div>

@@ -81,7 +81,7 @@ export default async function RelationshipManager({ searchParams }: P) {
                   </option>
                 ))}
               </select>
-              <button className="btn btn-gold w-full">Get a relationship manager</button>
+              <button className="btn btn-pink w-full">Get a relationship manager</button>
             </form>
           ) : (
             <p className="mt-3 text-sm text-[var(--color-warn)]">Payments are temporarily unavailable.</p>

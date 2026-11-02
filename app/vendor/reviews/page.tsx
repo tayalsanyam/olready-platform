@@ -39,7 +39,7 @@ export default async function VendorReviews({ searchParams }: P) {
                   </div>
                   {r.body ? <p className="mt-2 text-sm">{r.body}</p> : null}
                   {r.vendor_reply ? (
-                    <p className="mt-2 border-l-2 border-[var(--color-gold)] pl-3 text-sm text-[var(--color-muted)]">Your reply: {r.vendor_reply}</p>
+                    <p className="mt-2 border-l-2 border-[var(--color-pink)] pl-3 text-sm text-[var(--color-muted)]">Your reply: {r.vendor_reply}</p>
                   ) : (
                     <form action={replyReviewAction} className="mt-3 flex gap-2">
                       <input type="hidden" name="review_id" value={r.id} />
@@ -48,7 +48,7 @@ export default async function VendorReviews({ searchParams }: P) {
                     </form>
                   )}
                   {d ? (
-                    <div className="mt-3 rounded-lg bg-[var(--color-cream)] p-3 text-sm">
+                    <div className="mt-3 rounded-lg bg-[var(--color-tint)] p-3 text-sm">
                       {d.status === 'open' ? (
                         <p>Dispute received. Our team will contact you by {fmt(d.contact_due_at)}.</p>
                       ) : d.status === 'awaiting_proof' ? (

@@ -7,7 +7,7 @@ export default function Error({ error, retry }: { error: unknown; retry: () => v
   const digest = (error as { digest?: string } | null)?.digest;
   return (
     <div className="mx-auto max-w-md px-4 py-16 text-center">
-      <h1 className="font-[family-name:var(--font-display)] text-3xl">Something went wrong</h1>
+      <h1 className="font-semibold text-3xl">Something went wrong</h1>
       <p className="mt-2 text-[var(--color-muted)]">
         Please try again. If it keeps happening, write to care@olready.in
         {digest ? (

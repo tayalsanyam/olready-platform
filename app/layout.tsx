@@ -12,11 +12,20 @@ export const metadata: Metadata = {
   openGraph: { siteName: 'OLReady', type: 'website', locale: 'en_IN' },
 };
 
-export const viewport: Viewport = { themeColor: '#141414', width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = { themeColor: '#ffffff', width: 'device-width', initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* Same typefaces as the sales site. */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Cormorant+Garamond:wght@500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+        />
+      </head>
       <body className="min-h-screen antialiased">
         <Header />
         <main className="pb-6 pt-6">{children}</main>

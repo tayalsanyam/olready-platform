@@ -67,7 +67,7 @@ export default async function Pay({ params, searchParams }: P) {
             {Object.entries(payu.fields).map(([k, v]) => (
               <input key={k} type="hidden" name={k} value={v} />
             ))}
-            <button className="btn btn-gold w-full">Pay with PayU</button>
+            <button className="btn btn-pink w-full">Pay with PayU</button>
           </form>
         ) : order.gateway === 'manual' ? (
           <div className="space-y-2 text-sm">
@@ -80,7 +80,7 @@ export default async function Pay({ params, searchParams }: P) {
         ) : order.gateway === 'test' ? (
           <form action={completeTestPayment}>
             <input type="hidden" name="order_id" value={order.id} />
-            <button className="btn btn-gold w-full">Complete test payment</button>
+            <button className="btn btn-pink w-full">Complete test payment</button>
           </form>
         ) : null}
       </Card>

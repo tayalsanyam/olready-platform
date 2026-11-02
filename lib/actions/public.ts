@@ -47,9 +47,10 @@ export async function submitEnquiry(fd: FormData) {
 
 export async function shortlistAction(fd: FormData) {
   const slug = str(fd, 'slug');
-  await attempt(`/v/${slug}`, async () => {
+  const returnTo = back(fd, `/v/${slug}`);
+  await attempt(returnTo, async () => {
     const profile = await currentProfile();
-    if (!profile) return `/login?next=${encodeURIComponent(`/v/${slug}`)}`;
+    if (!profile) return `/login?next=${encodeURIComponent(returnTo)}`;
     if (profile.role !== 'bride') throw new DomainError('not_bride', 'Shortlists are for brides and families');
     const wedding = await weddingFor(sql, profile.id);
     if (!wedding) return { to: '/me', ok: 'Set up your wedding first, then shortlist vendors' };

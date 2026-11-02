@@ -23,6 +23,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
     ...(p.role === 'admin'
       ? [
           { href: '/ops/catalog', label: 'Categories' },
+          { href: '/ops/staff', label: 'Staff' },
           { href: '/ops/settings', label: 'Settings' },
         ]
       : []),

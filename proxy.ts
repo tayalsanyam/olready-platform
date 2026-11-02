@@ -26,5 +26,5 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Skip static files, images and the public machine-readable endpoints.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|api/payments|api/cron|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|api/payments|api/cron|api/public|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico)$).*)'],
 };

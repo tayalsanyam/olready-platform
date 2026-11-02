@@ -9,7 +9,7 @@ export function PageTitle({ title, sub, action }: { title: string; sub?: ReactNo
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl">{title}</h1>
+        <h1 className="text-2xl font-semibold sm:text-3xl">{title}</h1>
         {sub ? <p className="mt-1 text-[var(--color-muted)]">{sub}</p> : null}
       </div>
       {action}
@@ -22,7 +22,7 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
 }
 
 const badgeTones = {
-  gold: 'bg-[var(--color-gold-soft)] text-[#7a5000]',
+  gold: 'bg-[var(--color-pink-soft)] text-[var(--color-pink-deep)]',
   ok: 'bg-[#e3f4ea] text-[var(--color-ok)]',
   warn: 'bg-[#fdf0dc] text-[var(--color-warn)]',
   bad: 'bg-[#fde7e5] text-[var(--color-bad)]',
@@ -67,8 +67,8 @@ export function Empty({ title, children }: { title: string; children?: ReactNode
 export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
     <div className="card p-3">
-      <div className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">{label}</div>
-      <div className="mt-1 text-2xl font-semibold">{value}</div>
+      <div className="text-sm text-[var(--color-muted)]">{label}</div>
+      <div className="figure mt-0.5 text-3xl">{value}</div>
       {hint ? <div className="hint mt-0.5">{hint}</div> : null}
     </div>
   );
@@ -83,7 +83,7 @@ export function Tabs({ items, active }: { items: { href: string; label: string }
             <Link
               href={i.href}
               className={`inline-block border-b-2 py-2 ${
-                active === i.href ? 'border-[var(--color-gold)] font-semibold' : 'border-transparent text-[var(--color-muted)]'
+                active === i.href ? 'border-[var(--color-pink)] font-semibold' : 'border-transparent text-[var(--color-muted)]'
               }`}
             >
               {i.label}
@@ -115,19 +115,22 @@ export function Cover({ url, name, className = '' }: { url: string | null; name:
   return (
     <div
       aria-hidden
-      className={`flex h-full w-full items-center justify-center font-[family-name:var(--font-display)] text-3xl text-white/90 ${className}`}
-      style={{ background: `linear-gradient(135deg, hsl(${30 + hue} 45% 32%), hsl(${20 + hue} 30% 16%))` }}
+      className={`flex h-full w-full items-center justify-center text-4xl font-semibold text-[var(--color-pink-deep)]/70 ${className}`}
+      style={{ background: `hsl(${325 + (hue % 20)} 60% ${93 - (hue % 6)}%)` }}
     >
       {name.slice(0, 1).toUpperCase()}
     </div>
   );
 }
 
-export function Stars({ value }: { value: number | null }) {
+export function Stars({ value, count }: { value: number | null; count?: number }) {
   if (value == null) return null;
   return (
-    <span className="text-sm" aria-label={`${value} out of 5`}>
-      <span className="text-[var(--color-gold)]">★</span> {value.toFixed(1)}
+    <span className="inline-flex items-center gap-1.5 text-sm">
+      <span className="rating" aria-label={`Rated ${value.toFixed(1)} out of 5`}>
+        ★ {value.toFixed(1)}
+      </span>
+      {count != null ? <span className="text-[var(--color-muted)]">{count} review{count === 1 ? '' : 's'}</span> : null}
     </span>
   );
 }

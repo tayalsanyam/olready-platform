@@ -52,7 +52,7 @@ export default async function Shortlist({ searchParams }: P) {
               <Field label="Mobile number *">
                 <input name="phone" required className="input" inputMode="tel" defaultValue={p.phone ?? ''} />
               </Field>
-              <button className="btn btn-gold w-full">Send to {byCat.size} categor{byCat.size === 1 ? 'y' : 'ies'}</button>
+              <button className="btn btn-pink w-full">Send to {byCat.size} categor{byCat.size === 1 ? 'y' : 'ies'}</button>
             </form>
           </Card>
         </div>

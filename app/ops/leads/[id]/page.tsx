@@ -120,7 +120,7 @@ export default async function VerifyLead({ params, searchParams }: P) {
             </table>
             </div>
             {!closed && missing.length ? (
-              <div className="mt-4 rounded-lg bg-[var(--color-cream)] p-3">
+              <div className="mt-4 rounded-lg bg-[var(--color-tint)] p-3">
                 <p className="text-sm font-semibold">Ask about each of these. Add the ones she still needs:</p>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   {missing.map((c) => (
@@ -178,7 +178,7 @@ export default async function VerifyLead({ params, searchParams }: P) {
             const done = lead.verification_stage >= s.n;
             const next = lead.verification_stage + 1 === s.n && !closed;
             return (
-              <Card key={s.n} className={done ? 'border-[#bfe3cd]' : next ? 'border-[var(--color-gold)]' : 'opacity-60'}>
+              <Card key={s.n} className={done ? 'border-[#bfe3cd]' : next ? 'border-[var(--color-pink)]' : 'opacity-60'}>
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold">
                     {s.n}. {s.title}
@@ -191,7 +191,7 @@ export default async function VerifyLead({ params, searchParams }: P) {
                     <input type="hidden" name="lead_id" value={id} />
                     <input type="hidden" name="stage" value={s.n} />
                     <input name="notes" className="input" placeholder="Notes from the call" />
-                    <button className={`btn btn-sm ${s.n === 3 ? 'btn-gold' : ''}`}>{s.n === 3 ? 'Mark verified' : 'Done'}</button>
+                    <button className={`btn btn-sm ${s.n === 3 ? 'btn-pink' : ''}`}>{s.n === 3 ? 'Mark verified' : 'Done'}</button>
                   </form>
                 ) : null}
               </Card>

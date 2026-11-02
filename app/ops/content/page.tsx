@@ -59,7 +59,7 @@ export default async function Content({ searchParams }: P) {
                   <form action={opsModerateWedding} className="mt-3 flex flex-wrap gap-2">
                     <input type="hidden" name="id" value={w.id} />
                     <input name="note" className="input flex-1" placeholder="Note to the submitter (optional)" />
-                    <button name="publish" value="1" className="btn btn-sm btn-gold" disabled={!w.consent_confirmed}>
+                    <button name="publish" value="1" className="btn btn-sm btn-pink" disabled={!w.consent_confirmed}>
                       Publish
                     </button>
                     <button name="publish" value="0" className="btn btn-sm btn-ghost">

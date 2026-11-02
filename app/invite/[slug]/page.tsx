@@ -17,7 +17,7 @@ export default async function Invite({ params }: P) {
   const d = await inviteBySlug(sql, (await params).slug);
   if (!d) notFound();
   const t = d.invite.theme;
-  const font = t.font === 'serif' ? 'var(--font-display)' : 'var(--font-sans)';
+  const font = t.font === 'serif' ? 'var(--font-serif)' : 'var(--font-sans)';
   return (
     <div className="-mt-6 min-h-[80vh] px-4 py-12" style={{ background: t.bg, color: t.ink }}>
       <div className="mx-auto max-w-md text-center" style={{ fontFamily: font }}>

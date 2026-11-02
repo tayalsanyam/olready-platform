@@ -17,7 +17,7 @@ export default async function VendorThreads() {
         <ul className="card divide-y divide-[var(--color-line)]">
           {threads.map((t) => (
             <li key={t.id}>
-              <Link href={`/vendor/threads/${t.id}`} className="flex items-center justify-between gap-3 p-4 hover:bg-[var(--color-cream)]">
+              <Link href={`/vendor/threads/${t.id}`} className="flex items-center justify-between gap-3 p-4 hover:bg-[var(--color-tint)]">
                 <div>
                   <div className="font-semibold">{t.bride_name}</div>
                   <div className="hint">

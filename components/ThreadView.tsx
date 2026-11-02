@@ -33,7 +33,7 @@ export function ThreadView(props: {
                 const mine = m.sender_profile_id === props.viewerId;
                 return (
                   <li key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-[var(--color-ink)] text-white' : 'bg-[#f2efe8]'}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-[var(--color-ink)] text-white' : 'bg-[var(--color-tint)]'}`}>
                       <p className="whitespace-pre-wrap break-words">{m.body}</p>
                       <p className={`mt-1 text-[0.7rem] ${mine ? 'text-white/60' : 'text-[var(--color-muted)]'}`}>
                         {mine ? 'You' : m.sender_name || m.sender_role} · {fmt(m.created_at)}
@@ -103,7 +103,7 @@ export function ThreadView(props: {
                           <input type="hidden" name="quote_id" value={q.id} />
                           <input type="hidden" name="accept" value={accept ? '1' : '0'} />
                           <input type="hidden" name="_back" value={props.backPath} />
-                          <button className={`btn btn-sm ${accept ? 'btn-gold' : 'btn-ghost'}`}>{accept ? 'Accept' : 'Decline'}</button>
+                          <button className={`btn btn-sm ${accept ? 'btn-pink' : 'btn-ghost'}`}>{accept ? 'Accept' : 'Decline'}</button>
                         </form>
                       ))}
                     </div>
@@ -139,7 +139,7 @@ export function ThreadView(props: {
               <input type="hidden" name="thread_id" value={t.id} />
               <input type="hidden" name="_back" value={props.backPath} />
               <input name="amount_inr" className="input" inputMode="numeric" placeholder="Booking amount ₹ (optional)" />
-              <button className="btn btn-gold btn-sm">Report booking</button>
+              <button className="btn btn-pink btn-sm">Report booking</button>
             </form>
           </Card>
         ) : null}

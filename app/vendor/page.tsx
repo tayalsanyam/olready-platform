@@ -22,7 +22,7 @@ export default async function VendorHome({ searchParams }: P) {
       <PageTitle title="Verified leads" sub={`${vendor.category_name} · ${vendor.city_name}`} />
       <Notice error={q.error} ok={q.ok} />
       {vendor.status !== 'live' ? (
-        <div className="mb-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-gold-soft)] px-3 py-2 text-sm">
+        <div className="mb-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-pink-soft)] px-3 py-2 text-sm">
           Your profile is <b>{vendor.status.replace('_', ' ')}</b>. Leads appear here once our team puts it live.{' '}
           <Link href="/vendor/profile" className="underline">
             Finish your profile
@@ -42,7 +42,7 @@ export default async function VendorHome({ searchParams }: P) {
       {credits === 0 ? (
         <Card className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm">You have no credits. Buy a small pack to unlock your first leads.</p>
-          <Link href="/vendor/packs" className="btn btn-gold btn-sm">
+          <Link href="/vendor/packs" className="btn btn-pink btn-sm">
             Buy credits
           </Link>
         </Card>

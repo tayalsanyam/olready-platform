@@ -47,7 +47,7 @@ export default async function RealWeddingPage({ params }: P) {
         {rw.city_name ? ` · ${rw.city_name}` : ''}
         {rw.wedding_date ? ` · ${rw.wedding_date}` : ''}
       </p>
-      <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl">{rw.couple_names}</h1>
+      <h1 className="mt-1 font-semibold text-3xl">{rw.couple_names}</h1>
       <p className="text-lg text-[var(--color-muted)]">{rw.title}</p>
       <div className="card mt-5 aspect-[16/9] overflow-hidden">
         <Cover url={rw.cover_image_url} name={rw.couple_names} />
@@ -63,7 +63,7 @@ export default async function RealWeddingPage({ params }: P) {
       ) : null}
       {rw.vendors.length ? (
         <section className="mt-8">
-          <h2 className="font-[family-name:var(--font-display)] text-xl">The team behind it</h2>
+          <h2 className="font-semibold text-xl">The team behind it</h2>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
             {rw.vendors.map((v) => (
               <li key={v.id}>

@@ -74,7 +74,16 @@ export function filtersFor(fields: CategoryField[]): FilterDef[] {
   return out;
 }
 
+export type SortKey = 'recommended' | 'price_low' | 'price_high' | 'rating';
+export const SORTS: { key: SortKey; label: string }[] = [
+  { key: 'recommended', label: 'Recommended' },
+  { key: 'price_low', label: 'Price: low to high' },
+  { key: 'price_high', label: 'Price: high to low' },
+  { key: 'rating', label: 'Top rated' },
+];
+
 type BrowseOpts = {
+  sort?: SortKey;
   categoryId: number;
   cityId?: number | null;
   filter?: FilterDef | null;
@@ -110,7 +119,15 @@ export async function browseVendors(db: Db, o: BrowseOpts) {
       from mkt.reviews where vendor_id = v.id and status = 'published'
     ) r on true
     where ${browseWhere(db, o)}
-    order by v.assured desc, (v.verified_at is not null) desc, r.rating desc nulls last, v.created_at
+    order by ${
+      o.sort === 'price_low'
+        ? db`v.starting_price_inr asc nulls last,`
+        : o.sort === 'price_high'
+          ? db`v.starting_price_inr desc nulls last,`
+          : o.sort === 'rating'
+            ? db`r.rating desc nulls last, r.n desc,`
+            : db``
+    } v.assured desc, (v.verified_at is not null) desc, r.rating desc nulls last, v.created_at
     limit ${o.limit ?? 24} offset ${o.offset ?? 0}`;
 }
 

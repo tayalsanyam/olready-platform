@@ -88,10 +88,10 @@ export default async function ProfilePage({ searchParams }: P) {
           </Field>
         </Card>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="notify_email" defaultChecked={notify} className="h-4 w-4 accent-[var(--color-gold)]" />
+          <input type="checkbox" name="notify_email" defaultChecked={notify} className="h-4 w-4 accent-[var(--color-pink)]" />
           Email me about new leads, messages and accepted quotes
         </label>
-        <button className="btn btn-gold">Save profile</button>
+        <button className="btn btn-pink">Save profile</button>
       </form>
 
       <Card className="mt-6">

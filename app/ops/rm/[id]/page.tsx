@@ -115,7 +115,7 @@ export default async function RmBride({ params, searchParams }: P) {
           ) : null}
           <ul className="mt-3 space-y-2 text-sm">
             {notes.map((n) => (
-              <li key={n.id} className="rounded-lg bg-[var(--color-cream)] p-2">
+              <li key={n.id} className="rounded-lg bg-[var(--color-tint)] p-2">
                 <p className="whitespace-pre-wrap">{n.body}</p>
                 <p className="hint">
                   {n.author} · {fmt(n.created_at)}

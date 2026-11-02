@@ -23,8 +23,8 @@ export default async function Rsvp({ params, searchParams }: P) {
   return (
     <Container className="max-w-lg">
       <Card className="p-6">
-        <p className="text-sm uppercase tracking-[0.2em] text-[var(--color-gold)]">You are invited</p>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-2xl">{guest.title}</h1>
+        <p className="text-sm uppercase tracking-[0.2em] text-[var(--color-pink)]">You are invited</p>
+        <h1 className="mt-1 font-semibold text-2xl">{guest.title}</h1>
         <p className="mt-1 text-[var(--color-muted)]">Dear {guest.name}, please tell us which functions you can join.</p>
         <div className="mt-4">
           <Notice error={q.error} ok={q.ok} />
@@ -53,7 +53,7 @@ export default async function Rsvp({ params, searchParams }: P) {
               </div>
             </fieldset>
           ))}
-          <button className="btn btn-gold w-full">Send my reply</button>
+          <button className="btn btn-pink w-full">Send my reply</button>
         </form>
       </Card>
     </Container>

@@ -9,7 +9,7 @@ export default async function Thanks() {
   return (
     <Container className="max-w-xl">
       <Card className="p-6 text-center">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl">Request received</h1>
+        <h1 className="font-semibold text-2xl">Request received</h1>
         <p className="mt-2 text-[var(--color-muted)]">
           Our team will call you shortly to confirm your details. Once you are verified, vendors in each category you picked can
           reach you, and you can compare their quotes in one place.

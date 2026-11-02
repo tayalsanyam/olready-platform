@@ -45,10 +45,10 @@ export function RealWeddingForm({ cities, backPath, defaultVendorSlug }: { citie
           </Field>
         </div>
         <label className="flex items-start gap-2 text-sm sm:col-span-2">
-          <input type="checkbox" name="consent" className="mt-1 h-4 w-4 accent-[var(--color-gold)]" />
+          <input type="checkbox" name="consent" className="mt-1 h-4 w-4 accent-[var(--color-pink)]" />
           The couple agreed to publish these photos and their names on OLReady, and the photographer allows it.
         </label>
-        <button className="btn btn-gold sm:col-span-2 sm:justify-self-start">Submit for review</button>
+        <button className="btn btn-pink sm:col-span-2 sm:justify-self-start">Submit for review</button>
       </form>
     </Card>
   );

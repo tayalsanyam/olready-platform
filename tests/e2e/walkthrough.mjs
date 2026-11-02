@@ -35,7 +35,7 @@ async function step(name, fn) {
 }
 const go = (path) => page.goto(BASE + path, { waitUntil: 'networkidle' });
 const see = async (text) => {
-  await page.getByText(text, { exact: false }).first().waitFor({ timeout: 8000 });
+  await page.getByText(text, { exact: false }).filter({ visible: true }).first().waitFor({ timeout: 8000 });
 };
 const ok = async () => {
   const err = page.locator('[data-notice=error]');
@@ -245,7 +245,7 @@ await step('bride reviews the artist and the service separately', async () => {
   await see('Thank you for your review');
   await go('/v/glow-by-kirti-demo');
   await see('Booked via OLReady');
-  await see('Artist 5/5 · Service 3/5');
+  await see('Artist 5/5, service 3/5');
 });
 
 await step('bride shares a real wedding for review', async () => {
@@ -321,7 +321,8 @@ await step('content team publishes the real wedding', async () => {
   await go('/real-weddings');
   await see('Simran & Arjun');
   await go('/v/glow-by-kirti-demo');
-  await see('Simran & Arjun: A February wedding');
+  await see('Simran & Arjun');
+  await see('A February wedding');
 });
 
 await step('vendor uploads work photos and the first becomes the cover', async () => {
@@ -414,6 +415,21 @@ await step('admin opens florists, the category gets its own pages', async () => 
   await go('/vendors/chandigarh/florists');
   await see('Florists in Chandigarh');
   await see('No florists in chandigarh listed yet');
+});
+
+await step('admin gives a new teammate Ops access; the price list follows Ops', async () => {
+  await go('/ops/staff');
+  await see('Sync from the sales-site admin');
+  const form = page.locator('form', { hasText: 'Give access' });
+  await form.getByLabel('Email').fill('newops@olready.in');
+  await form.getByLabel('Role').selectOption('ops');
+  await submit(form.getByRole('button', { name: 'Give access' }));
+  await ok();
+  await see('newops@olready.in is now ops');
+  await shot('ops-staff');
+  const packs = await (await page.request.get(BASE + '/api/public/packs')).json();
+  const pro = packs.packs.find((p) => p.code === 'pro');
+  if (!pro || pro.price_inr !== 18999 || !packs.gst_included) throw new Error('price list wrong: ' + JSON.stringify(pro));
 });
 
 await step('cron endpoint needs its secret', async () => {

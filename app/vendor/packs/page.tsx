@@ -37,7 +37,7 @@ export default async function Packs({ searchParams }: P) {
       />
       <Notice error={q.error} ok={q.ok} />
       {subs.some((s) => s.status === 'pending_contract') ? (
-        <div className="mb-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-gold-soft)] px-3 py-2 text-sm">
+        <div className="mb-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-pink-soft)] px-3 py-2 text-sm">
           Your plan is paid. It activates once our team uploads your invoice and the signed contract.
         </div>
       ) : null}
@@ -68,7 +68,7 @@ export default async function Packs({ searchParams }: P) {
                     <input name="gstin" className="input uppercase" maxLength={15} />
                   </Field>
                 </details>
-                <button className="btn btn-gold w-full">Buy {p.name}</button>
+                <button className="btn btn-pink w-full">Buy {p.name}</button>
               </form>
             ) : (
               <p className="mt-3 text-sm text-[var(--color-warn)]">Payments are temporarily unavailable.</p>

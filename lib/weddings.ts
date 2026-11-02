@@ -282,3 +282,12 @@ export async function askShortlisted(
     needs: Array.from(byCategory, ([categoryId, preferredVendorIds]) => ({ categoryId, preferredVendorIds })),
   });
 }
+
+/** Vendor ids the viewer's wedding has shortlisted, for filled hearts on cards. */
+export async function shortlistedIds(db: Db, profileId: string | null | undefined) {
+  if (!profileId) return new Set<string>();
+  const rows = await db<{ vendor_id: string }[]>`
+    select s.vendor_id from mkt.shortlist s join mkt.wedding_members m on m.wedding_id = s.wedding_id
+    where m.profile_id = ${profileId}`;
+  return new Set(rows.map((r) => r.vendor_id));
+}

@@ -79,7 +79,7 @@ export default async function Enquire({ searchParams }: P) {
               {cats.map((c) => (
                 <li key={c.id} className="grid items-center gap-2 py-3 sm:grid-cols-[1fr_200px]">
                   <label className="flex items-center gap-2">
-                    <input type="checkbox" name="category_id" value={c.id} defaultChecked={preCat === c.slug} className="h-4 w-4 accent-[var(--color-gold)]" />
+                    <input type="checkbox" name="category_id" value={c.id} defaultChecked={preCat === c.slug} className="h-4 w-4 accent-[var(--color-pink)]" />
                     <span>{c.plural_name}</span>
                   </label>
                   <input name={`budget_${c.id}`} className="input" inputMode="numeric" placeholder={`Budget ₹ (${c.price_unit})`} aria-label={`Budget for ${c.plural_name}`} />
@@ -88,7 +88,7 @@ export default async function Enquire({ searchParams }: P) {
             </ul>
           </Card>
         )}
-        <button className="btn btn-gold w-full sm:w-auto">Send my request</button>
+        <button className="btn btn-pink w-full sm:w-auto">Send my request</button>
         <p className="hint">An enquiry is a chance to connect with vendors, not a confirmed booking.</p>
       </form>
     </Container>

@@ -18,7 +18,7 @@ export default async function Login({ searchParams }: P) {
   return (
     <Container className="max-w-md">
       <Card className="p-6">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl">Sign in</h1>
+        <h1 className="font-semibold text-2xl">Sign in</h1>
         <p className="mt-1 text-sm text-[var(--color-muted)]">
           Brides, families and vendors sign in with a one-time code sent to their email.
         </p>

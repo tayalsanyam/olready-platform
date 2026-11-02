@@ -49,7 +49,7 @@ export default async function BrideReviews({ searchParams }: P) {
                       {[1, 2, 3, 4, 5].map((n) => (
                         <label key={n} className="cursor-pointer text-sm">
                           <input type="radio" name={k} value={n} required className="peer sr-only" />
-                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-line)] peer-checked:border-[var(--color-gold)] peer-checked:bg-[var(--color-gold)] peer-checked:text-white">
+                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-line)] peer-checked:border-[var(--color-pink)] peer-checked:bg-[var(--color-pink)] peer-checked:text-white">
                             {n}
                           </span>
                         </label>
