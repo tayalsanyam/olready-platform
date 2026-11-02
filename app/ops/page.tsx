@@ -1,0 +1,57 @@
+import Link from 'next/link';
+import { sql } from '@/lib/db';
+import { requireStaff } from '@/lib/auth';
+import { PageTitle, Stat } from '@/components/ui';
+
+export const metadata = { title: 'Today' };
+
+export default async function OpsHome() {
+  const p = await requireStaff();
+  const [c] = await sql<Record<string, number>[]>`
+    select
+      (select count(*) from mkt.leads where status in ('new','verifying'))::int as to_verify,
+      (select count(*) from mkt.lead_needs where status = 'capped' and reopen_rounds < 2)::int as capped,
+      (select count(*) from mkt.vendors where status = 'pending_review')::int as vendors_pending,
+      (select count(*) from mkt.vendor_claims where status = 'submitted')::int as claims,
+      (select count(*) from mkt.vendor_subscriptions where status = 'pending_contract')::int as contracts,
+      (select count(*) from mkt.orders where status = 'created' and gateway = 'manual')::int as transfers,
+      (select count(*) from mkt.review_disputes where status = 'open')::int as disputes_contact,
+      (select count(*) from mkt.review_disputes where status = 'open' and contact_due_at < now())::int as disputes_overdue,
+      (select count(*) from mkt.review_disputes where status = 'proof_submitted')::int as disputes_decide,
+      (select count(*) from mkt.real_weddings where status = 'submitted')::int as weddings,
+      (select count(*) from mkt.leads where verified_at > now() - interval '7 days')::int as verified_7d,
+      (select count(*) from mkt.unlocks where created_at > now() - interval '7 days' and not refunded)::int as unlocks_7d,
+      (select count(*) from mkt.booking_reports where created_at > now() - interval '7 days')::int as bookings_7d`;
+  const queues: [string, number, string, string?][] = [
+    ['Leads to verify', c.to_verify, '/ops/leads'],
+    ['Capped leads to decide', c.capped, '/ops/needs'],
+    ['Profiles to review', c.vendors_pending, '/ops/vendors?status=pending_review'],
+    ['Claims to approve', c.claims, '/ops/vendors'],
+    ['Plans waiting for contract', c.contracts, '/ops/payments'],
+    ['Bank transfers to confirm', c.transfers, '/ops/payments'],
+    ['Disputes to contact', c.disputes_contact, '/ops/reviews', c.disputes_overdue ? `${c.disputes_overdue} past 48 hours` : undefined],
+    ['Disputes to decide', c.disputes_decide, '/ops/reviews'],
+    ['Real weddings to review', c.weddings, '/ops/content'],
+  ];
+  return (
+    <>
+      <PageTitle title={`Hello ${p.full_name || 'team'}`} sub="What needs a person today." />
+      <div className="mb-6 grid grid-cols-3 gap-3">
+        <Stat label="Verified, 7 days" value={c.verified_7d} />
+        <Stat label="Unlocks, 7 days" value={c.unlocks_7d} />
+        <Stat label="Bookings, 7 days" value={c.bookings_7d} />
+      </div>
+      <ul className="grid gap-3 sm:grid-cols-3">
+        {queues.map(([label, n, href, warn]) => (
+          <li key={label}>
+            <Link href={href} className={`card block p-4 hover:shadow-md ${n ? '' : 'opacity-60'}`}>
+              <div className="text-sm text-[var(--color-muted)]">{label}</div>
+              <div className="text-2xl font-semibold">{n}</div>
+              {warn ? <div className="text-xs font-semibold text-[var(--color-bad)]">{warn}</div> : null}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}

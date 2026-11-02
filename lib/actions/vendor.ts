@@ -1,0 +1,183 @@
+'use server';
+
+import { sql, DomainError } from '../db';
+import { requireProfile } from '../auth';
+import { requireVendor } from '../vendorSession';
+import { createVendor, updateVendorProfile, vendorForOwner } from '../vendors';
+import { reportBooking, unlockNeed } from '../leads';
+import { createOrder, markOrderPaid, razorpayCheckoutValid, type Gateway } from '../payments';
+import { openDispute, replyToReview, submitProof } from '../reviews';
+import { confirmTag } from '../realWeddings';
+import { attempt, attrsFromForm, back, num, str } from './run';
+
+export async function onboardVendor(fd: FormData) {
+  await attempt('/vendor/onboard', async () => {
+    const profile = await requireProfile('/vendor/onboard');
+    if (await vendorForOwner(sql, profile.id)) return '/vendor';
+    const [{ n }] = await sql<{ n: number }[]>`
+      select count(*)::int as n from mkt.wedding_members where profile_id = ${profile.id}`;
+    if (profile.role !== 'vendor' && (profile.role !== 'bride' || n > 0)) {
+      throw new DomainError('wrong_account', 'Use a separate email for your business account');
+    }
+    await sql.begin(async (tx) => {
+      await createVendor(
+        tx,
+        {
+          business_name: str(fd, 'business_name'),
+          category_id: num(fd, 'category_id') ?? 0,
+          city_id: num(fd, 'city_id') ?? 0,
+          tagline: str(fd, 'tagline'),
+          starting_price_inr: num(fd, 'starting_price_inr'),
+          phone: str(fd, 'phone') || null,
+          instagram: str(fd, 'instagram') || null,
+          attributes: attrsFromForm(fd),
+        },
+        { ownerProfileId: profile.id, actor: profile.id }
+      );
+      await tx`update mkt.profiles set role = 'vendor', full_name = coalesce(nullif(full_name, ''), ${str(fd, 'owner_name')}) where id = ${profile.id}`;
+    });
+    return { to: '/vendor/profile', ok: 'Profile created. Add photos and details; our team reviews it before it goes live.' };
+  });
+}
+
+export async function saveVendorProfile(fd: FormData) {
+  await attempt('/vendor/profile', async () => {
+    const { profile, vendor } = await requireVendor();
+    await updateVendorProfile(
+      sql,
+      vendor.id,
+      {
+        business_name: str(fd, 'business_name'),
+        tagline: str(fd, 'tagline'),
+        about: str(fd, 'about'),
+        starting_price_inr: num(fd, 'starting_price_inr'),
+        years_experience: num(fd, 'years_experience'),
+        phone: str(fd, 'phone') || null,
+        email: str(fd, 'email') || null,
+        instagram: str(fd, 'instagram') || null,
+        website: str(fd, 'website') || null,
+        cover_image_url: str(fd, 'cover_image_url') || null,
+        attributes: attrsFromForm(fd),
+      },
+      profile.id
+    );
+    return { ok: 'Saved' };
+  });
+}
+
+export async function addMedia(fd: FormData) {
+  await attempt('/vendor/profile', async () => {
+    const { vendor } = await requireVendor();
+    const urls = str(fd, 'urls')
+      .split(/\s+/)
+      .filter((u) => /^https:\/\/\S+$/.test(u))
+      .slice(0, 30);
+    if (!urls.length) throw new DomainError('no_urls', 'Paste one or more https image links');
+    let i = 0;
+    for (const url of urls) {
+      await sql`insert into mkt.vendor_media (vendor_id, url, sort) values (${vendor.id}, ${url}, ${100 + i++})`;
+    }
+    return { ok: `Added ${urls.length} photo${urls.length > 1 ? 's' : ''}` };
+  });
+}
+
+export async function removeMedia(fd: FormData) {
+  await attempt('/vendor/profile', async () => {
+    const { vendor } = await requireVendor();
+    await sql`delete from mkt.vendor_media where id = ${str(fd, 'media_id')} and vendor_id = ${vendor.id}`;
+    return { ok: 'Photo removed' };
+  });
+}
+
+export async function unlockAction(fd: FormData) {
+  await attempt('/vendor', async () => {
+    const { profile, vendor } = await requireVendor();
+    const r = await unlockNeed(sql, str(fd, 'need_id'), vendor.id, profile.id);
+    return { to: `/vendor/threads/${r.threadId}`, ok: `Unlocked for ${r.cost} credit${r.cost > 1 ? 's' : ''}. Say hello.` };
+  });
+}
+
+export async function vendorReportBooking(fd: FormData) {
+  const threadId = str(fd, 'thread_id');
+  await attempt(`/vendor/threads/${threadId}`, async () => {
+    const { profile, vendor } = await requireVendor();
+    const [t] = await sql<{ lead_need_id: string }[]>`select lead_need_id from mkt.threads where id = ${threadId} and vendor_id = ${vendor.id}`;
+    if (!t) throw new DomainError('not_found', 'Conversation not found');
+    await reportBooking(sql, { needId: t.lead_need_id, vendorId: vendor.id, reporterProfileId: profile.id, side: 'vendor', amountInr: num(fd, 'amount_inr') });
+    return { ok: 'Booking recorded. A bonus credit is in your balance.' };
+  });
+}
+
+export async function buyPack(fd: FormData) {
+  await attempt('/vendor/packs', async () => {
+    const { profile, vendor } = await requireVendor('/vendor/packs');
+    const { order } = await createOrder(sql, {
+      profileId: profile.id,
+      vendorId: vendor.id,
+      packId: num(fd, 'pack_id') ?? 0,
+      gateway: str(fd, 'gateway') as Gateway,
+      buyerGstin: str(fd, 'gstin') || null,
+    });
+    return `/vendor/pay/${order.id}`;
+  });
+}
+
+/** Local development only: completes a payment on the test gateway. */
+export async function completeTestPayment(fd: FormData) {
+  const orderId = str(fd, 'order_id');
+  await attempt(`/vendor/pay/${orderId}`, async () => {
+    if (process.env.NODE_ENV === 'production') throw new DomainError('no_test', 'Test payments are off');
+    const { profile } = await requireVendor();
+    const [o] = await sql<{ gateway: string }[]>`select gateway from mkt.orders where id = ${orderId} and profile_id = ${profile.id}`;
+    if (o?.gateway !== 'test') throw new DomainError('bad_order', 'Not a test order');
+    await markOrderPaid(sql, orderId, `test-${Date.now()}`, profile.id);
+    return { to: '/vendor/packs', ok: 'Payment received' };
+  });
+}
+
+/** Razorpay Checkout posts back here; the webhook is the backstop if this never arrives. */
+export async function razorpayVerifyAction(fd: FormData) {
+  const orderId = str(fd, 'order_id');
+  await attempt(`/vendor/pay/${orderId}`, async () => {
+    const { profile } = await requireVendor();
+    const [o] = await sql<{ gateway_order_id: string | null }[]>`
+      select gateway_order_id from mkt.orders where id = ${orderId} and profile_id = ${profile.id}`;
+    if (!o?.gateway_order_id) throw new DomainError('bad_order', 'Order not found');
+    const ok = razorpayCheckoutValid(o.gateway_order_id, str(fd, 'razorpay_payment_id'), str(fd, 'razorpay_signature'));
+    if (!ok) throw new DomainError('bad_signature', 'We could not confirm this payment. If money left your account, contact support.');
+    await markOrderPaid(sql, orderId, str(fd, 'razorpay_payment_id'), profile.id);
+    return { to: '/vendor/packs', ok: 'Payment received' };
+  });
+}
+
+export async function replyReviewAction(fd: FormData) {
+  await attempt('/vendor/reviews', async () => {
+    const { vendor } = await requireVendor();
+    await replyToReview(sql, str(fd, 'review_id'), vendor.id, str(fd, 'reply'));
+    return { ok: 'Reply posted' };
+  });
+}
+
+export async function disputeReviewAction(fd: FormData) {
+  await attempt('/vendor/reviews', async () => {
+    const { profile, vendor } = await requireVendor();
+    await openDispute(sql, str(fd, 'review_id'), vendor.id, str(fd, 'reason'), profile.id);
+    return { ok: 'Dispute sent. Our team will contact you within 48 hours.' };
+  });
+}
+
+export async function submitProofAction(fd: FormData) {
+  await attempt('/vendor/reviews', async () => {
+    const { vendor } = await requireVendor();
+    await submitProof(sql, str(fd, 'dispute_id'), vendor.id, str(fd, 'proof'));
+    return { ok: 'Proof sent for review' };
+  });
+}
+
+export async function confirmTagAction(fd: FormData) {
+  await attempt(back(fd, '/vendor/weddings'), async () => {
+    const { vendor } = await requireVendor();
+    await confirmTag(sql, str(fd, 'real_wedding_id'), vendor.id);
+    return { ok: 'Confirmed' };
+  });
+}

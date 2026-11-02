@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #141414;
+  --color-paper: #ffffff;
+  --color-cream: #faf7f1;
+  --color-line: #e7e2d8;
+  --color-muted: #6b6b6b;
+  --color-gold: #c48000;
+  --color-gold-soft: #f6ead2;
+  --color-ok: #1f7a4d;
+  --color-warn: #a15c00;
+  --color-bad: #b42318;
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+body { background: var(--color-cream); color: var(--color-ink); font-family: var(--font-sans); }
+
+.wordmark { letter-spacing: 0.32em; font-weight: 600; }
+
+@layer components {
+/* Form controls share one look across the site */
+.input {
+  width: 100%;
+  border: 1px solid var(--color-line);
+  background: #fff;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 1rem;
+  outline: none;
+}
+.input:focus { border-color: var(--color-gold); box-shadow: 0 0 0 3px var(--color-gold-soft); }
+.label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; }
+.hint { font-size: 0.8rem; color: var(--color-muted); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  border-radius: 0.5rem; padding: 0.6rem 1rem; font-weight: 600; font-size: 0.95rem;
+  border: 1px solid var(--color-ink); background: var(--color-ink); color: #fff; cursor: pointer;
+}
+.btn:hover { background: #000; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-gold { background: var(--color-gold); border-color: var(--color-gold); }
+.btn-gold:hover { background: #a86e00; }
+.btn-ghost { background: transparent; color: var(--color-ink); border-color: var(--color-line); }
+.btn-ghost:hover { background: #fff; }
+.btn-sm { padding: 0.35rem 0.7rem; font-size: 0.85rem; }
+.btn-danger { background: var(--color-bad); border-color: var(--color-bad); }
+
+.grid > * { min-width: 0; }
+.card { background: #fff; border: 1px solid var(--color-line); border-radius: 0.9rem; }
+
+table.data { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+table.data th { text-align: left; font-weight: 600; color: var(--color-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem; border-bottom: 1px solid var(--color-line); }
+table.data td { padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--color-line); vertical-align: top; }
+}

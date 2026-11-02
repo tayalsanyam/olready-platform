@@ -1,0 +1,360 @@
+// End-to-end walkthrough of the real UI: bride, ops, vendor, content, in a phone-sized browser.
+// Needs: dev server on BASE_URL with DEV_AUTH=1 and fresh demo data (npm run db:reset).
+// Usage: node tests/e2e/walkthrough.mjs [screenshot-dir]
+import { chromium } from 'playwright-core';
+import { mkdir } from 'node:fs/promises';
+
+const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
+const OUT = process.argv[2] ?? 'walkthrough-shots';
+await mkdir(OUT, { recursive: true });
+
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH ?? '/usr/bin/google-chrome', args: ['--no-sandbox'] });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+const page = await ctx.newPage();
+const consoleErrors = [];
+page.on('pageerror', (e) => consoleErrors.push(String(e)));
+
+let n = 0;
+const steps = [];
+const overflow = [];
+async function shot(name) {
+  const w = await page.evaluate(() => document.documentElement.scrollWidth);
+  if (w > 392) overflow.push(`${name} (${new URL(page.url()).pathname}): ${w}px wide`);
+  await page.screenshot({ path: `${OUT}/${String(++n).padStart(2, '0')}-${name}.png`, fullPage: true });
+}
+async function step(name, fn) {
+  try {
+    await fn();
+    steps.push(['ok', name]);
+    console.log('✓', name);
+  } catch (e) {
+    steps.push(['FAIL', name, e.message.split('\n')[0]]);
+    console.log('✗', name, '\n   ', e.message.split('\n')[0], (e.stack.match(/walkthrough.mjs:(\d+)/g) || []).join(' '));
+    await shot(`FAIL-${name.replace(/[^a-z0-9]+/gi, '-')}`);
+  }
+}
+const go = (path) => page.goto(BASE + path, { waitUntil: 'networkidle' });
+const see = async (text) => {
+  await page.getByText(text, { exact: false }).first().waitFor({ timeout: 8000 });
+};
+const ok = async () => {
+  const err = page.locator('[data-notice=error]');
+  if (await err.count()) throw new Error('Error shown: ' + (await err.first().innerText()));
+};
+/** Clicks a button that submits a server action and waits for the action and any redirect to finish. */
+async function submit(locator) {
+  const [req] = await Promise.all([
+    page.waitForRequest((r) => r.method() === 'POST' && r.url().startsWith(BASE), { timeout: 15000 }),
+    locator.click(),
+  ]);
+  await req.response().catch(() => null);
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(400);
+  await page.waitForLoadState('networkidle');
+}
+
+async function signInAs(name) {
+  await go('/dev-login');
+  const signOut = page.getByRole('button', { name: /^Sign out/ });
+  if (await signOut.count()) {
+    await submit(signOut);
+    await page.waitForURL((u) => u.pathname === '/');
+    await go('/dev-login');
+  }
+  await submit(page.locator('li', { hasText: name }).getByRole('button', { name: 'Sign in' }));
+  await page.waitForURL((u) => !u.pathname.startsWith('/dev-login'));
+}
+
+// ------------------------------------------------------------------ anonymous bride
+await step('home search lands on a city × category page', async () => {
+  await go('/');
+  await shot('home');
+  await page.getByRole('button', { name: 'Search' }).click();
+  await page.waitForURL('**/vendors/chandigarh/bridal-makeup');
+  await see('Bridal makeup artists in Chandigarh');
+  await see('Glow by Kirti');
+  await shot('listing');
+});
+
+await step('filter page shows only airbrush artists', async () => {
+  await page.getByRole('link', { name: 'Airbrush makeup', exact: true }).click();
+  await page.waitForURL('**/bridal-makeup/airbrush');
+  await see('Airbrush makeup bridal makeup artists in Chandigarh');
+  if (await page.getByText('Makeup by Ishita').count()) throw new Error('non-airbrush vendor shown');
+});
+
+await step('vendor profile hides contact details and carries JSON-LD', async () => {
+  await go('/v/glow-by-kirti-demo');
+  await see('Request a quote');
+  const html = await page.content();
+  if (html.includes('+919800000001') || html.includes('owner1@demo.in')) throw new Error('contact details leaked into HTML');
+  if (!html.includes('"@type":"LocalBusiness"') || !html.includes('"@type":"FAQPage"')) throw new Error('missing JSON-LD');
+  await see('Does Glow by Kirti travel to the venue?');
+  await shot('profile');
+});
+
+await step('SEO files list landing pages', async () => {
+  const sm = await (await page.request.get(BASE + '/sitemap.xml')).text();
+  if (!sm.includes('/vendors/chandigarh/bridal-makeup')) throw new Error('landing page missing from sitemap');
+  if (sm.includes('/vendors/panchkula/decorators/luxury')) throw new Error('thin page listed in sitemap');
+  const llms = await (await page.request.get(BASE + '/llms.txt')).text();
+  if (!llms.includes('Bridal makeup artists in Chandigarh')) throw new Error('llms.txt incomplete');
+  const robots = await (await page.request.get(BASE + '/robots.txt')).text();
+  if (!robots.includes('Disallow: /ops')) throw new Error('robots.txt does not hide ops');
+});
+
+await step('anonymous multi-category enquiry', async () => {
+  await go('/enquire');
+  await page.getByLabel('Your name *').fill('Priya Walkthrough');
+  await page.getByLabel('Mobile number *').fill('98111 22233');
+  await page.getByLabel('Email').fill('priya@demo.in');
+  await page.getByRole('checkbox', { name: 'Wedding photographers' }).check();
+  await page.getByRole('checkbox', { name: 'DJs and dhol players' }).check();
+  await page.getByLabel('Budget for Wedding photographers').fill('90000');
+  await shot('enquiry');
+  await page.getByRole('button', { name: 'Send my request' }).click();
+  await page.waitForURL('**/enquire/thanks');
+  await see('Request received');
+});
+
+// ------------------------------------------------------------------ bride signs in
+await step('bride sets up her wedding and gets a dated checklist', async () => {
+  await signInAs('Simran Kaur');
+  await page.waitForURL('**/me');
+  await page.getByLabel('Call it').fill('Simran weds Arjun');
+  await page.getByLabel("Partner's name").fill('Arjun');
+  await page.getByLabel('Wedding date').fill('2027-02-14');
+  await submit(page.getByRole('button', { name: 'Start planning' }));
+  await ok();
+  await see('Simran weds Arjun');
+  await see('We will call you to verify');
+  await shot('bride-home');
+  await go('/me/checklist');
+  await see('Book the venue');
+  await see('2026-05-14');
+});
+
+await step('bride shortlists two vendors', async () => {
+  for (const slug of ['frames-and-phere-demo', 'marigold-decor-co-demo']) {
+    await go(`/v/${slug}`);
+    await submit(page.getByRole('button', { name: 'Shortlist' }));
+    await see('Added to your shortlist');
+  }
+  await go('/me/shortlist');
+  await see('Frames & Phere');
+  await see('Send to 2 categories');
+  await shot('shortlist');
+});
+
+await step('bride adds guests and a guest answers the RSVP link', async () => {
+  await go('/me/guests');
+  await page.locator('textarea[name=lines]').fill('Uncle Raj, 9876512345\nAunty Neeta');
+  await submit(page.getByRole('button', { name: 'Add guests' }));
+  await see('Added 2 guests');
+  const href = await page.getByRole('link', { name: 'link' }).first().getAttribute('href');
+  await go(href);
+  for (const r of await page.locator('input[type=radio][value=yes]').all()) await r.check();
+  await page.locator('input[type=number]').first().fill('3');
+  await submit(page.getByRole('button', { name: 'Send my reply' }));
+  await see('your reply is saved');
+  await shot('rsvp');
+  await go('/me/guests');
+  await see('Mehendi');
+});
+
+await step('bride publishes an e-invite', async () => {
+  await go('/me/invite');
+  await submit(page.getByRole('button', { name: 'Save invite' }));
+  await see('Invite saved');
+  const href = await page.getByRole('link', { name: 'Open my invite' }).getAttribute('href');
+  await go(href);
+  await see('Simran weds Arjun');
+  await shot('invite');
+});
+
+// ------------------------------------------------------------------ ops verifies
+await step('ops verifies the lead and adds decor on the call', async () => {
+  await signInAs('Rohit (ops)');
+  await go('/ops/leads');
+  await page.getByRole('link', { name: 'Simran Kaur' }).click();
+  await page.waitForLoadState('networkidle');
+  await see('Ask about each of these');
+  await shot('ops-call-script');
+  const decor = page.locator('form', { hasText: 'Wedding decorator' }).filter({ has: page.getByRole('button', { name: 'Add' }) });
+  await decor.getByPlaceholder('Budget ₹').fill('200000');
+  await submit(decor.getByRole('button', { name: 'Add' }));
+  await see('Category added');
+  for (const label of ['Done', 'Done', 'Mark verified']) {
+    await submit(page.getByRole('button', { name: label, exact: true }));
+    await ok();
+  }
+  await see('Vendors can now see this lead');
+});
+
+// ------------------------------------------------------------------ vendor unlocks and quotes
+await step('makeup vendor sees the lead and unlocks it', async () => {
+  await signInAs('Glow by Kirti owner');
+  await page.waitForURL('**/vendor');
+  await see('Simran');
+  await see('3 more categories');
+  await shot('vendor-leads');
+  await submit(page.getByRole('button', { name: /Unlock for 1 credit/ }).first());
+  await see('Unlocked for 1 credit');
+  await see('+919876543210');
+});
+
+await step('vendor messages and sends a quote', async () => {
+  await page.getByPlaceholder('Write a message').fill('Hi Simran, congratulations! I would love to do your bridal look.');
+  await submit(page.getByRole('button', { name: 'Send', exact: true }));
+  await page.getByLabel('Send a quote (₹)').fill('24000');
+  await page.getByPlaceholder('What is included').fill('Bridal look with HD airbrush, hair and draping');
+  await submit(page.getByRole('button', { name: 'Send quote' }));
+  await see('Quote sent');
+  await shot('vendor-thread');
+});
+
+await step('photographer sees the shortlisted lead first', async () => {
+  await signInAs('Frames & Phere owner');
+  await see('Simran');
+});
+
+// ------------------------------------------------------------------ bride accepts and reports booking
+await step('bride accepts the quote and reports the booking', async () => {
+  await signInAs('Simran Kaur');
+  await see('1 vendor replied');
+  await page.getByRole('link', { name: /Glow by Kirti/ }).click();
+  await page.waitForLoadState('networkidle');
+  if (await page.getByText('+919876543210').count()) throw new Error('bride sees phone block meant for vendors');
+  await submit(page.getByRole('button', { name: 'Accept' }));
+  await see('Quote accepted');
+  await submit(page.getByRole('button', { name: 'Report booking' }));
+  await see('Congratulations');
+  await go('/me');
+  await see('Booked: Glow by Kirti');
+  await see('7 days of relationship-manager help');
+  await shot('bride-booked');
+});
+
+await step('bride reviews the artist and the service separately', async () => {
+  await go('/me/reviews');
+  const card = page.locator('.card', { hasText: 'Glow by Kirti' });
+  await card.locator('input[name=rating_artist][value="5"]').check({ force: true });
+  await card.locator('input[name=rating_service][value="3"]').check({ force: true });
+  await card.locator('textarea[name=body]').fill('Beautiful work, but arrived an hour late.');
+  await submit(card.getByRole('button', { name: 'Save review' }));
+  await see('Thank you for your review');
+  await go('/v/glow-by-kirti-demo');
+  await see('Booked via OLReady');
+  await see('Artist 5/5 · Service 3/5');
+});
+
+await step('bride shares a real wedding for review', async () => {
+  await go('/me/real-wedding');
+  await page.getByLabel('Couple names *').fill('Simran & Arjun');
+  await page.getByLabel('Title *').fill('A February wedding');
+  await page.getByLabel('Vendors (OLReady profile links)').fill('/v/glow-by-kirti-demo');
+  await page.getByRole('checkbox').check();
+  await submit(page.getByRole('button', { name: 'Submit for review' }));
+  await see('reviews every story');
+});
+
+// ------------------------------------------------------------------ vendor disputes, buys credits
+await step('vendor disputes the review', async () => {
+  await signInAs('Glow by Kirti owner');
+  await go('/vendor/reviews');
+  await page.getByText('This review is false').click();
+  await page.getByPlaceholder('Why is it false?').fill('We arrived on time; the venue gate was closed.');
+  await submit(page.getByRole('button', { name: 'Open a dispute' }));
+  await see('within 48 hours');
+});
+
+await step('vendor buys a top-up and a plan', async () => {
+  await go('/vendor/packs');
+  await shot('packs');
+  const topup = page.locator('.card', { hasText: 'Top-up 10' });
+  await topup.locator('select[name=gateway]').selectOption('test');
+  await submit(topup.getByRole('button', { name: 'Buy Top-up 10' }));
+  await submit(page.getByRole('button', { name: 'Complete test payment' }));
+  await see('Payment received');
+  await see('19 top-up credits');
+  const pro = page.locator('.card', { hasText: '60 verified enquiries' });
+  await pro.locator('select[name=gateway]').selectOption('test');
+  await submit(pro.getByRole('button', { name: 'Buy Pro' }));
+  await submit(page.getByRole('button', { name: 'Complete test payment' }));
+  await see('activates once our team uploads your invoice');
+  await page.getByRole('link', { name: 'Receipt' }).first().click();
+  await page.waitForLoadState('networkidle');
+  await see('Payment receipt');
+});
+
+// ------------------------------------------------------------------ ops: plan, dispute, content
+await step('ops activates the plan only with invoice and contract', async () => {
+  await signInAs('Rohit (ops)');
+  await go('/ops/payments');
+  await page.getByPlaceholder('Zoho tax invoice link').fill('https://books.zoho.in/demo-invoice');
+  await page.getByPlaceholder('Signed contract link').fill('https://sign.zoho.in/demo-contract');
+  await submit(page.getByRole('button', { name: 'Activate plan' }));
+  await see('Plan activated');
+});
+
+await step('ops runs the dispute through contact and decision', async () => {
+  await go('/ops/reviews');
+  await see('h left');
+  await submit(page.getByRole('button', { name: 'I contacted the vendor' }));
+  await see('7 days to send proof');
+  await signInAs('Glow by Kirti owner');
+  await go('/vendor/reviews');
+  await page.getByPlaceholder('Booking records, chat logs, links').fill('Gate log screenshot: https://example.com/gate.jpg');
+  await submit(page.getByRole('button', { name: 'Send proof' }));
+  await signInAs('Rohit (ops)');
+  await go('/ops/reviews');
+  await page.getByPlaceholder('Reason for the decision').fill('Proof does not cover arrival time');
+  await submit(page.getByRole('button', { name: 'Keep review' }));
+  await see('Decision recorded');
+});
+
+await step('content team publishes the real wedding', async () => {
+  await signInAs('Meera (content)');
+  await go('/ops/content');
+  await see('Simran & Arjun');
+  await submit(page.getByRole('button', { name: 'Publish' }));
+  await go('/real-weddings');
+  await see('Simran & Arjun');
+  await go('/v/glow-by-kirti-demo');
+  await see('Simran & Arjun: A February wedding');
+});
+
+await step('ops employee cannot export; admin can', async () => {
+  await signInAs('Rohit (ops)');
+  const denied = await page.request.get(BASE + '/ops/export?table=leads');
+  if (denied.status() !== 403) throw new Error(`ops export returned ${denied.status()}`);
+  await signInAs('Asha (admin)');
+  const okRes = await page.request.get(BASE + '/ops/export?table=leads');
+  if (okRes.status() !== 200 || !(await okRes.text()).includes('Simran Kaur')) throw new Error('admin export failed');
+});
+
+await step('admin opens florists, the category gets its own pages', async () => {
+  await go('/ops/catalog');
+  await page.getByRole('link', { name: 'Florists' }).click();
+  await page.waitForLoadState('networkidle');
+  await page.getByLabel('Open to brides and vendors').check();
+  await submit(page.getByRole('button', { name: 'Save', exact: true }).first());
+  await see('Saved');
+  await go('/vendors/chandigarh/florists');
+  await see('Florists in Chandigarh');
+  await see('No florists in chandigarh listed yet');
+});
+
+await step('cron endpoint needs its secret', async () => {
+  const no = await page.request.get(BASE + '/api/cron/daily');
+  if (no.status() !== 401) throw new Error('cron open without secret');
+  const yes = await page.request.get(BASE + '/api/cron/daily', { headers: { authorization: 'Bearer local-cron' } });
+  if (yes.status() !== 200) throw new Error('cron failed with secret');
+});
+
+await browser.close();
+const failed = steps.filter((s) => s[0] === 'FAIL');
+console.log(`\n${steps.length - failed.length}/${steps.length} steps passed`);
+if (consoleErrors.length) console.log('Browser errors:', consoleErrors);
+if (overflow.length) console.log('Pages wider than the phone screen:', overflow);
+process.exit(failed.length || overflow.length ? 1 : 0);
