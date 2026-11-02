@@ -82,7 +82,7 @@ type BrowseOpts = {
   offset?: number;
 };
 
-export async function browseVendors(db: Db, o: BrowseOpts) {
+function browseWhere(db: Db, o: Omit<BrowseOpts, 'limit' | 'offset'>) {
   const f = o.filter;
   const filterSql = !f
     ? db``
@@ -94,6 +94,10 @@ export async function browseVendors(db: Db, o: BrowseOpts) {
   const citySql = o.cityId
     ? db`and (v.city_id = ${o.cityId} or ${o.cityId} = any(v.service_city_ids))`
     : db``;
+  return db`v.status = 'live' and v.category_id = ${o.categoryId} ${citySql} ${filterSql}`;
+}
+
+export async function browseVendors(db: Db, o: BrowseOpts) {
   return db<VendorCard[]>`
     select v.*, c.slug as category_slug, c.name as category_name, c.price_unit,
            ci.name as city_name, ci.slug as city_slug,
@@ -105,14 +109,14 @@ export async function browseVendors(db: Db, o: BrowseOpts) {
       select round(avg((rating_artist + rating_service) / 2.0), 1)::float as rating, count(*) as n
       from mkt.reviews where vendor_id = v.id and status = 'published'
     ) r on true
-    where v.status = 'live' and v.category_id = ${o.categoryId} ${citySql} ${filterSql}
+    where ${browseWhere(db, o)}
     order by v.assured desc, (v.verified_at is not null) desc, r.rating desc nulls last, v.created_at
     limit ${o.limit ?? 24} offset ${o.offset ?? 0}`;
 }
 
 export async function countVendors(db: Db, o: Omit<BrowseOpts, 'limit' | 'offset'>) {
-  const rows = await browseVendors(db, { ...o, limit: 1000, offset: 0 });
-  return rows.length;
+  const [{ n }] = await db<{ n: number }[]>`select count(*)::int as n from mkt.vendors v where ${browseWhere(db, o)}`;
+  return n;
 }
 
 export async function getVendorBySlug(db: Db, slug: string) {
