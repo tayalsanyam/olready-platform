@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   openGraph: { siteName: 'OLReady', type: 'website', locale: 'en_IN' },
   twitter: { card: 'summary_large_image' },
   formatDetection: { telephone: false },
+  // Search Console and Bing Webmaster ownership tags, set per deployment.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.BING_SITE_VERIFICATION ? { 'msvalidate.01': process.env.BING_SITE_VERIFICATION } : undefined,
+  },
 };
 
 export const viewport: Viewport = { themeColor: '#ffffff', width: 'device-width', initialScale: 1 };

@@ -61,10 +61,11 @@ node tests/e2e/sweep.mjs          # every sitemap page, contact-leak scan, 7-rol
 
 ## Not in this build yet
 
-- WhatsApp sending (no provider chosen yet). RSVP links use WhatsApp share links; all system email goes through Resend.
+- Mobile apps (web first, by decision).
+- Vendor date availability. Brides find out by sending a request; Ask OLReady says so instead of guessing.
 - Self-makeup classes (marked "coming soon" in the spec).
-- Email sends right after each action when `RESEND_API_KEY` is set, and again by the daily job; vendors and brides can switch event emails off.
-- Razorpay and PayU are implemented to their documented signatures but untested without live keys; run one test-mode payment on each before switching them on.
+- Error monitoring beyond the server logs.
+- Razorpay and PayU follow their documented signatures but are untested without live keys; run one test-mode payment on each before switching them on. WhatsApp sends nothing until Meta approves the templates.
 - Required category fields are enforced when a vendor saves; imported artists may be missing them until they edit their profile.
 
 ## Ops data, AI and billing (November 2026)
