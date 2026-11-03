@@ -11,6 +11,7 @@ export type QuoteLine = {
   details: string;
   status: 'sent' | 'accepted' | 'declined' | 'withdrawn';
   created_at: Date;
+  reading: { included: string[]; extra: string[]; ask: string[] } | null;
 };
 export type CategoryLine = {
   category_id: number;
@@ -53,7 +54,8 @@ export async function weddingQuotes(db: Db, weddingId: string) {
     select q.id as quote_id, t.id as thread_id, v.business_name as vendor_name, v.slug as vendor_slug,
            (select round(avg((r.rating_artist + r.rating_service) / 2.0), 1)::float from mkt.reviews r where r.vendor_id = v.id and r.status = 'published') as rating,
            q.amount_inr, q.details, q.status, q.created_at, ln.category_id, c.name as category_name, ln.id as need_id,
-           (ln.booked_vendor_id = v.id) as booked_vendor
+           (ln.booked_vendor_id = v.id) as booked_vendor,
+           (select json_build_object('included', r.included, 'extra', r.extra, 'ask', r.ask) from mkt.quote_readings r where r.quote_id = q.id) as reading
     from mkt.quotes q
     join mkt.threads t on t.id = q.thread_id
     join mkt.vendors v on v.id = t.vendor_id

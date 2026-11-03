@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { QuoteReading } from '@/components/QuoteReading';
 import { sql } from '@/lib/db';
 import { requireBrideWedding } from '@/lib/brideSession';
 import { budgetSummary, canSeeBudget } from '@/lib/budget';
@@ -61,6 +62,7 @@ export default async function Compare({ searchParams }: P) {
                             {above ? <Badge tone="warn">{formatInr(x.amount_inr - l.planned!)} above budget</Badge> : null}
                           </div>
                           {x.details ? <p className="mt-3 whitespace-pre-wrap text-sm">{x.details}</p> : <p className="mt-3 text-sm text-[var(--color-muted)]">No details given. Ask what is included.</p>}
+                          {x.reading ? <QuoteReading r={x.reading} /> : null}
                           <p className="mt-2 text-xs text-[var(--color-muted)]">Sent {fmt(x.created_at)}</p>
                           <div className="mt-3 flex flex-wrap gap-2">
                             <Link href={`/me/threads/${x.thread_id}`} className="btn btn-ghost btn-sm">

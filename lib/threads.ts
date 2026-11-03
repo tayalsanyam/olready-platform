@@ -92,8 +92,11 @@ export async function threadMessages(db: Db, threadId: string) {
 }
 
 export async function threadQuotes(db: Db, threadId: string) {
-  return db<{ id: string; amount_inr: number; details: string; status: string; created_at: Date }[]>`
-    select id, amount_inr, details, status, created_at from mkt.quotes where thread_id = ${threadId} order by created_at desc`;
+  return db<{ id: string; amount_inr: number; details: string; status: string; created_at: Date; reading: { included: string[]; extra: string[]; ask: string[] } | null }[]>`
+    select q.id, q.amount_inr, q.details, q.status, q.created_at,
+           case when r.quote_id is null then null else json_build_object('included', r.included, 'extra', r.extra, 'ask', r.ask) end as reading
+    from mkt.quotes q left join mkt.quote_readings r on r.quote_id = q.id
+    where q.thread_id = ${threadId} order by q.created_at desc`;
 }
 
 export type Attachment = { url: string; kind: 'image' | 'pdf'; name: string };

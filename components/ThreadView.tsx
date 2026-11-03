@@ -3,6 +3,8 @@ import type { ThreadRow } from '@/lib/threads';
 import { REPORT_REASONS } from '@/lib/moderation';
 import { reportMessageAction } from '@/lib/actions/threads';
 import { Badge, Card, Field } from './ui';
+import { QuoteReading } from './QuoteReading';
+import type { QuoteReading as QR } from '@/lib/quoteReader';
 
 type Msg = {
   id: number;
@@ -16,7 +18,7 @@ type Msg = {
   review_status: 'none' | 'flagged' | 'cleared' | 'hidden';
   created_at: Date;
 };
-type Quote = { id: string; amount_inr: number; details: string; status: string; created_at: Date };
+type Quote = { id: string; amount_inr: number; details: string; status: string; created_at: Date; reading?: QR | null };
 type Action = (fd: FormData) => Promise<void>;
 
 const fmt = (d: Date) =>
@@ -159,6 +161,7 @@ export function ThreadView(props: {
                     <Badge tone={q.status === 'accepted' ? 'ok' : q.status === 'sent' ? 'gold' : 'plain'}>{q.status}</Badge>
                   </div>
                   {q.details ? <p className="mt-1 whitespace-pre-wrap">{q.details}</p> : null}
+                  {q.reading && q.status !== 'withdrawn' ? <QuoteReading r={q.reading} compact /> : null}
                   {props.decideQuote && q.status === 'sent' ? (
                     <div className="mt-2 flex gap-2">
                       {[true, false].map((accept) => (

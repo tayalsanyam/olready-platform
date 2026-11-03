@@ -50,12 +50,15 @@ export default async function Settings({ searchParams }: P) {
       </Card>
       <Card className="mt-5">
         <h2 className="font-semibold">Exports (admin only)</h2>
-        <p className="hint">Staff roles can view but not download.</p>
+        <p className="hint">Staff roles can view but not download. Every list in Data can be filtered, then downloaded.</p>
         <div className="mt-2 flex flex-wrap gap-2">
+          <Link href="/ops/data" className="btn btn-ghost btn-sm">
+            Open Data
+          </Link>
           {['vendors', 'leads', 'orders', 'unlocks'].map((t) => (
-            <Link key={t} href={`/ops/export?table=${t}`} className="btn btn-ghost btn-sm">
+            <a key={t} href={`/ops/export?set=${t}`} className="btn btn-ghost btn-sm">
               {t}.csv
-            </Link>
+            </a>
           ))}
         </div>
       </Card>

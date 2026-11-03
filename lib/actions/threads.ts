@@ -1,6 +1,8 @@
 'use server';
 
+import { after } from 'next/server';
 import { sql } from '../db';
+import { readQuote } from '../quoteReader';
 import { requireProfile } from '../auth';
 import { DomainError } from '../db';
 import { decideQuote, postMessage, sendQuote, threadAccess } from '../threads';
@@ -26,6 +28,8 @@ export async function sendQuoteAction(fd: FormData) {
     const p = await requireProfile();
     const q = await sendQuote(sql, str(fd, 'thread_id'), p, num(fd, 'amount_inr') ?? 0, str(fd, 'details'));
     await notifyQuote(sql, q.id, 'sent');
+    // Read the quote into Included / Extra / Worth asking once it is out; never holds up the send.
+    after(() => readQuote(sql, q.id).then(() => undefined, () => undefined));
     return { ok: 'Quote sent' };
   });
 }
