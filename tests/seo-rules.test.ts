@@ -20,3 +20,16 @@ describe('robots.txt', () => {
       expect(blocked(p), p).toBe(true);
   });
 });
+
+describe('filter page titles', async () => {
+  const { landingTitle } = await import('@/lib/seo');
+  const cat = (plural_name: string) => ({ plural_name }) as never;
+  const city = { name: 'Mohali' } as never;
+  const f = (label: string, value: unknown, key = 'k') => ({ slug: 's', label, value, field: { key } }) as never;
+  it('reads like a search, never repeating the category', () => {
+    expect(landingTitle(cat('Bridal makeup artists'), city, f('Airbrush makeup', 'airbrush'))).toBe('Airbrush makeup artists in Mohali');
+    expect(landingTitle(cat('Wedding venues'), city, f('Alcohol allowed', true))).toBe('Alcohol allowed wedding venues in Mohali');
+    expect(landingTitle(cat('Mehendi artists'), city, f('Travels to venue', true))).toBe('Mehendi artists in Mohali who travel to venue');
+    expect(landingTitle(cat('Wedding venues'), city, f('200+ guests', { min: 200 }))).toBe('Wedding venues in Mohali for 200+ guests');
+  });
+});

@@ -9,6 +9,19 @@ export function landingPath(city: City | { slug: string }, category: Category | 
   return `/vendors/${city.slug}/${category.slug}${filter ? `/${filter.slug}` : ''}`;
 }
 
+/**
+ * "Airbrush makeup" + "Bridal makeup artists" reads as "Airbrush makeup artists", not
+ * "Airbrush makeup bridal makeup artists": when the option ends in a word the category name
+ * has, the option replaces the start of the name.
+ */
+export function filterNoun(category: Category, filter: FilterDef) {
+  const words = category.plural_name.split(' ');
+  const last = filter.label.trim().split(/\s+/).pop()!.toLowerCase();
+  const at = words.findIndex((w) => w.toLowerCase() === last);
+  if (at >= 0) return [filter.label, ...words.slice(at + 1)].join(' ');
+  return `${filter.label} ${category.plural_name.toLowerCase()}`;
+}
+
 export function landingTitle(category: Category, city: City, filter?: FilterDef | null) {
   const base = `${category.plural_name} in ${city.name}`;
   if (!filter) return base;
@@ -16,7 +29,10 @@ export function landingTitle(category: Category, city: City, filter?: FilterDef 
   // Price bands read as "Wedding venues in Mohali, under ₹1,000 a plate"; ranges as "… for 500+ guests".
   if (filter.field.key === '__price') return `${base}, ${low}`;
   if (typeof filter.value === 'object') return `${base} for ${low}`;
-  return `${filter.label} ${category.plural_name.toLowerCase()} in ${city.name}`;
+  // "Travels to venue" describes what the vendor does: "Mehendi artists in Mohali who travel to venue".
+  if (filter.value === true && /^[A-Z][a-z]+s\b/.test(filter.label) && !/^(Has|Is)\b/.test(filter.label))
+    return `${base} who ${low.replace(/^([a-z]+?)s\b/, '$1')}`;
+  return `${filterNoun(category, filter)} in ${city.name}`;
 }
 
 /** A landing page is indexed only when it lists enough vendors; thin pages hurt the whole site. */
@@ -110,7 +126,7 @@ export function itemListLd(vendors: VendorCard[]) {
 /** Landing-page Q&A written from the live data on the page. */
 export function landingFaq(category: Category, city: City, vendors: VendorCard[], filter?: FilterDef | null) {
   const prices = vendors.map((v) => v.starting_price_inr).filter((n): n is number => n != null).sort((a, b) => a - b);
-  const label = filter ? `${filter.label.toLowerCase()} ${category.plural_name.toLowerCase()}` : category.plural_name.toLowerCase();
+  const label = (filter && typeof filter.value !== 'object' && filter.field.key !== '__price' ? filterNoun(category, filter) : category.plural_name).toLowerCase();
   const faq: { q: string; a: string }[] = [];
   if (prices.length) {
     const median = prices[Math.floor(prices.length / 2)];

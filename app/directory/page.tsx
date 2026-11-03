@@ -72,14 +72,23 @@ export default async function Directory() {
       {costs.length ? (
         <section className="mt-12 scroll-mt-24" id="costs">
           <h2 className="text-xl font-semibold">Wedding costs</h2>
-          <ul className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-3">
-            {costs.map((c) => (
-              <li key={c.path}>
-                <Link href={c.path} className="hover:text-[var(--color-pink-deep)]">
-                  {c.title}
-                </Link>
-              </li>
-            ))}
+          <ul className="mt-3 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            {[...new Set(costs.map((c) => c.path.split('/')[2]))].map((slug) => {
+              const group = costs.filter((c) => c.path.split('/')[2] === slug);
+              const [name] = group[0].title.split(' cost in ');
+              return (
+                <li key={slug}>
+                  <span className="font-medium">{name} cost</span>
+                  <span className="mt-0.5 flex flex-wrap gap-x-3">
+                    {group.map((c) => (
+                      <Link key={c.path} href={c.path} className="text-[var(--color-muted)] hover:text-[var(--color-pink-deep)]" aria-label={c.title}>
+                        {c.title.split(' cost in ')[1]?.replace('Chandigarh Tricity', 'Whole Tricity')}
+                      </Link>
+                    ))}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}
