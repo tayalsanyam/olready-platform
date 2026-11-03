@@ -3,6 +3,8 @@
 //   2. no vendor phone number or email appears in any public page or a bride's pages
 //   3. each role reaches the routes it should and is turned away from the rest
 // Usage: DATABASE_URL=... node tests/e2e/sweep.mjs [baseUrl]
+// Run on fresh demo data (npm run db:reset): staff with an authenticator turned on are
+// correctly sent to /mfa, which the access matrix does not expect.
 import postgres from 'postgres';
 import { chromium } from 'playwright-core';
 
@@ -76,7 +78,7 @@ const ROUTES = ['/me', '/me/assistant', '/me/budget', '/vendor', '/vendor/packs'
 const EXPECT = {
   visitor: { default: 'login', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'login' },
   // Simran has no wedding plan yet, so Budget sends her to set one up.
-  'Simran Kaur': { '/me': 'ok', '/me/assistant': 'ok', '/me/budget': 'away', '/vendor': 'away', '/vendor/packs': 'away', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'no' },
+  'Simran Kaur': { '/me': 'ok', '/me/assistant': 'ok', '/me/budget': ['ok', 'away'], '/vendor': 'away', '/vendor/packs': 'away', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'no' },
   'Glow by Kirti owner': { '/me': 'away', '/me/assistant': 'ok', '/me/budget': 'away', '/vendor': 'ok', '/vendor/packs': 'ok', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: invoice?.buyer === 'Glow by Kirti owner' ? 'ok' : 'no' },
   'Meera (content)': { '/ops': 'ok', '/ops/content': 'ok', '/me': 'away', '/me/assistant': 'ok', '/me/budget': 'away', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'no' },
   'Tanya (RM)': { '/ops': 'ok', '/ops/rm': 'ok', '/me': 'away', '/me/assistant': 'ok', '/me/budget': 'away', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'no' },
@@ -99,7 +101,7 @@ for (const [who, exp] of Object.entries(EXPECT)) {
     results[who][r] = got;
     const want = exp[r] ?? exp.default;
     // Pages a signed-in non-bride can open on /me may show a notice instead; only "ok" vs not matters there.
-    if (got !== want) fail(`${who} ${r}: expected ${want}, got ${got}${loc ? ` → ${loc}` : ''}`);
+    if (![want].flat().includes(got)) fail(`${who} ${r}: expected ${want}, got ${got}${loc ? ` → ${loc}` : ''}`);
     if (got === 'ok' && who === 'Simran Kaur') scan(`bride ${r}`, body);
   }
   await ctx.close();

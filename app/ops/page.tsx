@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireStaff } from '@/lib/auth';
 import { Notice, PageTitle, Stat } from '@/components/ui';
+import { formatInr } from '@/lib/catalog';
 import { CALLBACK_TOPICS, openCallbacks } from '@/lib/vendorTools';
 import { opsCloseCallback } from '@/lib/actions/vendorTools';
 
@@ -28,7 +29,30 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
       (select count(*) from mkt.reviews where status = 'pending')::int as reviews_pending,
       (select count(*) from mkt.leads where verified_at > now() - interval '7 days')::int as verified_7d,
       (select count(*) from mkt.unlocks where created_at > now() - interval '7 days' and not refunded)::int as unlocks_7d,
-      (select count(*) from mkt.booking_reports where created_at > now() - interval '7 days')::int as bookings_7d`;
+      (select count(*) from mkt.booking_reports where created_at > now() - interval '7 days')::int as bookings_7d,
+      (select count(*) from mkt.banners where status = 'pending')::int as banners,
+      (select count(*) from mkt.whatsapp_outbox where status = 'failed' and updated_at > now() - interval '7 days')::int as wa_failed,
+      (select count(*) from mkt.assistant_messages where cardinality(flags) > 0 and created_at > now() - interval '7 days')::int as ai_flagged`;
+  // Money, for admins: this calendar month in India time, from tax documents so it matches the books.
+  const money =
+    p.role === 'admin'
+      ? (
+          await sql<{ billed: number; credited: number; gst: number; invoices: number; plans: number; wallet_owed: number; boost_spend: number; last_billed: number }[]>`
+            with m as (select date_trunc('month', now() at time zone 'Asia/Kolkata') as start)
+            select
+              coalesce(sum(d.total_paise) filter (where d.kind = 'invoice'), 0)::bigint / 100.0 as billed,
+              coalesce(sum(d.total_paise) filter (where d.kind = 'credit_note'), 0)::bigint / 100.0 as credited,
+              coalesce(sum(case when d.kind = 'invoice' then 1 else -1 end * (d.cgst_paise + d.sgst_paise + d.igst_paise)), 0)::bigint / 100.0 as gst,
+              count(*) filter (where d.kind = 'invoice')::int as invoices,
+              (select count(*)::int from mkt.vendor_subscriptions s, m where s.status = 'active' and s.starts_at at time zone 'Asia/Kolkata' >= m.start) as plans,
+              (select coalesce(sum(delta_inr), 0)::int from mkt.ad_wallet_ledger) as wallet_owed,
+              (select coalesce(sum(charged_inr), 0)::int from mkt.boost_visits v, m where v.day >= m.start::date) as boost_spend,
+              (select coalesce(sum(total_paise), 0)::bigint / 100.0 from mkt.tax_documents x, m
+                where x.kind = 'invoice' and x.issued_at at time zone 'Asia/Kolkata' >= m.start - interval '1 month' and x.issued_at at time zone 'Asia/Kolkata' < m.start) as last_billed
+            from mkt.tax_documents d, m
+            where d.issued_at at time zone 'Asia/Kolkata' >= m.start`
+        )[0]
+      : null;
   const queues: [string, number, string, string?][] = [
     ['Leads to verify', c.to_verify, '/ops/leads'],
     ['Capped leads to decide', c.capped, '/ops/needs'],
@@ -42,6 +66,9 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
     ['Relationship-manager requests', c.rm_pending, '/ops/rm'],
     ['Chat messages to check', c.flagged, '/ops/moderation'],
     ['Invited reviews to approve', c.reviews_pending, '/ops/reviews'],
+    ['Banners to approve', c.banners, '/ops/promotions'],
+    ['WhatsApp messages that failed', c.wa_failed, '/ops/whatsapp'],
+    ['Ask OLReady answers to check', c.ai_flagged, '/ops/bride-ai'],
   ];
   return (
     <>
@@ -74,6 +101,22 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
               </li>
             ))}
           </ul>
+        </section>
+      ) : null}
+      {money ? (
+        <section className="mb-6 rounded-[18px] border border-[var(--color-line)] p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-semibold">This month</h2>
+            <span className="text-xs text-[var(--color-muted)]">
+              From tax invoices and credit notes. <Link href="/ops/data/tax-documents" className="underline">See them all</Link>
+            </span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Stat label="Billed, after refunds" value={formatInr(Math.round(Number(money.billed) - Number(money.credited)))} hint={`${money.invoices} invoices; last month ${formatInr(Math.round(Number(money.last_billed)))}`} />
+            <Stat label="GST to pay" value={formatInr(Math.round(Number(money.gst)))} hint="Net of credit notes" />
+            <Stat label="New plans" value={money.plans} hint={`Boost spend ${formatInr(money.boost_spend)}`} />
+            <Stat label="Ads wallets owed" value={formatInr(money.wallet_owed)} hint="Unspent vendor balances" />
+          </div>
         </section>
       ) : null}
       <div className="mb-6 grid grid-cols-3 gap-3">

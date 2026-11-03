@@ -20,6 +20,7 @@ import { moderateRealWedding, tagVendor } from '../realWeddings';
 import { queueEmail } from '../email';
 import { notifyNewLead, notifyRmAssigned } from '../notify';
 import { slugify } from '../catalog';
+import { STATE_CODES } from '../gst';
 import { addRmNote, approveEngagement, reassign, rejectEngagement } from '../rm';
 import { attempt, attrsFromForm, back, num, str } from './run';
 
@@ -228,6 +229,30 @@ export async function opsSaveCategory(fd: FormData) {
       values (${slugify(plural)}, ${name}, ${plural}, ${cost}, ${cap}) returning id`;
     await audit(sql, p.id, 'category.create', 'category', String(c.id));
     return `/ops/catalog/${c.id}`;
+  });
+}
+
+// ---------------------------------------------------------------- cities and towns
+export async function opsSaveCity(fd: FormData) {
+  await attempt('/ops/catalog#cities', async () => {
+    const p = await requireRole(ADMIN);
+    const id = num(fd, 'id');
+    const name = str(fd, 'name').slice(0, 60);
+    const state = str(fd, 'state');
+    if (!name) throw new DomainError('empty', 'Name the town');
+    if (!Object.values(STATE_CODES).includes(state)) throw new DomainError('state', 'Pick the state, so tax invoices show the right place of supply');
+    if (id) {
+      await sql`update mkt.cities set name = ${name}, state = ${state}, sort = ${num(fd, 'sort') ?? 0}, active = ${fd.get('active') === 'on'} where id = ${id}`;
+      await audit(sql, p.id, 'city.update', 'city', String(id));
+      return { ok: `${name} saved` };
+    }
+    const slug = slugify(name);
+    const [dup] = await sql`select 1 from mkt.cities where slug = ${slug}`;
+    if (dup) throw new DomainError('dup', `${name} is already listed`);
+    const [{ sort }] = await sql<{ sort: number }[]>`select coalesce(max(sort), 0) + 1 as sort from mkt.cities`;
+    const [c] = await sql<{ id: number }[]>`insert into mkt.cities (slug, name, state, sort) values (${slug}, ${name}, ${state}, ${sort}) returning id`;
+    await audit(sql, p.id, 'city.create', 'city', String(c.id), { name, state });
+    return { ok: `${name} added. Its city and category pages appear once vendors there go live.` };
   });
 }
 

@@ -13,6 +13,11 @@ import { JsonLd } from '@/components/VendorCard';
 import { siteUrl } from '@/lib/seo';
 import { liveBanners, sponsored } from '@/lib/promotion';
 import { BannerStrip } from '@/components/BannerStrip';
+import { Toran } from '@/components/Toran';
+import { InviteCard } from '@/components/InviteCard';
+import { inviteDesigns } from '@/lib/invites';
+import { SAMPLE } from '@/lib/inviteDesign';
+import { ideaPhotos } from '@/lib/ideas';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +38,22 @@ export default async function Home() {
       vendors: await browseVendors(sql, { categoryId: c.id, cityId: home?.id, limit: 8 }),
     }))
   );
-  const [banners, promoted] = await Promise.all([liveBanners(sql, 'home'), sponsored(sql, { cityId: home?.id, placement: 'home', limit: 4 })]);
+  const [banners, promoted, designs, photos, [reach], popular] = await Promise.all([
+    liveBanners(sql, 'home'),
+    sponsored(sql, { cityId: home?.id, placement: 'home', limit: 4 }),
+    inviteDesigns(sql, { kind: 'card' }),
+    ideaPhotos(sql, { limit: 4 }),
+    sql<{ vendors: number; towns: number }[]>`
+      select count(*)::int as vendors, count(distinct city_id)::int as towns from mkt.vendors where status = 'live'`,
+    // Quick searches people make most: the busiest category in each town that has vendors.
+    sql<{ city_slug: string; city: string; cat_slug: string; cat: string }[]>`
+      select distinct on (ci.id) ci.slug as city_slug, ci.name as city, c.slug as cat_slug, c.plural_name as cat
+      from mkt.vendors v join mkt.cities ci on ci.id = v.city_id join mkt.categories c on c.id = v.category_id and c.active
+      where v.status = 'live'
+      group by ci.id, ci.slug, ci.name, ci.sort, c.slug, c.plural_name, c.sort
+      order by ci.id, count(*) desc, c.sort limit 6`,
+  ]);
+  const invite = designs[0];
   const promotedFields = await Promise.all(promoted.map((v) => fieldsFor(sql, v.category_id)));
   return (
     <>
@@ -50,12 +70,13 @@ export default async function Home() {
         ]}
       />
       <section className="-mt-6 bg-[var(--color-tint)]">
-        <Container className="grid items-center gap-8 py-8 md:grid-cols-[1.1fr_1fr] md:py-12">
+        <Toran />
+        <Container className="grid items-center gap-8 pb-8 pt-2 md:grid-cols-[1.1fr_1fr] md:pb-12 md:pt-4">
           <div>
             <h1 className="max-w-xl text-4xl leading-[1.08] sm:text-5xl">Plan your wedding with vendors we have checked first.</h1>
             <p className="mt-4 max-w-lg text-lg text-[var(--color-muted)]">
-              Makeup, photography, decor, mehendi and music across Chandigarh, Mohali and Panchkula. Tell us once; our team confirms your
-              details, then verified vendors send you quotes.
+              Venues, caterers, makeup, photography, decor and more across Chandigarh, Mohali, Panchkula and nearby towns. Tell us once; our
+              team confirms your details, then verified vendors send you quotes.
             </p>
             <form action="/vendors/go" className="mt-6 rounded-2xl border border-[var(--color-line)] bg-white p-2 sm:flex sm:items-center sm:gap-2 sm:rounded-full">
               <label className="block flex-1 px-3 py-1 sm:py-0">
@@ -84,7 +105,21 @@ export default async function Home() {
                 Search
               </button>
             </form>
-            <p className="mt-3 text-sm">
+            {popular.length ? (
+              <div className="mt-4">
+                <p className="text-sm text-[var(--color-muted)]">Brides are looking at</p>
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {popular.map((p) => (
+                    <li key={p.city_slug}>
+                      <Link href={`/vendors/${p.city_slug}/${p.cat_slug}`} className="chip bg-white">
+                        {p.cat} in {p.city}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            <p className="mt-4 text-sm">
               Need several vendors?{' '}
               <Link href="/enquire" className="font-semibold text-[var(--color-pink-deep)] underline underline-offset-4">
                 Send one request for all of them
@@ -110,7 +145,9 @@ export default async function Home() {
                 <IconShield size={18} className="text-[var(--color-pink)]" />
                 Every enquiry verified on a call
               </span>
-              <span className="text-[var(--color-muted)]">before any vendor sees it</span>
+              <span className="text-[var(--color-muted)]">
+                before any of our {reach.vendors} checked vendors in {reach.towns} towns sees it
+              </span>
             </div>
           </div>
         </Container>
@@ -174,20 +211,68 @@ export default async function Home() {
       )}
 
       <section className="mt-14 bg-[var(--color-ink)] text-white">
-        <Container className="grid gap-8 py-10 md:grid-cols-3">
-          {[
-            { icon: <IconShield size={26} />, t: 'Checked before they reach you', d: 'Our team calls you to confirm your date, city and budget. Only then do vendors see your request.' },
-            { icon: <IconPhoneOff size={26} />, t: 'Your number stays private', d: 'Vendors message you on OLReady first. You choose when to share your phone.' },
-            { icon: <IconChat size={26} />, t: 'Every quote in one place', d: 'Chat, compare and accept quotes for makeup, photography, decor, mehendi and music side by side.' },
-          ].map((x) => (
-            <div key={x.t}>
-              <span className="text-[var(--color-pink)]">{x.icon}</span>
-              <h3 className="mt-3 text-lg font-semibold">{x.t}</h3>
-              <p className="mt-1 text-sm text-white/70">{x.d}</p>
-            </div>
-          ))}
+        <Container className="py-10 md:py-14">
+          <h2 className="max-w-xl text-2xl font-semibold leading-tight md:text-3xl">One request, one short call, then quotes from vendors who want your wedding.</h2>
+          <ol className="mt-8 grid gap-8 md:grid-cols-3">
+            {[
+              { icon: <IconChat size={22} />, t: 'Tell us once', d: 'Tick every vendor you still need: venue, caterer, makeup, photos, decor. One form, not ten.' },
+              { icon: <IconShield size={22} />, t: 'We call to check', d: 'A real person from our team confirms your date, city and budget. Only then do vendors see your request.' },
+              { icon: <IconPhoneOff size={22} />, t: 'Compare and choose', d: 'Verified vendors message and quote you on OLReady. Your number stays private until you share it.' },
+            ].map((x, i) => (
+              <li key={x.t} className="relative border-t border-white/20 pt-5">
+                <span className="figure absolute -top-[0.9rem] left-0 bg-[var(--color-ink)] pr-3 text-2xl text-[var(--color-pink)]">{i + 1}</span>
+                <h3 className="flex items-center gap-2 text-lg font-semibold">
+                  <span className="text-[var(--color-pink)]">{x.icon}</span>
+                  {x.t}
+                </h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-white/70">{x.d}</p>
+              </li>
+            ))}
+          </ol>
+          <Link href="/enquire" className="btn btn-pink mt-8">
+            Send one request
+          </Link>
         </Container>
       </section>
+
+      <Container className="mt-14">
+        <h2 className="text-xl font-semibold">Plan the rest of it here too</h2>
+        <p className="mt-1 text-sm text-[var(--color-muted)]">Free with your OLReady account.</p>
+        <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1.15fr] md:grid-rows-2">
+          {invite ? (
+            <Link href="/invitations" className="group relative overflow-hidden rounded-[22px] bg-[var(--color-pink-soft)] p-5 md:row-span-2">
+              <p className="font-semibold group-hover:text-[var(--color-pink-deep)]">E-invites your family will forward</p>
+              <p className="mt-1 text-sm text-[var(--color-muted)]">Pick a design, add your functions, share on WhatsApp. Guests reply on their own RSVP link.</p>
+              <div className="mx-auto mt-5 w-full max-w-[260px] rotate-[-2.5deg] transition-transform duration-300 group-hover:rotate-0">
+                <InviteCard layout={invite.layout} theme={invite.theme} content={{ ...SAMPLE, kind: 'card' }} compact />
+              </div>
+            </Link>
+          ) : null}
+          <Link href="/me/assistant" className="group rounded-[22px] border border-[var(--color-line)] p-5 hover:border-[var(--color-pink)]">
+            <p className="font-semibold group-hover:text-[var(--color-pink-deep)]">Ask OLReady, in your own words</p>
+            <div className="mt-4 space-y-2 text-sm">
+              <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-[var(--color-pink-soft)] px-3 py-2">Venue in Zirakpur for 400 guests, under ₹1,500 a plate?</p>
+              <p className="w-fit max-w-[90%] rounded-2xl rounded-bl-md bg-[var(--color-tint)] px-3 py-2">I found three that fit. Want me to shortlist them and ask for quotes?</p>
+            </div>
+            <p className="mt-3 text-xs text-[var(--color-muted)]">Answers come from real OLReady listings. English, Hindi or Hinglish.</p>
+          </Link>
+          <Link href="/ideas" className="group grid grid-cols-[1fr_auto] items-center gap-4 rounded-[22px] border border-[var(--color-line)] p-5 hover:border-[var(--color-pink)]">
+            <div>
+              <p className="font-semibold group-hover:text-[var(--color-pink-deep)]">Ideas from Tricity weddings</p>
+              <p className="mt-1 text-sm text-[var(--color-muted)]">Looks, mehendi, decor and outfits from real vendors. Save the ones you love to your wedding wall.</p>
+            </div>
+            {photos.length ? (
+              <div className="grid h-24 w-24 grid-cols-2 gap-1 overflow-hidden rounded-xl sm:h-28 sm:w-28">
+                {photos.slice(0, 4).map((p) => (
+                  <div key={p.ref} className="overflow-hidden bg-[var(--color-tint)]">
+                    <Cover url={p.url} name={p.caption || p.topic_name} />
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </Link>
+        </div>
+      </Container>
 
       {weddings.length ? (
         <Container className="mt-12">
@@ -206,7 +291,7 @@ export default async function Home() {
                 <p className="mt-2 font-semibold group-hover:text-[var(--color-pink-deep)]">{w.couple_names}</p>
                 <p className="text-sm text-[var(--color-muted)]">
                   {w.title}
-                  {w.city_name ? `, ${w.city_name}` : ''}
+                  {w.city_name && !w.title.includes(w.city_name) ? `, ${w.city_name}` : ''}
                 </p>
               </Link>
             ))}
@@ -220,8 +305,8 @@ export default async function Home() {
             <h2 className="text-xl font-semibold">Run a wedding business?</h2>
             <p className="mt-1 text-sm text-[var(--color-muted)]">List free. Pay only for verified brides you choose to talk to.</p>
           </div>
-          <Link href="/vendor/onboard" className="btn">
-            List your business
+          <Link href="/for-vendors" className="btn">
+            See how it works for vendors
           </Link>
         </div>
       </Container>

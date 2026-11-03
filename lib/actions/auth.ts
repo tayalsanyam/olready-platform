@@ -9,27 +9,40 @@ import { str, withParam } from './run';
 
 const safeNext = (n: string) => (n.startsWith('/') && !n.startsWith('//') ? n : '/');
 
+/** Where someone lands after signing in when no page asked for them: brides plan, vendors work. */
+const landing = (next: string, as: string) => safeNext(next || (as === 'vendor' ? '/vendor' : '/me'));
+
 export async function sendCode(fd: FormData) {
   const email = str(fd, 'email').toLowerCase();
-  const next = safeNext(str(fd, 'next') || '/');
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) redirect(withParam(`/login?next=${encodeURIComponent(next)}`, 'error', 'Enter a valid email'));
+  const as = str(fd, 'as') === 'vendor' ? 'vendor' : 'bride';
+  const name = str(fd, 'full_name').slice(0, 80);
+  const next = landing(str(fd, 'next'), as);
+  const back = `/login?as=${as}&next=${encodeURIComponent(next)}`;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) redirect(withParam(back, 'error', 'Enter a valid email'));
   const supabase = await supabaseServer();
-  const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-  if (error) redirect(withParam(`/login?next=${encodeURIComponent(next)}`, 'error', 'Could not send the code. Try again in a minute.'));
-  redirect(`/login?step=code&email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`);
+  // A new email creates the account; the name is kept for its profile.
+  const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true, data: name ? { full_name: name } : undefined } });
+  if (error) redirect(withParam(back, 'error', 'Could not send the code. Try again in a minute.'));
+  redirect(`/login?step=code&as=${as}&email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}${name ? `&name=${encodeURIComponent(name)}` : ''}`);
 }
 
 export async function verifyCode(fd: FormData) {
   const email = str(fd, 'email').toLowerCase();
   const token = str(fd, 'token').replace(/\s/g, '');
-  const next = safeNext(str(fd, 'next') || '/');
+  const as = str(fd, 'as') === 'vendor' ? 'vendor' : 'bride';
+  const next = landing(str(fd, 'next'), as);
   const supabase = await supabaseServer();
   const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
   if (error) {
-    redirect(withParam(`/login?step=code&email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`, 'error', 'That code did not work. Check it or ask for a new one.'));
+    redirect(withParam(`/login?step=code&as=${as}&email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`, 'error', 'That code did not work. Check it or ask for a new one.'));
   }
   // A new sign-in always asks staff for their authenticator code again.
   (await cookies()).delete(MFA_COOKIE);
+  const name = str(fd, 'full_name').slice(0, 80);
+  if (name) {
+    const { data } = await supabase.auth.getUser();
+    if (data.user) await sql`update mkt.profiles set full_name = ${name} where auth_user_id = ${data.user.id} and full_name = ''`;
+  }
   redirect(next);
 }
 

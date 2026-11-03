@@ -60,7 +60,7 @@ export async function Header() {
           <Link href="/blog" className="hover:text-[var(--color-pink)]">
             Guides
           </Link>
-          <Link href="/vendor/onboard" className="hover:text-[var(--color-pink)]">
+          <Link href="/for-vendors" className="hover:text-[var(--color-pink)]">
             For vendors
           </Link>
         </nav>
@@ -118,7 +118,7 @@ export async function Footer() {
               <Link href="/enquire" className="btn btn-pink btn-sm">
                 Get verified quotes
               </Link>
-              <Link href="/vendor/onboard" className="btn btn-ghost btn-sm">
+              <Link href="/for-vendors" className="btn btn-ghost btn-sm">
                 List your business
               </Link>
             </div>

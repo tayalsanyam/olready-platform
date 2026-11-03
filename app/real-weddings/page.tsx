@@ -77,7 +77,7 @@ export default async function RealWeddings({ searchParams }: P) {
               <p className="mt-2 font-semibold group-hover:text-[var(--color-pink-deep)]">{w.couple_names}</p>
               <p className="text-sm text-[var(--color-muted)]">
                 {w.title}
-                {w.city_name ? `, ${w.city_name}` : ''}
+                {w.city_name && !w.title.includes(w.city_name) ? `, ${w.city_name}` : ''}
                 {w.vendor_count ? ` · ${w.vendor_count} vendor${w.vendor_count === 1 ? '' : 's'} credited` : ''}
               </p>
             </Link>
