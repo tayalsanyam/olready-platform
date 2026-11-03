@@ -23,7 +23,12 @@ insert into mkt.categories (slug, name, plural_name, description, wave, sort, ac
   ('food-stalls', 'Food stall', 'Food stalls', 'Live counters and chaat stalls.', 2, 10, false, 1, 10, 'per event'),
   ('choreographers', 'Sangeet choreographer', 'Sangeet choreographers', 'Choreography for sangeet performances.', 2, 11, false, 1, 10, 'per song'),
   ('pandits', 'Wedding pandit', 'Wedding pandits', 'Pandits for ceremonies.', 2, 12, false, 1, 10, 'per ceremony'),
-  ('bands', 'Wedding band', 'Wedding bands', 'Brass bands and live music.', 2, 13, false, 1, 10, 'per event')
+  ('bands', 'Wedding band', 'Wedding bands', 'Brass bands and live music.', 2, 13, false, 1, 10, 'per event'),
+  ('venues', 'Wedding venue', 'Wedding venues', 'Banquet halls, marriage lawns, hotels, resorts and farmhouses.', 1, 0, true, 3, 6, 'per plate, veg'),
+  ('caterers', 'Wedding caterer', 'Wedding caterers', 'Wedding catering, live counters and menus for every function.', 1, 6, true, 2, 6, 'per plate, veg'),
+  ('planners', 'Wedding planner', 'Wedding planners', 'Full planning, coordination and destination weddings.', 1, 7, true, 2, 6, 'onwards'),
+  ('bridal-wear', 'Bridal wear store', 'Bridal wear stores', 'Bridal lehengas, sarees and groom wear, to buy or rent.', 1, 8, true, 1, 10, 'per outfit'),
+  ('jewellery', 'Bridal jeweller', 'Bridal jewellers', 'Bridal jewellery in gold, diamond, kundan and polki, to buy or rent.', 1, 9, true, 1, 10, 'per set')
 on conflict (slug) do nothing;
 
 -- ---------------------------------------------------------------- fields
@@ -49,7 +54,28 @@ join (values
   ('mehendi-artists','team_size','Artists in team','number','[]',false,false,true,'How many artists does {name} bring?',null,2),
   ('mehendi-artists','travels_to_venue','Travels to venue','bool','[]',true,true,true,'Does {name} travel to the venue?','travels-to-venue',3),
   ('djs-dhol','services','Services','multiselect','[{"value":"dj","label":"DJ","seo":"dj"},{"value":"dhol","label":"Dhol","seo":"dhol"},{"value":"sound","label":"Sound and lights","seo":"sound"}]',true,true,true,'What does {name} provide?',null,1),
-  ('djs-dhol','hours_included','Hours included','number','[]',false,false,true,'How many hours are included?',null,2)
+  ('djs-dhol','hours_included','Hours included','number','[]',false,false,true,'How many hours are included?',null,2),
+  ('venues','venue_type','Venue type','select','[{"value":"banquet","label":"Banquet hall","seo":"banquet-halls"},{"value":"lawn","label":"Marriage lawn","seo":"marriage-lawns"},{"value":"hotel","label":"Hotel","seo":"hotels"},{"value":"resort","label":"Resort","seo":"resorts"},{"value":"farmhouse","label":"Farmhouse","seo":"farmhouses"},{"value":"club","label":"Club","seo":"clubs"}]',true,true,true,'What kind of venue is {name}?',null,1),
+  ('venues','capacity_max','Maximum guests','number','[{"value":"small","label":"Under 200 guests","seo":"under-200-guests","max":199},{"value":"200","label":"200+ guests","seo":"200-guests","min":200},{"value":"500","label":"500+ guests","seo":"500-guests","min":500},{"value":"1000","label":"1,000+ guests","seo":"1000-guests","min":1000}]',true,true,true,'How many guests can {name} host?',null,2),
+  ('venues','non_veg_per_plate','Non-veg per plate','money','[]',false,false,true,'What does a non-veg plate cost at {name}?',null,3),
+  ('venues','rooms','Rooms','number','[]',false,false,false,'How many rooms does {name} have?',null,4),
+  ('venues','setting','Setting','multiselect','[{"value":"indoor","label":"Indoor"},{"value":"outdoor","label":"Outdoor","seo":"outdoor"},{"value":"poolside","label":"Poolside","seo":"poolside"}]',false,true,false,'Is {name} indoor or outdoor?',null,5),
+  ('venues','alcohol_allowed','Alcohol allowed','bool','[]',false,true,false,'Can we serve alcohol at {name}?','alcohol-allowed',6),
+  ('venues','outside_catering','Outside caterers allowed','bool','[]',false,true,false,'Can we bring our own caterer to {name}?','outside-catering',7),
+  ('venues','outside_decor','Outside decorators allowed','bool','[]',false,false,false,'Can we bring our own decorator to {name}?',null,8),
+  ('caterers','food_type','Food','select','[{"value":"veg","label":"Pure veg","seo":"pure-veg"},{"value":"veg_nonveg","label":"Veg and non-veg","seo":"non-veg"}]',true,true,true,'Does {name} serve non-veg?',null,1),
+  ('caterers','cuisines','Cuisines','multiselect','[{"value":"punjabi","label":"Punjabi","seo":"punjabi"},{"value":"north_indian","label":"North Indian"},{"value":"south_indian","label":"South Indian","seo":"south-indian"},{"value":"chinese","label":"Chinese"},{"value":"continental","label":"Continental"},{"value":"live_counters","label":"Live counters","seo":"live-counters"}]',true,true,false,'Which cuisines does {name} cook?',null,2),
+  ('caterers','min_guests','Minimum guests','number','[]',false,false,true,'What is the smallest event {name} caters?',null,3),
+  ('caterers','non_veg_per_plate','Non-veg per plate','money','[]',false,false,false,'What does a non-veg plate cost with {name}?',null,4),
+  ('planners','services','Services','multiselect','[{"value":"full","label":"Full planning","seo":"full-planning"},{"value":"coordination","label":"Day-of coordination","seo":"coordination"},{"value":"destination","label":"Destination weddings","seo":"destination"},{"value":"design","label":"Decor design"}]',true,true,true,'What does {name} handle?',null,1),
+  ('planners','weddings_done','Weddings planned','number','[]',false,false,true,'How many weddings has {name} planned?',null,2),
+  ('planners','fee_model','Fee','select','[{"value":"percent","label":"Percentage of budget"},{"value":"fixed","label":"Fixed fee"}]',false,false,false,'How does {name} charge?',null,3),
+  ('bridal-wear','wear_type','Outfits','multiselect','[{"value":"lehenga","label":"Lehengas","seo":"lehengas"},{"value":"saree","label":"Sarees","seo":"sarees"},{"value":"sharara","label":"Shararas"},{"value":"gown","label":"Gowns"},{"value":"sherwani","label":"Sherwanis","seo":"sherwanis"}]',true,true,true,'What outfits does {name} offer?',null,1),
+  ('bridal-wear','rental','On rent','bool','[]',false,true,true,'Does {name} rent outfits?','on-rent',2),
+  ('bridal-wear','custom_made','Made to order','bool','[]',false,true,false,'Does {name} make outfits to order?','made-to-order',3),
+  ('jewellery','jewellery_type','Jewellery','multiselect','[{"value":"gold","label":"Gold","seo":"gold"},{"value":"diamond","label":"Diamond","seo":"diamond"},{"value":"kundan","label":"Kundan and polki","seo":"kundan-polki"},{"value":"silver","label":"Silver"},{"value":"artificial","label":"Artificial","seo":"artificial"}]',true,true,true,'What jewellery does {name} make?',null,1),
+  ('jewellery','rental','On rent','bool','[]',false,true,true,'Does {name} rent jewellery?','on-rent',2),
+  ('jewellery','certified','Hallmarked or certified','bool','[]',false,false,true,'Is {name}''s jewellery hallmarked or certified?',null,3)
 ) as f(cat, key, label, type, options, required, filterable, on_card, faq, seo, sort)
   on f.cat = c.slug
 on conflict (category_id, key) do nothing;
@@ -71,7 +97,18 @@ join (values
   ('mehendi-artists','value','Under ₹10,000',0,10000,1),
   ('mehendi-artists','premium','Above ₹10,000',10000,null,2),
   ('djs-dhol','value','Under ₹30,000',0,30000,1),
-  ('djs-dhol','premium','Above ₹30,000',30000,null,2)
+  ('djs-dhol','premium','Above ₹30,000',30000,null,2),
+  ('venues','value','Under ₹5,00,000',0,500000,1),
+  ('venues','premium','₹5,00,000–₹15,00,000',500000,1500000,2),
+  ('venues','luxe','Above ₹15,00,000',1500000,null,3),
+  ('caterers','value','Under ₹3,00,000',0,300000,1),
+  ('caterers','premium','Above ₹3,00,000',300000,null,2),
+  ('planners','value','Under ₹2,00,000',0,200000,1),
+  ('planners','premium','Above ₹2,00,000',200000,null,2),
+  ('bridal-wear','value','Under ₹75,000',0,75000,1),
+  ('bridal-wear','premium','Above ₹75,000',75000,null,2),
+  ('jewellery','value','Under ₹2,00,000',0,200000,1),
+  ('jewellery','premium','Above ₹2,00,000',200000,null,2)
 ) as t(cat, code, label, min_inr, max_inr, sort)
   on t.cat = c.slug
 on conflict (category_id, code) do nothing;
@@ -112,3 +149,38 @@ insert into mkt.invite_templates (code, name, theme, price_inr) values
   ('midnight', 'Midnight', '{"bg":"#111111","ink":"#F5F1E8","accent":"#D9A43B","font":"serif"}', 0),
   ('marigold', 'Marigold', '{"bg":"#FFF4E0","ink":"#3A1F00","accent":"#E0791B","font":"sans"}', 0)
 on conflict (code) do nothing;
+
+-- ---------------------------------------------------------------- idea topics and tags
+insert into mkt.idea_topics (slug, name, description, category_id, sort)
+select t.slug, t.name, t.description, c.id, t.sort
+from (values
+  ('bridal-makeup-looks', 'Bridal makeup looks', 'Bridal and party makeup by Tricity artists.', 'bridal-makeup', 1),
+  ('mehendi-designs', 'Mehendi designs', 'Bridal and guest mehendi designs.', 'mehendi-artists', 2),
+  ('wedding-decor', 'Wedding decor', 'Mandaps, stages, entrances and table decor.', 'decorators', 3),
+  ('wedding-venues', 'Wedding venues', 'Banquets, lawns, hotels and farmhouses, set up for weddings.', 'venues', 4),
+  ('wedding-photography', 'Wedding photography', 'Candid moments, portraits and pre-wedding shoots.', 'photographers', 5),
+  ('bridal-lehengas', 'Bridal outfits', 'Lehengas, sarees, shararas and sherwanis.', 'bridal-wear', 6),
+  ('bridal-jewellery', 'Bridal jewellery', 'Kundan, polki, gold and diamond bridal sets.', 'jewellery', 7),
+  ('wedding-food', 'Wedding food', 'Menus, live counters and food styling.', 'caterers', 8),
+  ('wedding-entertainment', 'Music and baraat', 'DJs, dhol and baraat moments.', 'djs-dhol', 9),
+  ('real-wedding-moments', 'Real wedding moments', 'Photos from real Tricity weddings.', null, 10)
+) as t(slug, name, description, cat, sort)
+left join mkt.categories c on c.slug = t.cat
+on conflict (slug) do nothing;
+
+insert into mkt.idea_tags (topic_id, slug, label, sort)
+select tp.id, t.slug, t.label, t.sort
+from (values
+  ('bridal-makeup-looks','subtle','Subtle',1), ('bridal-makeup-looks','glam','Glam',2), ('bridal-makeup-looks','airbrush','Airbrush',3), ('bridal-makeup-looks','smokey-eyes','Smokey eyes',4), ('bridal-makeup-looks','hairstyles','Hairstyles',5),
+  ('mehendi-designs','arabic','Arabic',1), ('mehendi-designs','traditional','Traditional',2), ('mehendi-designs','minimal','Minimal',3), ('mehendi-designs','portrait','Portrait',4), ('mehendi-designs','feet','Feet',5),
+  ('wedding-decor','mandap','Mandap',1), ('wedding-decor','stage','Stage',2), ('wedding-decor','floral','Floral',3), ('wedding-decor','haldi','Haldi',4), ('wedding-decor','mehendi','Mehendi',5), ('wedding-decor','lights','Lights',6), ('wedding-decor','entrance','Entrance',7),
+  ('wedding-venues','lawn','Lawns',1), ('wedding-venues','banquet','Banquets',2), ('wedding-venues','poolside','Poolside',3), ('wedding-venues','night','Night',4),
+  ('wedding-photography','candid','Candid',1), ('wedding-photography','couple-portraits','Couple portraits',2), ('wedding-photography','pre-wedding','Pre-wedding',3), ('wedding-photography','family','Family',4),
+  ('bridal-lehengas','red','Red',1), ('bridal-lehengas','pastel','Pastel',2), ('bridal-lehengas','pink','Pink',3), ('bridal-lehengas','gold','Gold',4), ('bridal-lehengas','groom','Groom',5),
+  ('bridal-jewellery','kundan','Kundan',1), ('bridal-jewellery','polki','Polki',2), ('bridal-jewellery','choker','Choker',3), ('bridal-jewellery','nath','Nath',4), ('bridal-jewellery','maang-tikka','Maang tikka',5),
+  ('wedding-food','live-counters','Live counters',1), ('wedding-food','desserts','Desserts',2), ('wedding-food','chaat','Chaat',3),
+  ('wedding-entertainment','baraat','Baraat',1), ('wedding-entertainment','sangeet','Sangeet',2), ('wedding-entertainment','dhol','Dhol',3),
+  ('real-wedding-moments','pheras','Pheras',1), ('real-wedding-moments','varmala','Varmala',2), ('real-wedding-moments','vidaai','Vidaai',3), ('real-wedding-moments','candid','Candid',4)
+) as t(topic, slug, label, sort)
+join mkt.idea_topics tp on tp.slug = t.topic
+on conflict (topic_id, slug) do nothing;

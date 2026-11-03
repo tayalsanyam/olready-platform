@@ -60,6 +60,12 @@ export default async function VendorHome({ searchParams }: P) {
               <dl className="mt-2 grid grid-cols-2 gap-1 text-sm">
                 <dt className="text-[var(--color-muted)]">Wedding</dt>
                 <dd>{n.event_date ?? 'Date not fixed'}</dd>
+                {n.guest_count ? (
+                  <>
+                    <dt className="text-[var(--color-muted)]">Guests</dt>
+                    <dd>About {n.guest_count}</dd>
+                  </>
+                ) : null}
                 <dt className="text-[var(--color-muted)]">Budget</dt>
                 <dd>{n.budget_inr != null ? formatInr(n.budget_inr) : (n.tier_label ?? 'Not shared')}</dd>
                 <dt className="text-[var(--color-muted)]">Also needs</dt>

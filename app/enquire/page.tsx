@@ -1,3 +1,5 @@
+import { after } from 'next/server';
+import { bump, visitorKey } from '@/lib/analytics';
 import { sql } from '@/lib/db';
 import { currentProfile } from '@/lib/auth';
 import { formatInr, listCategories, listCities } from '@/lib/catalog';
@@ -15,6 +17,7 @@ export default async function Enquire({ searchParams }: P) {
   const q = await searchParams;
   const [cats, cities, profile] = await Promise.all([listCategories(sql, { activeOnly: true }), listCities(sql), currentProfile()]);
   const vendor = sp(q.vendor) ? await getVendorBySlug(sql, sp(q.vendor)!) : null;
+  if (vendor?.status === 'live' && (await visitorKey())) after(() => bump(sql, [vendor.id], 'quote_starts').catch(() => undefined));
   const wedding = profile ? await weddingFor(sql, profile.id) : null;
   const preCat = sp(q.category);
   const preCity = cities.find((c) => c.slug === sp(q.city))?.id ?? vendor?.city_id ?? wedding?.city_id ?? cities[0]?.id;
@@ -51,6 +54,9 @@ export default async function Enquire({ searchParams }: P) {
           </Field>
           <Field label="Wedding date">
             <input name="event_date" type="date" className="input" defaultValue={wedding?.wedding_date ?? ''} />
+          </Field>
+          <Field label="Guests (approx.)" hint="Venues and caterers price per plate, so this helps them quote.">
+            <input name="guest_count" type="number" min={1} max={20000} inputMode="numeric" className="input" />
           </Field>
           <Field label="City *">
             <select name="city_id" className="input" defaultValue={preCity} required>

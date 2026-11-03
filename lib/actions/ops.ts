@@ -76,6 +76,18 @@ export async function opsSetBudget(fd: FormData) {
   });
 }
 
+export async function opsSetGuests(fd: FormData) {
+  await attempt(back(fd, '/ops/leads'), async () => {
+    const p = await requireRole(OPS);
+    const n = num(fd, 'guest_count');
+    if (n != null && (n < 1 || n > 20000)) throw new DomainError('bad_guests', 'Guests must be between 1 and 20,000');
+    const id = str(fd, 'lead_id');
+    await sql`update mkt.leads set guest_count = ${n} where id = ${id}`;
+    await audit(sql, p.id, 'lead.guests', 'lead', id, { guest_count: n });
+    return { ok: 'Guest count saved' };
+  });
+}
+
 export async function opsRemoveNeed(fd: FormData) {
   await attempt(back(fd, '/ops/leads'), async () => {
     const p = await requireRole(OPS);

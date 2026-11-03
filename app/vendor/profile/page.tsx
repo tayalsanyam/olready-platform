@@ -4,6 +4,8 @@ import { requireVendor } from '@/lib/vendorSession';
 import { fieldsFor } from '@/lib/catalog';
 import { vendorMedia } from '@/lib/vendors';
 import { addMedia, removeMedia, saveVendorProfile, setCoverAction } from '@/lib/actions/vendor';
+import { vendorTagPhoto } from '@/lib/actions/ideas';
+import { topicTags } from '@/lib/ideas';
 import { PhotoInput } from '@/components/PhotoInput';
 import { AttributeInputs } from '@/components/AttributeInputs';
 import { Badge, Card, Field, Notice, PageTitle } from '@/components/ui';
@@ -26,6 +28,9 @@ export default async function ProfilePage({ searchParams }: P) {
   const { profile, vendor } = await requireVendor('/vendor/profile');
   const [{ notify_email: notify }] = await sql<{ notify_email: boolean }[]>`select notify_email from mkt.profiles where id = ${profile.id}`;
   const [fields, media] = await Promise.all([fieldsFor(sql, vendor.category_id), vendorMedia(sql, vendor.id)]);
+  const [topic] = await sql<{ id: number; slug: string; name: string }[]>`
+    select id, slug, name from mkt.idea_topics where category_id = ${vendor.category_id}`;
+  const tags = topic ? await topicTags(sql, topic.id) : [];
   return (
     <>
       <PageTitle
@@ -130,6 +135,46 @@ export default async function ProfilePage({ searchParams }: P) {
           </ul>
         ) : null}
       </Card>
+
+      {media.length && topic ? (
+        <Card className="mt-6">
+          <h2 className="font-semibold">Help brides find your work</h2>
+          <p className="hint">
+            Your photos also appear in <Link className="underline" href={`/ideas/${topic.slug}`}>{topic.name}</Link> ideas, credited to you
+            with a link to your profile. A short caption and the right styles put them in front of brides searching for that look.
+          </p>
+          <ul className="mt-3 divide-y divide-[var(--color-line)]">
+            {media.map((m, i) => (
+              <li key={m.id} className="py-3">
+                <form action={vendorTagPhoto} className="flex gap-3">
+                  <input type="hidden" name="media_id" value={m.id} />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={m.url} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <input
+                      name="caption"
+                      defaultValue={m.caption}
+                      maxLength={140}
+                      placeholder="Caption, e.g. Pastel lehenga look for a day wedding"
+                      className="input py-1"
+                      aria-label={`Caption for photo ${i + 1}`}
+                    />
+                    <fieldset className="flex flex-wrap gap-1.5" aria-label={`Styles for photo ${i + 1}`}>
+                      {tags.map((t) => (
+                        <label key={t.slug} className="chip cursor-pointer has-[:checked]:border-[var(--color-pink)] has-[:checked]:bg-[var(--color-pink-soft)]">
+                          <input type="checkbox" name="tags" value={t.slug} defaultChecked={m.tags.includes(t.slug)} className="sr-only" />
+                          {t.label}
+                        </label>
+                      ))}
+                    </fieldset>
+                    <button className="btn btn-ghost btn-sm">Save</button>
+                  </div>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
     </>
   );
 }

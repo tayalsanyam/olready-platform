@@ -104,6 +104,48 @@ export function CategoryIcon({ slug, size = 28 }: { slug: string; size?: number 
           <circle cx="16.5" cy="16" r="2.5" />
         </svg>
       );
+    case 'venues':
+      return (
+        <svg {...b}>
+          <path d="M3.5 20h17M5 20V10l7-5 7 5v10" />
+          <path d="M10 20v-5a2 2 0 0 1 4 0v5M8 12h.01M16 12h.01" />
+        </svg>
+      );
+    case 'caterers':
+    case 'food-stalls':
+      return (
+        <svg {...b}>
+          <path d="M4 16h16M5 16a7 7 0 0 1 14 0M12 9V7.5M10.5 7.5h3M3.5 19h17" />
+        </svg>
+      );
+    case 'planners':
+      return (
+        <svg {...b}>
+          <rect x="4.5" y="5" width="15" height="15" rx="2" />
+          <path d="M4.5 9.5h15M8.5 3.5v3M15.5 3.5v3M8.5 14l2 2 4-4" />
+        </svg>
+      );
+    case 'bridal-wear':
+      return (
+        <svg {...b}>
+          <path d="M9 3.5h6l-1 4 4.5 12.5h-13L10 7.5l-1-4Z" />
+          <path d="M10 7.5h4M8 14c2.5 1 5.5 1 8 0" />
+        </svg>
+      );
+    case 'jewellery':
+      return (
+        <svg {...b}>
+          <path d="M7 4h10l3 5-8 11L4 9l3-5Z" />
+          <path d="M4 9h16M9.5 4 12 9l2.5-5M12 9v11" />
+        </svg>
+      );
+    case 'invitations':
+      return (
+        <svg {...b}>
+          <rect x="3.5" y="6" width="17" height="12" rx="1.5" />
+          <path d="m3.5 7 8.5 6 8.5-6" />
+        </svg>
+      );
     default:
       return (
         <svg {...b}>

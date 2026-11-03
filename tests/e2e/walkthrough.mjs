@@ -69,6 +69,7 @@ async function signInAs(name) {
 await step('home search lands on a city × category page', async () => {
   await go('/');
   await shot('home');
+  await page.getByLabel('Vendor type').selectOption('bridal-makeup');
   await page.getByRole('button', { name: 'Search' }).click();
   await page.waitForURL('**/vendors/chandigarh/bridal-makeup');
   await see('Bridal makeup artists in Chandigarh');

@@ -47,6 +47,9 @@ export async function Header() {
               </Link>
             </div>
           </details>
+          <Link href="/ideas" className="hover:text-[var(--color-pink)]">
+            Ideas
+          </Link>
           <Link href="/real-weddings" className="hover:text-[var(--color-pink)]">
             Real weddings
           </Link>
@@ -75,6 +78,9 @@ export async function Header() {
             {c.plural_name}
           </Link>
         ))}
+        <Link href="/ideas" className="chip">
+          Ideas
+        </Link>
         <Link href="/real-weddings" className="chip">
           Real weddings
         </Link>
@@ -121,6 +127,7 @@ export async function Footer() {
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] pt-5 text-xs text-[var(--color-muted)]">
           <p>An enquiry is a chance to connect with a vendor, not a confirmed booking. Support Monday to Saturday, 10:00 to 18:30 IST.</p>
           <div className="flex gap-4">
+            <Link href="/ideas">Ideas</Link>
             <Link href="/real-weddings">Real weddings</Link>
             <Link href="/vendors">All vendors</Link>
           </div>

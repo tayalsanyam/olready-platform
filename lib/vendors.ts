@@ -59,7 +59,7 @@ export type FilterDef = {
   slug: string;
   label: string;
   field: CategoryField;
-  value: string | true;
+  value: string | true | { min?: number; max?: number };
 };
 
 export function filtersFor(fields: CategoryField[]): FilterDef[] {
@@ -69,6 +69,9 @@ export function filtersFor(fields: CategoryField[]): FilterDef[] {
     if (f.type === 'bool' && f.seo_slug) out.push({ slug: f.seo_slug, label: f.label, field: f, value: true });
     if (f.type === 'select' || f.type === 'multiselect') {
       for (const o of f.options) if (o.seo) out.push({ slug: o.seo, label: o.label, field: f, value: o.value });
+    }
+    if (f.type === 'number' || f.type === 'money') {
+      for (const o of f.options) if (o.seo) out.push({ slug: o.seo, label: o.label, field: f, value: { min: o.min, max: o.max } });
     }
   }
   return out;
@@ -97,6 +100,10 @@ function browseWhere(db: Db, o: Omit<BrowseOpts, 'limit' | 'offset'>) {
     ? db``
     : f.value === true
       ? db`and (v.attributes ->> ${f.field.key}) = 'true'`
+      : typeof f.value === 'object'
+        ? db`and (v.attributes ->> ${f.field.key}) ~ '^[0-9]+$'
+            and (${f.value.min ?? null}::int is null or (v.attributes ->> ${f.field.key})::int >= ${f.value.min ?? null}::int)
+            and (${f.value.max ?? null}::int is null or (v.attributes ->> ${f.field.key})::int <= ${f.value.max ?? null}::int)`
       : f.field.type === 'multiselect'
         ? db`and (v.attributes -> ${f.field.key}) ? ${f.value}`
         : db`and (v.attributes ->> ${f.field.key}) = ${f.value}`;
@@ -153,8 +160,8 @@ export async function getVendorBySlug(db: Db, slug: string) {
 }
 
 export async function vendorMedia(db: Db, vendorId: string) {
-  return db<{ id: string; url: string; caption: string }[]>`
-    select id, url, caption from mkt.vendor_media where vendor_id = ${vendorId} order by sort, created_at`;
+  return db<{ id: string; url: string; caption: string; tags: string[] }[]>`
+    select id, url, caption, tags from mkt.vendor_media where vendor_id = ${vendorId} order by sort, created_at`;
 }
 
 export async function vendorForOwner(db: Db, profileId: string) {

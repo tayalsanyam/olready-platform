@@ -11,6 +11,7 @@ export type Lead = {
   email: string | null;
   city_id: number;
   event_date: string | null;
+  guest_count: number | null;
   source: string;
   status: 'new' | 'verifying' | 'verified' | 'rejected' | 'fake';
   verification_stage: number;
@@ -45,6 +46,7 @@ export type EnquiryInput = {
   email?: string | null;
   cityId: number;
   eventDate?: string | null;
+  guestCount?: number | null;
   source?: Lead['source'];
   needs: { categoryId: number; budgetInr?: number | null; preferredVendorIds?: string[] }[];
   directVendorId?: string | null;
@@ -64,9 +66,10 @@ export async function createEnquiry(sql: Sql, input: EnquiryInput) {
   const phone = normalisePhone(input.phone);
   return sql.begin(async (tx) => {
     const [lead] = await tx<Lead[]>`
-      insert into mkt.leads (wedding_id, bride_profile_id, bride_name, phone, email, city_id, event_date, source)
+      insert into mkt.leads (wedding_id, bride_profile_id, bride_name, phone, email, city_id, event_date, guest_count, source)
       values (${input.weddingId ?? null}, ${input.brideProfileId ?? null}, ${input.name.trim()}, ${phone},
         ${input.email?.toLowerCase() ?? null}, ${input.cityId}, ${input.eventDate || null},
+        ${input.guestCount && input.guestCount > 0 && input.guestCount <= 20000 ? Math.round(input.guestCount) : null},
         ${input.directVendorId ? 'direct_request' : (input.source ?? 'website')})
       returning *`;
     const seen = new Set<number>();
@@ -234,6 +237,7 @@ export type NeedCard = {
   bride_first_name: string;
   city_name: string;
   event_date: string | null;
+  guest_count: number | null;
   tier_label: string | null;
   budget_inr: number | null;
   unlocks: number;
@@ -251,7 +255,7 @@ export async function visibleNeeds(db: Db, vendorId: string) {
     with v as (select * from mkt.vendors where id = ${vendorId} and status = 'live')
     select ln.id as need_id, l.id as lead_id, ln.category_id, c.name as category_name,
            split_part(l.bride_name, ' ', 1) as bride_first_name, ci.name as city_name,
-           to_char(l.event_date, 'YYYY-MM-DD') as event_date, bt.label as tier_label, ln.budget_inr,
+           to_char(l.event_date, 'YYYY-MM-DD') as event_date, l.guest_count, bt.label as tier_label, ln.budget_inr,
            (select count(*) from mkt.unlocks u where u.lead_need_id = ln.id and not u.refunded)::int as unlocks,
            ln.unlock_cap, c.unlock_credit_cost as credit_cost, (ln.direct_vendor_id is not null) as direct,
            (v.id = any(ln.preferred_vendor_ids)) as shortlisted,

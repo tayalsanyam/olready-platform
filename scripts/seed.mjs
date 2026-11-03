@@ -49,6 +49,18 @@ try {
     ['djs-dhol', 'DJ Baraat Beats', chd, 35000, { services: ['dj', 'sound'], hours_included: 5 }, true, false],
     ['djs-dhol', 'Punjab Dhol Crew', moh, 15000, { services: ['dhol'], hours_included: 3 }, false, false],
     ['djs-dhol', 'Sangeet Sound Co', chd, 28000, { services: ['dj', 'dhol', 'sound'], hours_included: 6 }, true, false],
+    ['venues', 'Rosewood Banquets', chd, 1400, { venue_type: 'banquet', capacity_max: 600, non_veg_per_plate: 1700, rooms: 0, setting: ['indoor'], alcohol_allowed: true, outside_catering: false, outside_decor: true }, true, true],
+    ['venues', 'Sukhna Greens Lawn', moh, 1100, { venue_type: 'lawn', capacity_max: 1500, non_veg_per_plate: 1350, setting: ['outdoor'], alcohol_allowed: true, outside_catering: true, outside_decor: true }, true, false],
+    ['venues', 'Shivalik Courtyard Hotel', pkl, 2200, { venue_type: 'hotel', capacity_max: 250, non_veg_per_plate: 2600, rooms: 48, setting: ['indoor', 'poolside'], alcohol_allowed: true, outside_catering: false, outside_decor: false }, true, false],
+    ['venues', 'Mango Orchard Farm', moh, 1600, { venue_type: 'farmhouse', capacity_max: 150, non_veg_per_plate: 1900, rooms: 6, setting: ['outdoor'], alcohol_allowed: true, outside_catering: true, outside_decor: true }, false, false],
+    ['caterers', 'Tandoor Tales Catering', chd, 850, { food_type: 'veg_nonveg', cuisines: ['punjabi', 'north_indian', 'live_counters'], min_guests: 100, non_veg_per_plate: 1050 }, true, false],
+    ['caterers', 'Shudh Rasoi', pkl, 650, { food_type: 'veg', cuisines: ['punjabi', 'south_indian', 'chinese'], min_guests: 50 }, true, false],
+    ['planners', 'Shubh Vivah Planners', chd, 150000, { services: ['full', 'design'], weddings_done: 140, fee_model: 'fixed' }, true, false],
+    ['planners', 'Day-Of Darlings', moh, 40000, { services: ['coordination'], weddings_done: 60, fee_model: 'fixed' }, false, false],
+    ['bridal-wear', 'Zari Lane Couture', chd, 65000, { wear_type: ['lehenga', 'sharara'], rental: false, custom_made: true }, true, false],
+    ['bridal-wear', 'Rent-a-Lehenga Studio', moh, 9000, { wear_type: ['lehenga', 'saree', 'sherwani'], rental: true, custom_made: false }, false, false],
+    ['jewellery', 'Kundan Kothi Jewellers', chd, 180000, { jewellery_type: ['gold', 'kundan'], rental: false, certified: true }, true, false],
+    ['jewellery', 'Glimmer Rentals', pkl, 7000, { jewellery_type: ['artificial', 'kundan'], rental: true, certified: false }, false, false],
   ];
   const slugs = {};
   let i = 0;
@@ -69,6 +81,32 @@ try {
       await sql`insert into mkt.credit_ledger (vendor_id, credit_kind, delta, reason, note) values (${v}, 'topup', 10, 'adjustment', 'demo credits')`;
     }
   }
+  // Work photos (original abstract placeholders) for every demo vendor except Glow by Kirti,
+  // whose owner uploads photos during the walkthrough. Tags put them into the ideas gallery.
+  const demoTags = {
+    'bridal-makeup': [['glam', 'smokey-eyes'], ['subtle', 'hairstyles']],
+    'mehendi-artists': [['arabic', 'minimal'], ['traditional', 'feet']],
+    decorators: [['mandap', 'floral'], ['stage', 'lights']],
+    venues: [['lawn', 'night'], ['banquet']],
+    photographers: [['candid', 'couple-portraits'], ['pre-wedding']],
+    'bridal-wear': [['red', 'gold'], ['pastel', 'pink']],
+    jewellery: [['kundan', 'choker'], ['polki', 'maang-tikka']],
+    caterers: [['live-counters', 'chaat'], ['desserts']],
+    'djs-dhol': [['baraat', 'dhol'], ['sangeet']],
+    planners: [[], []],
+  };
+  let photo = 0;
+  for (const [c, name] of vendors) {
+    if (name === 'Glow by Kirti') continue;
+    const [{ id: vid }] = await sql`select id from mkt.vendors where slug = ${slugs[name]}`;
+    const tagSets = demoTags[c] ?? [[], []];
+    for (let k = 0; k < 2; k++) {
+      const url = `/demo/demo-${(photo++ % 12) + 1}.jpg`;
+      await sql`insert into mkt.vendor_media (vendor_id, url, caption, tags, sort) values (${vid}, ${url}, ${`${name}, sample ${k + 1}`}, ${tagSets[k]}, ${k})`;
+      if (k === 0) await sql`update mkt.vendors set cover_image_url = ${url} where id = ${vid}`;
+    }
+  }
+
   // One draft profile Ops built, waiting to be claimed.
   await sql`
     insert into mkt.vendors (category_id, city_id, service_city_ids, slug, business_name, attributes, email, status, claim_status)
@@ -99,7 +137,7 @@ try {
 
   await sql`update mkt.gateway_settings set enabled = true where gateway in ('manual', 'test')`;
   await sql`insert into mkt.audit_log (actor_profile_id, action, entity) values (${admin}, 'demo.seed', 'system')`;
-  console.log('Demo data loaded: 16 live vendors, 1 unclaimed draft, 1 lead to verify, 1 real wedding');
+  console.log(`Demo data loaded: ${vendors.length} live vendors, 1 unclaimed draft, 1 lead to verify, 1 real wedding`);
 } finally {
   await sql.end();
 }

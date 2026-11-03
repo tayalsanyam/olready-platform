@@ -6,6 +6,7 @@ import { Tabs } from '@/components/ui';
 const items = [
   { href: '/vendor', label: 'Leads' },
   { href: '/vendor/threads', label: 'Conversations' },
+  { href: '/vendor/insights', label: 'Insights' },
   { href: '/vendor/profile', label: 'Profile' },
   { href: '/vendor/packs', label: 'Credits and plans' },
   { href: '/vendor/reviews', label: 'Reviews' },

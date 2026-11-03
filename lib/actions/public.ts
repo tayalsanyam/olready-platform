@@ -38,6 +38,7 @@ export async function submitEnquiry(fd: FormData) {
       email,
       cityId,
       eventDate: str(fd, 'event_date') || null,
+      guestCount: Number(str(fd, 'guest_count')) || null,
       needs,
       directVendorId: direct?.id ?? null,
     });

@@ -3,7 +3,7 @@ import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { formatInr, listCategories } from '@/lib/catalog';
 import type { Lead } from '@/lib/leads';
-import { opsAddNeed, opsAdvance, opsMarkFake, opsRejectLead, opsRemoveNeed, opsReopen, opsSetBudget } from '@/lib/actions/ops';
+import { opsAddNeed, opsAdvance, opsMarkFake, opsRejectLead, opsRemoveNeed, opsReopen, opsSetBudget, opsSetGuests } from '@/lib/actions/ops';
 import { Badge, Card, Notice, PageTitle } from '@/components/ui';
 
 export const metadata = { title: 'Verify lead' };
@@ -52,6 +52,7 @@ export default async function VerifyLead({ params, searchParams }: P) {
             {lead.email ? <span>{lead.email}</span> : null}
             <span>· {lead.city}</span>
             <span>· wedding {lead.event ?? 'not fixed'}</span>
+            {lead.guest_count ? <span>· about {lead.guest_count} guests</span> : null}
             <span>· via {lead.source}</span>
             <Badge tone={lead.status === 'verified' ? 'ok' : closed ? 'bad' : 'warn'}>{lead.status}</Badge>
           </span>
@@ -60,6 +61,15 @@ export default async function VerifyLead({ params, searchParams }: P) {
       <Notice error={q.error} ok={q.ok} />
       <div className="grid gap-5 lg:grid-cols-[3fr_2fr]">
         <div className="space-y-5">
+          <form action={opsSetGuests} className="flex flex-wrap items-end gap-2">
+            <input type="hidden" name="lead_id" value={lead.id} />
+            <input type="hidden" name="_back" value={self} />
+            <label className="text-sm">
+              <span className="block text-[var(--color-muted)]">Guests (ask on the call; venues and caterers need it)</span>
+              <input name="guest_count" type="number" min={1} max={20000} defaultValue={lead.guest_count ?? ''} className="input w-32 py-1" />
+            </label>
+            <button className="btn btn-ghost btn-sm">Save guests</button>
+          </form>
           <Card>
             <h2 className="font-semibold">Categories</h2>
             <div className="-mx-4 mt-2 overflow-x-auto px-4">

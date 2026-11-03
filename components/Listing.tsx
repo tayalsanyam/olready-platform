@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { after } from 'next/server';
+import { bump, visitorKey } from '@/lib/analytics';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { sql } from '@/lib/db';
@@ -58,6 +60,7 @@ export async function ListingPage({
   const { city, category, fields, filters, filter, vendors, total, pages } = r;
   const here = landingPath(city, category, filter);
   const viewer = await currentProfile();
+  if (vendors.length && (await visitorKey())) after(() => bump(sql, vendors.map((v) => v.id), 'impressions').catch(() => undefined));
   const hearts = await shortlistedIds(sql, viewer?.role === 'bride' ? viewer.id : null);
   const withSort = (path: string, p = 1) => {
     const q = new URLSearchParams();

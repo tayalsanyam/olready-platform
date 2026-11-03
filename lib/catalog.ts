@@ -1,7 +1,8 @@
 import type { Db } from './db';
 import { DomainError } from './db';
 
-export type FieldOption = { value: string; label: string; seo?: string };
+/** For number fields, min/max turn an option into a range filter ("500+ guests"). */
+export type FieldOption = { value: string; label: string; seo?: string; min?: number; max?: number };
 export type CategoryField = {
   id: number;
   category_id: number;

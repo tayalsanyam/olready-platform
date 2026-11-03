@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { after } from 'next/server';
+import { recordView, visitorKey } from '@/lib/analytics';
 import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { currentProfile, STAFF_ROLES } from '@/lib/auth';
@@ -55,6 +57,10 @@ export default async function VendorPage({ params, searchParams }: P) {
   const isOwner = viewer && raw.owner_profile_id === viewer.id;
   const isStaff = viewer && STAFF_ROLES.includes(viewer.role);
   if (raw.status !== 'live' && !isOwner && !isStaff) notFound();
+  if (raw.status === 'live' && !isOwner && !isStaff) {
+    const visitor = await visitorKey();
+    after(() => recordView(sql, raw.id, visitor).catch(() => undefined));
+  }
   // Contact details never reach the bride's browser.
   const v = publicVendor(raw);
   const [fields, media, reviews, weddings, hearts] = await Promise.all([
