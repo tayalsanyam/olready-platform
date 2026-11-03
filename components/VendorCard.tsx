@@ -26,6 +26,12 @@ export function VendorCard({
       const shown = displayValue(f, v.attributes[f.key]);
       if (shown == null) return null;
       if (f.type === 'bool') return v.attributes[f.key] ? f.label : null;
+      // Numbers need their label to mean anything on a card: "Up to 1,500 guests", "Non-veg ₹1,350".
+      if (f.type === 'money') return `${f.label.replace(/ per plate$/i, '')} ${shown}`;
+      if (f.type === 'number') {
+        const n = Number(v.attributes[f.key]).toLocaleString('en-IN');
+        return f.key === 'capacity_max' ? `Up to ${n} guests` : `${f.label}: ${n}`;
+      }
       return shown;
     })
     .filter(Boolean)
