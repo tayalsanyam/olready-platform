@@ -274,7 +274,10 @@ export async function visibleNeeds(db: Db, vendorId: string) {
     where (l.city_id = v.city_id or l.city_id = any(v.service_city_ids))
       and (ln.direct_vendor_id is null or ln.direct_vendor_id = v.id)
       and not exists (select 1 from mkt.unlocks u where u.lead_need_id = ln.id and u.vendor_id = v.id)
-    order by (ln.direct_vendor_id is not null) desc, (v.id = any(ln.preferred_vendor_ids)) desc, l.verified_at desc`;
+      -- A wedding that has already happened is not a lead.
+      and (l.event_date is null or l.event_date >= (now() at time zone 'Asia/Kolkata')::date)
+    order by (ln.direct_vendor_id is not null) desc, (v.id = any(ln.preferred_vendor_ids)) desc, l.verified_at desc
+    limit 200`;
 }
 
 // ---------------------------------------------------------------- unlock

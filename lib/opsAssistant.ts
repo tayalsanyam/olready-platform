@@ -84,7 +84,7 @@ export async function assistantAllowance(db: Db, profileId: string) {
   const [perPerson, team] = await Promise.all([getSetting<number>(db, 'ops_assistant_per_person_day', 150), getSetting<number>(db, 'ops_assistant_team_day', 1000)]);
   const [u] = await db<{ mine: number; all: number }[]>`
     select count(*) filter (where profile_id = ${profileId})::int as mine, count(*)::int as all
-    from mkt.ops_assistant_log where created_at >= ${today()}::date and kind = 'ask'`;
+    from mkt.ops_assistant_log where created_at >= (${today()}::date)::timestamp at time zone 'Asia/Kolkata' and kind = 'ask'`;
   return { perPerson, team, mine: u.mine, all: u.all, left: Math.max(0, Math.min(perPerson - u.mine, team - u.all)) };
 }
 

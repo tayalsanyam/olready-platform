@@ -529,7 +529,7 @@ export async function allowance(db: Db, profileId: string) {
   const [u] = await db<{ mine: number; all: number }[]>`
     select count(*) filter (where t.profile_id = ${profileId})::int as mine, count(*)::int as all
     from mkt.assistant_messages m join mkt.assistant_threads t on t.id = m.thread_id
-    where m.role = 'user' and m.text <> '' and m.created_at >= ${today()}::date`;
+    where m.role = 'user' and m.text <> '' and m.created_at >= (${today()}::date)::timestamp at time zone 'Asia/Kolkata'`;
   return { on: Boolean(on) && aiEnabled(), left: Math.max(0, Math.min(perDay - u.mine, siteDay - u.all)), perDay };
 }
 

@@ -188,7 +188,7 @@ export async function queuePostEventFeedback(db: Db) {
     join mkt.vendors v on v.id = ln.booked_vendor_id
     left join mkt.profiles p on p.id = l.bride_profile_id
     where ln.status = 'closed_booked' and l.event_date is not null
-      and l.event_date between current_date - 14 and current_date - 1
+      and l.event_date between (now() at time zone 'Asia/Kolkata')::date - 14 and (now() at time zone 'Asia/Kolkata')::date - 1
       and coalesce(p.email, l.email) is not null`;
   for (const r of rows) {
     await queueEmail(

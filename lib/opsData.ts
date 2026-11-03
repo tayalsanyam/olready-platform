@@ -394,14 +394,58 @@ function where(db: Db, d: DataSet, f: Filters) {
   return parts.reduce((a, p, i) => (i ? db`${a} and ${p}` : p));
 }
 
+/** Splits a select list into alias → expression, so sorting can use the expression directly. */
+function selectMap(select: string) {
+  const items: string[] = [];
+  let depth = 0;
+  let quote = false;
+  let cur = '';
+  for (const ch of select) {
+    if (ch === "'") quote = !quote;
+    if (!quote && ch === '(') depth++;
+    if (!quote && ch === ')') depth--;
+    if (!quote && depth === 0 && ch === ',') {
+      items.push(cur.trim());
+      cur = '';
+    } else cur += ch;
+  }
+  if (cur.trim()) items.push(cur.trim());
+  const map = new Map<string, string>();
+  for (const it of items) {
+    const m = it.match(/^([\s\S]*?)\s+as\s+([a-z_]+)$/i);
+    if (m) map.set(m[2], m[1]);
+    else map.set(it.split('.').pop()!.trim(), it);
+  }
+  return map;
+}
+
+/**
+ * One page of a list. Rows are picked first using only the filter and sort columns, then the
+ * full row (with its per-row counts) is built for those rows alone, so a page costs the same
+ * whether the table holds a hundred rows or a million.
+ */
 export async function runDataset(db: Db, d: DataSet, f: Filters, page = 1, size = 50) {
-  const sortCol = d.columns.find((c) => c.key === f.sort)?.key;
-  const order = sortCol ? db`${db(sortCol)} ${f.dir === 'asc' ? db`asc` : db`desc`} nulls last` : db`created_at desc nulls last`;
+  const cols = selectMap(d.select);
+  const idExpr = cols.get('id')!;
+  const sortKey = d.columns.find((c) => c.key === f.sort)?.key;
+  const dir = f.dir === 'asc' ? db`asc` : db`desc`;
+  // The default order matches the date indexes (newest first), so page 1 is an index scan.
+  const order = sortKey && cols.has(sortKey) ? db`${db.unsafe(cols.get(sortKey)!)} ${dir} nulls last` : db`${db.unsafe(d.dateCol)} desc`;
   const w = where(db, d, f);
-  const [rows, [{ n }]] = await Promise.all([
-    db<Record<string, unknown>[]>`select * from (select ${db.unsafe(d.select)} from ${db.unsafe(d.from)} where ${w}) x order by ${order} limit ${size} offset ${(page - 1) * size}`,
+  const [ids, [{ n }]] = await Promise.all([
+    db<{ id: string; t: string }[]>`
+      select ${db.unsafe(idExpr)}::text as id, pg_typeof(${db.unsafe(idExpr)})::text as t
+      from ${db.unsafe(d.from)} where ${w} order by ${order}, ${db.unsafe(idExpr)} desc limit ${size} offset ${(page - 1) * size}`,
     db<{ n: number }[]>`select count(*)::int as n from ${db.unsafe(d.from)} where ${w}`,
   ]);
+  if (!ids.length) return { rows: [], total: n };
+  const list = ids.map((r) => r.id);
+  // Compare in the id's own type so the primary key index is used.
+  const type = /^[a-z ]+$/.test(ids[0].t) ? ids[0].t : 'text';
+  const rows = await db<Record<string, unknown>[]>`
+    select ${db.unsafe(d.select)} from ${db.unsafe(d.from)} where ${db.unsafe(idExpr)} = any(${list}::${db.unsafe(type)}[])`;
+  const at = new Map(list.map((id, i) => [id, i]));
+  rows.sort((a, b) => (at.get(String(a.id)) ?? 0) - (at.get(String(b.id)) ?? 0));
   return { rows, total: n };
 }
 

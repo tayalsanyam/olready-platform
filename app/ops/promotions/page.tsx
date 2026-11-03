@@ -20,7 +20,7 @@ export default async function Promotions({ searchParams }: P) {
     sql<{ wallet_in: number; boost_7d: number; banners_month: number }[]>`
       select
         (select coalesce(sum(delta_inr), 0) from mkt.ad_wallet_ledger where reason = 'topup' and created_at > now() - interval '30 days')::int as wallet_in,
-        (select coalesce(sum(charged_inr), 0) from mkt.boost_visits where day > current_date - 7)::int as boost_7d,
+        (select coalesce(sum(charged_inr), 0) from mkt.boost_visits where day > (now() at time zone 'Asia/Kolkata')::date - 7)::int as boost_7d,
         (select coalesce(sum(price_inr), 0) from mkt.banners where status = 'approved' and month = date_trunc('month', now())::date)::int as banners_month`,
   ]);
   const pending = banners.filter((b) => b.status === 'pending');

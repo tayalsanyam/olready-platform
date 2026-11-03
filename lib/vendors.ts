@@ -384,7 +384,7 @@ export async function similarVendors(db: Db, v: { id: string; category_id: numbe
 export async function recentDemand(db: Db, vendorId: string) {
   const [{ n }] = await db<{ n: number }[]>`
     select (
-      coalesce((select sum(quote_starts) from mkt.vendor_daily where vendor_id = ${vendorId} and day > current_date - 7), 0)
+      coalesce((select sum(quote_starts) from mkt.vendor_daily where vendor_id = ${vendorId} and day > (now() at time zone 'Asia/Kolkata')::date - 7), 0)
       + (select count(*) from mkt.lead_needs where direct_vendor_id = ${vendorId} and created_at > now() - interval '7 days')
     )::int as n`;
   return n;

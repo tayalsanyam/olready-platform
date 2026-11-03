@@ -67,7 +67,7 @@ export async function approveEngagement(db: Db, id: string, rmProfileId: string,
       starts_at = now(),
       ends_at = least(
         now() + make_interval(days => e.length_days),
-        coalesce((select (w.wedding_date + 1)::timestamptz from mkt.weddings w where w.id = e.wedding_id and w.wedding_date >= current_date), 'infinity')
+        coalesce((select (w.wedding_date + 1)::timestamptz from mkt.weddings w where w.id = e.wedding_id and w.wedding_date >= (now() at time zone 'Asia/Kolkata')::date), 'infinity')
       )
     where id = ${id} and status = 'pending_approval' returning id`;
   if (!e) throw new DomainError('bad_state', 'This request is not waiting for approval');

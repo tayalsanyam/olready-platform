@@ -22,7 +22,7 @@ export default async function BrideAi({ searchParams }: P) {
     getSetting<number>(sql, 'bride_assistant_on', 1),
     sql<{ q_today: number; q_week: number; brides_week: number; up: number; down: number; flagged: number; actions_done: number; actions_total: number }[]>`
       select
-        (select count(*)::int from mkt.assistant_messages where role = 'user' and text <> '' and created_at >= current_date) as q_today,
+        (select count(*)::int from mkt.assistant_messages where role = 'user' and text <> '' and (created_at at time zone 'Asia/Kolkata')::date = (now() at time zone 'Asia/Kolkata')::date) as q_today,
         (select count(*)::int from mkt.assistant_messages where role = 'user' and text <> '' and created_at > now() - interval '7 days') as q_week,
         (select count(distinct t.profile_id)::int from mkt.assistant_threads t where t.updated_at > now() - interval '7 days') as brides_week,
         (select count(*)::int from mkt.assistant_feedback where helpful and created_at > now() - interval '7 days') as up,
@@ -31,8 +31,8 @@ export default async function BrideAi({ searchParams }: P) {
         (select count(*)::int from mkt.assistant_actions where status = 'done' and created_at > now() - interval '7 days') as actions_done,
         (select count(*)::int from mkt.assistant_actions where created_at > now() - interval '7 days') as actions_total`,
     sql<{ day: string; questions: number }[]>`
-      select to_char(d, 'DD Mon') as day, (select count(*)::int from mkt.assistant_messages m where m.role = 'user' and m.text <> '' and m.created_at::date = d) as questions
-      from generate_series(current_date - 13, current_date, interval '1 day') d order by d`,
+      select to_char(d, 'DD Mon') as day, (select count(*)::int from mkt.assistant_messages m where m.role = 'user' and m.text <> '' and (m.created_at at time zone 'Asia/Kolkata')::date = d::date) as questions
+      from generate_series((now() at time zone 'Asia/Kolkata')::date - 13, (now() at time zone 'Asia/Kolkata')::date, interval '1 day') d order by d`,
     show === 'flagged'
       ? sql<{ id: string; thread_id: string; text: string; flags: string[]; created_at: Date; question: string | null }[]>`
           select m.id, m.thread_id, m.text, m.flags, m.created_at,

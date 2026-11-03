@@ -27,7 +27,7 @@ export async function readQuote(db: Db, quoteId: string): Promise<QuoteReading |
     join mkt.categories c on c.id = ln.category_id where q.id = ${quoteId}`;
   if (!q || q.done || q.details.trim().length < 20) return null;
   const cap = await getSetting<number>(db, 'quote_reader_site_day', 4000);
-  const [{ n }] = await db<{ n: number }[]>`select count(*)::int as n from mkt.quote_readings where created_at >= ${today()}::date`;
+  const [{ n }] = await db<{ n: number }[]>`select count(*)::int as n from mkt.quote_readings where created_at >= (${today()}::date)::timestamp at time zone 'Asia/Kolkata'`;
   if (n >= cap) return null;
   const text = await askClaude({
     model: process.env.ANTHROPIC_QUOTE_MODEL ?? 'claude-haiku-5-5',
