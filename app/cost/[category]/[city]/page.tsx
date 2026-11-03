@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
-import { costEntries, costGuide, costPath, costTitle } from '@/lib/costGuide';
-import { formatInr, listCities } from '@/lib/catalog';
+import { costGuide, costPath, costTitle, costTowns } from '@/lib/costGuide';
+import { formatInr } from '@/lib/catalog';
 import { CostGuidePage } from '@/components/CostGuidePage';
 
 type P = { params: Promise<{ category: string; city: string }> };
@@ -22,7 +22,6 @@ export default async function Page({ params }: P) {
   const { category, city } = await params;
   const g = await costGuide(sql, category, city);
   if (!g) notFound();
-  const entries = new Set((await costEntries(sql)).map((e) => e.path));
-  const others = (await listCities(sql)).filter((c) => c.slug !== city && entries.has(costPath(category, c.slug)));
+  const others = await costTowns(sql, category, city);
   return <CostGuidePage g={g} otherCities={others} />;
 }

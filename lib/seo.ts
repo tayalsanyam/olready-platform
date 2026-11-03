@@ -1,6 +1,6 @@
 import type { Db } from './db';
 import { getSetting } from './db';
-import { type Category, type City, fieldsFor, formatInr, listCategories, listCities } from './catalog';
+import { type Category, type City, fieldsFor, formatInr, listCategories } from './catalog';
 import { type FilterDef, type VendorCard, countVendors, filtersFor } from './vendors';
 
 export const siteUrl = () => (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
@@ -44,19 +44,41 @@ export async function indexable(db: Db, vendorCount: number) {
 export type LandingEntry = { path: string; vendors: number; title: string };
 
 /** Every city × category × filter page worth listing in the sitemap. */
+/**
+ * Every listing page worth indexing, across India: the India-wide page per category, each town per
+ * category with enough vendors, its filter pages, and its area pages ("Wedding venues in Sector 35,
+ * Chandigarh"). One grouped query finds the towns and areas; filters are counted only where a town
+ * already qualifies.
+ */
 export async function landingEntries(db: Db): Promise<LandingEntry[]> {
-  const [cats, cities] = await Promise.all([listCategories(db, { activeOnly: true }), listCities(db)]);
+  const cats = await listCategories(db, { activeOnly: true });
   const min = await getSetting(db, 'min_vendors_to_index', 3);
+  const towns = await db<(City & { category_id: number; n: number })[]>`
+    select c.*, v.category_id, count(distinct v.id)::int as n
+    from mkt.vendors v join mkt.cities c on c.id = v.city_id or c.id = any(v.service_city_ids)
+    where v.status = 'live' and c.active group by c.id, v.category_id having count(distinct v.id) >= ${min}
+    order by c.launched desc, c.sort, c.name`;
+  const areas = await db<{ city_slug: string; city_name: string; category_id: number; slug: string; name: string; n: number }[]>`
+    select c.slug as city_slug, c.name as city_name, v.category_id, l.slug, l.name, count(*)::int as n
+    from mkt.vendors v join mkt.localities l on l.id = v.locality_id join mkt.cities c on c.id = l.city_id
+    where v.status = 'live' and l.active group by c.slug, c.name, v.category_id, l.slug, l.name having count(*) >= ${min}`;
+  const national = await db<{ category_id: number; n: number }[]>`
+    select category_id, count(*)::int as n from mkt.vendors where status = 'live' group by category_id having count(*) >= ${min}`;
   const out: LandingEntry[] = [];
   for (const cat of cats) {
+    const nat = national.find((x) => x.category_id === cat.id);
+    if (nat) out.push({ path: `/vendors/india/${cat.slug}`, vendors: nat.n, title: `${cat.plural_name} in India` });
+    const here = towns.filter((t) => t.category_id === cat.id);
+    if (!here.length) continue;
     const filters = filtersFor(await fieldsFor(db, cat.id), cat.price_bands ?? []);
-    for (const city of cities) {
-      const base = await countVendors(db, { categoryId: cat.id, cityId: city.id });
-      if (base < min) continue;
-      out.push({ path: landingPath(city, cat), vendors: base, title: landingTitle(cat, city) });
+    for (const city of here) {
+      out.push({ path: landingPath(city, cat), vendors: city.n, title: landingTitle(cat, city) });
       for (const f of filters) {
         const n = await countVendors(db, { categoryId: cat.id, cityId: city.id, filter: f });
         if (n >= min) out.push({ path: landingPath(city, cat, f), vendors: n, title: landingTitle(cat, city, f) });
+      }
+      for (const a of areas.filter((x) => x.category_id === cat.id && x.city_slug === city.slug)) {
+        out.push({ path: landingPath(city, cat, a), vendors: a.n, title: landingTitle(cat, { ...city, name: `${a.name}, ${city.name}` }) });
       }
     }
   }
@@ -94,7 +116,16 @@ export function vendorLd(
     name: v.business_name,
     url: `${siteUrl()}/v/${v.slug}`,
     description: v.tagline || v.about.slice(0, 200),
-    address: { '@type': 'PostalAddress', addressLocality: v.city_name, ...(extra.state ? { addressRegion: extra.state } : {}), addressCountry: 'IN' },
+    address: {
+      '@type': 'PostalAddress',
+      ...(v.address_public && v.address_line ? { streetAddress: [v.address_line, v.locality_name].filter(Boolean).join(', ') } : {}),
+      addressLocality: v.locality_name && !v.address_public ? `${v.locality_name}, ${v.city_name}` : v.city_name,
+      ...(extra.state || v.state_name ? { addressRegion: extra.state ?? v.state_name } : {}),
+      ...(v.pincode ? { postalCode: v.pincode } : {}),
+      addressCountry: 'IN',
+    },
+    ...(v.address_public && v.lat && v.lng ? { geo: { '@type': 'GeoCoordinates', latitude: Number(v.lat), longitude: Number(v.lng) } } : {}),
+    ...(v.address_public && v.maps_url ? { hasMap: v.maps_url } : {}),
     ...(extra.areaServed?.length ? { areaServed: extra.areaServed.map((name) => ({ '@type': 'City', name })) } : {}),
     ...(images.length ? { image: images } : {}),
     ...(extra.reviews?.length

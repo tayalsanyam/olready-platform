@@ -14,7 +14,7 @@ import { IdeaGrid } from '@/components/IdeaGrid';
 export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'Search by photo: find vendors for the look you love',
-  description: 'Show us a bridal look, mehendi design, decor or outfit you love and see Tricity vendors known for that style.',
+  description: 'Show us a bridal look, mehendi design, decor or outfit you love and see vendors known for that style.',
   alternates: { canonical: '/look' },
 };
 type P = { searchParams: Promise<Record<string, string | string[]>> };

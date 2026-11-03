@@ -40,7 +40,7 @@ export default async function AssistantPage({ searchParams }: P) {
   if (wedding) {
     starters.push('What should I book next, and by when?', 'Compare my quotes for me', `Suggest a budget split for my wedding${city ? ` in ${city.name}` : ''}`);
   } else {
-    starters.push(`Find a venue in ${city?.name ?? 'Chandigarh'} for 300 guests`, 'Where do I start planning a wedding?', 'How much does bridal makeup cost in the Tricity?');
+    starters.push(city ? `Find a venue in ${city.name} for 300 guests` : 'Find a venue for 300 guests', 'Where do I start planning a wedding?', 'How much does bridal makeup cost in the Tricity?');
   }
   starters.push('Show me mehendi designs I might like');
 

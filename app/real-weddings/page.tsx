@@ -12,8 +12,8 @@ export async function generateMetadata({ searchParams }: P) {
   const q = await searchParams;
   const filtered = Boolean(sp(q.city) || sp(q.culture));
   return {
-    title: 'Real weddings from the Tricity',
-    description: 'Real weddings from Chandigarh, Mohali and Panchkula, by city and culture, with every vendor credited.',
+    title: 'Real weddings',
+    description: 'Real Indian weddings by town and culture, with every vendor credited.',
     alternates: { canonical: '/real-weddings' },
     robots: filtered ? { index: false, follow: true } : undefined,
   };

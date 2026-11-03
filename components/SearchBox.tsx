@@ -81,7 +81,7 @@ export function SearchBox({ cities, defaultCity = '' }: { cities: { slug: string
         className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm outline-none"
       />
       <select value={city} onChange={(e) => setCity(e.target.value)} aria-label="City" className="max-w-[7.5rem] shrink-0 rounded-r-full bg-transparent py-2 pr-3 text-sm text-[var(--color-muted)] outline-none">
-        <option value="">All cities</option>
+        <option value="">All India</option>
         {cities.map((c) => (
           <option key={c.slug} value={c.slug}>
             {c.name}

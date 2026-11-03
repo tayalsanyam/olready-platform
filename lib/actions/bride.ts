@@ -1,5 +1,6 @@
 'use server';
 
+import { resolvePlace } from '../locations';
 import { saveWeddingInvite } from '../invites';
 import { filesFrom, storeImage } from '../storage';
 
@@ -42,11 +43,13 @@ async function requireWedding(next = '/me') {
 export async function saveWeddingAction(fd: FormData) {
   await attempt('/me', async () => {
     const p = await requireBride();
+    const pin = str(fd, 'pincode') || null;
+    const place = num(fd, 'city_id') || pin ? await resolvePlace(sql, { cityId: num(fd, 'city_id'), localityId: num(fd, 'locality_id'), pincode: pin }) : null;
     const input = {
       title: str(fd, 'title'),
       partnerName: str(fd, 'partner_name'),
       weddingDate: str(fd, 'wedding_date') || null,
-      cityId: num(fd, 'city_id'),
+      cityId: place?.cityId ?? null,
     };
     if (str(fd, 'full_name')) await sql`update mkt.profiles set full_name = ${str(fd, 'full_name')} where id = ${p.id}`;
     await sql`update mkt.profiles set notify_email = ${fd.get('notify_email') === 'on'} where id = ${p.id}`;
@@ -57,8 +60,8 @@ export async function saveWeddingAction(fd: FormData) {
         where bride_profile_id = ${p.id} and whatsapp_opt_in <> ${wa}`;
     }
     const w = await weddingFor(sql, p.id);
-    if (w) await updateWedding(sql, w.id, p.id, input);
-    else await createWedding(sql, p.id, input);
+    const wid = w ? (await updateWedding(sql, w.id, p.id, input), w.id) : (await createWedding(sql, p.id, input)).id;
+    await sql`update mkt.weddings set locality_id = ${place?.localityId ?? null}, pincode = ${place?.pincode ?? null} where id = ${wid}`;
     // Earlier enquiries from this bride join her wedding workspace.
     const w2 = await weddingFor(sql, p.id);
     await sql`update mkt.leads set wedding_id = ${w2!.id} where bride_profile_id = ${p.id} and wedding_id is null`;

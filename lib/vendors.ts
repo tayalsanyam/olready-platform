@@ -40,6 +40,14 @@ export type Vendor = {
   legal_name?: string | null;
   billing_address?: string | null;
   gstin?: string | null;
+  address_line?: string | null;
+  pincode?: string | null;
+  maps_url?: string | null;
+  lat?: string | null;
+  lng?: string | null;
+  address_public?: boolean;
+  billing_state_code?: string | null;
+  billing_pincode?: string | null;
   created_at: Date;
 };
 
@@ -49,13 +57,20 @@ export type VendorCard = Vendor & {
   price_unit: string;
   city_name: string;
   city_slug: string;
+  state_name?: string;
+  locality_name?: string | null;
+  locality_slug?: string | null;
   rating: number | null;
   review_count: number;
 };
 
-/** Public fields only: contact details never leave the server for brides. */
+/**
+ * Public fields only: contact details never leave the server for brides, and the street address,
+ * map and coordinates only when the vendor chose to show them. Billing details never.
+ */
 export function publicVendor<T extends Vendor>(v: T) {
-  const { phone: _p, email: _e, instagram: _i, website: _w, ...rest } = v;
+  const { phone: _p, email: _e, instagram: _i, website: _w, legal_name: _l, billing_address: _b, gstin: _g, billing_state_code: _s, billing_pincode: _bp, ...rest } = v;
+  if (!rest.address_public) return { ...rest, address_line: null, maps_url: null, lat: null, lng: null };
   return rest;
 }
 
@@ -99,10 +114,15 @@ export const SORTS: { key: SortKey; label: string }[] = [
 
 type BrowseOpts = {
   sort?: SortKey;
-  categoryId: number;
+  /** Leave out for every category. */
+  categoryId?: number | null;
   cityId?: number | null;
   filter?: FilterDef | null;
   minRating?: number | null;
+  /** Vendors based in this area of the town. */
+  localityId?: number | null;
+  /** Vendors not booked or closed on this date (YYYY-MM-DD). */
+  freeOn?: string | null;
   limit?: number;
   offset?: number;
 };
@@ -130,17 +150,21 @@ function browseWhere(db: Db, o: Omit<BrowseOpts, 'limit' | 'offset'>) {
   const ratingSql = o.minRating
     ? db`and (select avg((rating_artist + rating_service) / 2.0) from mkt.reviews where vendor_id = v.id and status = 'published') >= ${o.minRating}`
     : db``;
-  return db`v.status = 'live' and v.category_id = ${o.categoryId} ${citySql} ${filterSql} ${ratingSql}`;
+  const areaSql = o.localityId ? db`and v.locality_id = ${o.localityId}` : db``;
+  const freeSql = o.freeOn ? db`and not mkt.vendor_busy(v.id, ${o.freeOn}::date)` : db``;
+  const catSql = o.categoryId ? db`and v.category_id = ${o.categoryId}` : db``;
+  return db`v.status = 'live' ${catSql} ${citySql} ${filterSql} ${ratingSql} ${areaSql} ${freeSql}`;
 }
 
 export async function browseVendors(db: Db, o: BrowseOpts) {
   return db<VendorCard[]>`
     select v.*, c.slug as category_slug, c.name as category_name, c.price_unit,
-           ci.name as city_name, ci.slug as city_slug,
+           ci.name as city_name, ci.slug as city_slug, ci.state as state_name, lo.name as locality_name, lo.slug as locality_slug,
            r.rating, coalesce(r.n, 0)::int as review_count
     from mkt.vendors v
     join mkt.categories c on c.id = v.category_id
     join mkt.cities ci on ci.id = v.city_id
+    left join mkt.localities lo on lo.id = v.locality_id
     left join lateral (
       select round(avg((rating_artist + rating_service) / 2.0), 1)::float as rating, count(*) as n
       from mkt.reviews where vendor_id = v.id and status = 'published'
@@ -166,11 +190,12 @@ export async function countVendors(db: Db, o: Omit<BrowseOpts, 'limit' | 'offset
 export async function getVendorBySlug(db: Db, slug: string) {
   const [v] = await db<VendorCard[]>`
     select v.*, c.slug as category_slug, c.name as category_name, c.price_unit,
-           ci.name as city_name, ci.slug as city_slug,
+           ci.name as city_name, ci.slug as city_slug, ci.state as state_name, lo.name as locality_name, lo.slug as locality_slug,
            r.rating, coalesce(r.n, 0)::int as review_count
     from mkt.vendors v
     join mkt.categories c on c.id = v.category_id
     join mkt.cities ci on ci.id = v.city_id
+    left join mkt.localities lo on lo.id = v.locality_id
     left join lateral (
       select round(avg((rating_artist + rating_service) / 2.0), 1)::float as rating, count(*) as n
       from mkt.reviews where vendor_id = v.id and status = 'published'

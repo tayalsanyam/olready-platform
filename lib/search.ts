@@ -18,7 +18,7 @@ export type PageHit = { label: string; href: string };
 const like = (q: string) => `%${q.replace(/[\\%_]/g, (c) => '\\' + c)}%`;
 const prefix = (q: string) => `${q.replace(/[\\%_]/g, (c) => '\\' + c)}%`;
 
-/** Live vendors by name, tagline or category, in the chosen city (or any Tricity city). */
+/** Live vendors by name, tagline or category, in the chosen city (or anywhere in India). */
 export async function searchVendors(db: Db, q: string, cityId: number | null, limit = 24) {
   const term = q.trim().slice(0, 60);
   if (term.length < 2) return [];

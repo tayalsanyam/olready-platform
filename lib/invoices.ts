@@ -63,12 +63,13 @@ export async function ensureInvoice(db: Db, orderId: string, actor: string | nul
   const [o] = await db<{
     status: string; amount_inr: number; list_price_inr: number | null; discount_inr: number; buyer_gstin: string | null; paid_at: Date | null;
     product: string; kind: string; vendor_id: string | null; buyer_name: string; vendor_address: string | null; city_state: string | null; city: string | null;
+    city_state_code: string | null; billing_state_code: string | null; billing_pincode: string | null;
   }[]>`
     select o.status, o.amount_inr, o.list_price_inr, o.discount_inr, coalesce(o.buyer_gstin, v.gstin) as buyer_gstin, o.paid_at,
       coalesce('OLReady ' || p.name, s.name, case when o.wallet_topup_inr is not null then 'OLReady ads wallet top-up' end, 'OLReady service') as product,
       case when p.id is not null then 'pack' when o.service_code is not null then 'service' else 'wallet' end as kind,
       o.vendor_id, coalesce(v.legal_name, v.business_name, pr.full_name) as buyer_name, v.billing_address as vendor_address,
-      ci.state as city_state, ci.name as city
+      ci.state as city_state, ci.state_code as city_state_code, v.billing_state_code, v.billing_pincode, ci.name as city
     from mkt.orders o
     join mkt.profiles pr on pr.id = o.profile_id
     left join mkt.packs p on p.id = o.pack_id
@@ -79,11 +80,11 @@ export async function ensureInvoice(db: Db, orderId: string, actor: string | nul
   if (!o) throw new DomainError('not_found', 'Order not found');
   if (!['paid', 'refunded'].includes(o.status)) throw new DomainError('unpaid', 'Invoices are issued once an order is paid');
   const s = seller();
-  // Place of supply: the buyer's GST registration if given, else where the vendor is, else our own state.
-  const buyerCode = gstinState(o.buyer_gstin) ?? stateCode(o.city_state) ?? s.state_code;
+  // Place of supply: the buyer's GST registration, else their billing state, else their town's state, else ours.
+  const buyerCode = gstinState(o.buyer_gstin) ?? o.billing_state_code ?? o.city_state_code ?? stateCode(o.city_state) ?? s.state_code;
   const buyer: Party = {
     name: o.buyer_name,
-    address: [o.vendor_address, o.city].filter(Boolean).join(', '),
+    address: [o.vendor_address, o.vendor_address?.includes(o.city ?? '\u0000') ? null : o.city, o.billing_pincode].filter(Boolean).join(', '),
     gstin: o.buyer_gstin,
     state: STATE_CODES[buyerCode],
     state_code: buyerCode,

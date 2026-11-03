@@ -37,7 +37,7 @@ export default async function Search({ searchParams }: P) {
   const href = (t: string) => `/search?q=${encodeURIComponent(q)}${city ? `&city=${city.slug}` : ''}${t === 'all' ? '' : `&type=${t}`}`;
   return (
     <Container>
-      <PageTitle title={q ? `Results for “${q}”` : 'Search'} sub={city ? `In ${city.name} and vendors who serve it` : 'Across Chandigarh, Mohali, Panchkula and nearby'} />
+      <PageTitle title={q ? `Results for “${q}”` : 'Search'} sub={city ? `In ${city.name} and vendors who serve it` : 'Across India'} />
       <div className="mb-4 max-w-2xl">
         <SearchBox cities={cities.map((c) => ({ slug: c.slug, name: c.name }))} defaultCity={city?.slug ?? ''} />
       </div>

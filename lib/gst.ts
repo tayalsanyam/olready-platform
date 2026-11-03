@@ -64,3 +64,16 @@ export function rupeesInWords(paise: number) {
 }
 
 export const paiseText = (p: number) => (p / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const GSTIN_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+/** Format and check digit of a GSTIN (the 15th character is a base-36 checksum of the first 14). */
+export function gstinValid(raw: string) {
+  const g = raw.trim().toUpperCase();
+  if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(g) || !STATE_CODES[g.slice(0, 2)]) return false;
+  let sum = 0;
+  for (let i = 0; i < 14; i++) {
+    const p = GSTIN_CHARS.indexOf(g[i]) * (i % 2 ? 2 : 1);
+    sum += Math.floor(p / 36) + (p % 36);
+  }
+  return GSTIN_CHARS[(36 - (sum % 36)) % 36] === g[14];
+}

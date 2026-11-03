@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { sql } from '@/lib/db';
 import { fieldsFor, getCategoryBySlug, getCityBySlug, listCities } from '@/lib/catalog';
+import { localitiesFor, localityBySlug } from '@/lib/locations';
 import { SORTS, type SortKey, browseVendors, countVendors, filtersFor } from '@/lib/vendors';
 import { currentProfile } from '@/lib/auth';
 import { shortlistedIds } from '@/lib/weddings';
@@ -15,29 +16,35 @@ import { costGuide, costPath } from '@/lib/costGuide';
 import { formatInr } from '@/lib/catalog';
 import { JsonLd, VendorCard } from './VendorCard';
 import { sponsored } from '@/lib/promotion';
+import { RememberTown } from './RememberTown';
 
 export const PAGE_SIZE = 24;
 
-export async function resolveLanding(citySlug: string, categorySlug: string, filterSlug?: string, page = 1, sort: SortKey = 'recommended', minRating: number | null = null) {
+export async function resolveLanding(citySlug: string, categorySlug: string, filterSlug?: string, page = 1, sort: SortKey = 'recommended', minRating: number | null = null, freeOn: string | null = null) {
   const [city, category] = await Promise.all([getCityBySlug(sql, citySlug), getCategoryBySlug(sql, categorySlug)]);
   if (!city || !category || !category.active) return null;
   const fields = await fieldsFor(sql, category.id);
   const filters = filtersFor(fields, category.price_bands ?? []);
   const filter = filterSlug ? (filters.find((f) => f.slug === filterSlug) ?? null) : null;
-  if (filterSlug && !filter) return null;
+  // The third segment is a filter ("airbrush") or else an area of the town ("sector-35", "vip-road").
+  const area = filterSlug && !filter ? await localityBySlug(sql, city.id, filterSlug) : null;
+  if (filterSlug && !filter && !area) return null;
+  const localityId = area?.id ?? null;
   const [vendors, total] = await Promise.all([
-    browseVendors(sql, { categoryId: category.id, cityId: city.id, filter, sort, minRating, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
-    countVendors(sql, { categoryId: category.id, cityId: city.id, filter, minRating }),
+    browseVendors(sql, { categoryId: category.id, cityId: city.id, filter, localityId, freeOn, sort, minRating, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
+    countVendors(sql, { categoryId: category.id, cityId: city.id, filter, localityId, freeOn, minRating }),
   ]);
-  return { city, category, fields, filters, filter, vendors, total, page, pages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
+  // Titles and FAQs name the area with its town: "Wedding venues in Sector 35, Chandigarh".
+  const place = area ? { ...city, name: `${area.name}, ${city.name}` } : city;
+  return { city, place, area, category, fields, filters, filter, vendors, total, page, pages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
 }
 
 export async function landingMetadata(citySlug: string, categorySlug: string, filterSlug?: string, page = 1): Promise<Metadata> {
   const r = await resolveLanding(citySlug, categorySlug, filterSlug, page);
   if (!r) return { title: 'Not found', robots: { index: false } };
-  const title = landingTitle(r.category, r.city, r.filter);
+  const title = landingTitle(r.category, r.place, r.filter);
   const index = await indexable(sql, r.total);
-  const path = landingPath(r.city, r.category, r.filter);
+  const path = landingPath(r.city, r.category, r.filter ?? r.area);
   return {
     title: `${r.total >= 3 ? `Best ${title.charAt(0).toLowerCase()}${title.slice(1)}` : title} with prices, photos and reviews${page > 1 ? ` (page ${page})` : ''}`,
     description: `Compare ${r.total} ${title.toLowerCase()} on OLReady. See starting prices, verified profiles and reviews, then get quotes from verified vendors.`,
@@ -53,6 +60,7 @@ export async function ListingPage({
   page = 1,
   sort = 'recommended',
   minRating = null,
+  freeOn = null,
 }: {
   citySlug: string;
   categorySlug: string;
@@ -60,11 +68,12 @@ export async function ListingPage({
   page?: number;
   sort?: SortKey;
   minRating?: number | null;
+  freeOn?: string | null;
 }) {
-  const r = await resolveLanding(citySlug, categorySlug, filterSlug, page, sort, minRating);
+  const r = await resolveLanding(citySlug, categorySlug, filterSlug, page, sort, minRating, freeOn);
   if (!r || (page > 1 && page > r.pages)) notFound();
-  const { city, category, fields, filters, filter, vendors, total, pages } = r;
-  const here = landingPath(city, category, filter);
+  const { city, place, area, category, fields, filters, filter, vendors, total, pages } = r;
+  const here = landingPath(city, category, filter ?? area);
   const viewer = await currentProfile();
   if (vendors.length && (await visitorKey())) after(() => bump(sql, vendors.map((v) => v.id), 'impressions').catch(() => undefined));
   const hearts = await shortlistedIds(sql, viewer?.role === 'bride' ? viewer.id : null);
@@ -72,26 +81,30 @@ export async function ListingPage({
     const q = new URLSearchParams();
     if (sort !== 'recommended') q.set('sort', sort);
     if (rating) q.set('rating', String(rating));
+    if (freeOn) q.set('date', freeOn);
     if (p > 1) q.set('page', String(p));
     const s = q.toString();
     return s ? `${path}?${s}` : path;
   };
   const selfPath = withSort(here, page);
-  const title = landingTitle(category, city, filter);
-  const faq = landingFaq(category, city, vendors, filter);
-  const otherCities = (await listCities(sql)).filter((c) => c.id !== city.id);
+  const title = landingTitle(category, place, filter);
+  const faq = landingFaq(category, place, vendors, filter);
+  const [launched, areas] = await Promise.all([listCities(sql), localitiesFor(sql, city.id, { withVendorsOnly: true, categoryId: category.id })]);
+  const otherCities = launched.filter((c) => c.id !== city.id);
   const [collections, guide] = await Promise.all([publishedCollections(sql, { categoryId: category.id }), costGuide(sql, category.slug, city.slug)]);
   // Sponsored cards sit above the results on the first page only; they never reorder the results.
-  const promoted = page === 1 && !filter ? await sponsored(sql, { categoryId: category.id, cityId: city.id, placement: 'search', limit: 2 }) : [];
+  const promoted = page === 1 && !filter && !area ? await sponsored(sql, { categoryId: category.id, cityId: city.id, placement: 'search', limit: 2 }) : [];
   const crumbs = [
     { name: 'Vendors', path: '/vendors' },
     { name: city.name, path: `/vendors/${city.slug}` },
     { name: category.plural_name, path: landingPath(city, category) },
     ...(filter ? [{ name: filter.label, path: landingPath(city, category, filter) }] : []),
+    ...(area ? [{ name: area.name, path: landingPath(city, category, area) }] : []),
   ];
   return (
     <Container>
       <JsonLd data={[breadcrumbLd(crumbs), itemListLd(vendors), faqLd(faq)]} />
+      <RememberTown slug={city.slug} />
       <nav aria-label="Breadcrumb" className="mb-3 text-sm text-[var(--color-muted)]">
         {crumbs.map((c, i) => (
           <span key={c.path}>
@@ -140,6 +153,21 @@ export async function ListingPage({
                   {f.label}
                 </Link>
               ))}
+          </div>
+        ) : null}
+        {areas.length > 1 || area ? (
+          <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto text-sm" role="group" aria-label="Area">
+            <span className="self-center whitespace-nowrap text-[var(--color-muted)]">Area</span>
+            {area ? (
+              <Link href={withSort(landingPath(city, category))} className="chip shrink-0 py-0.5">
+                All of {city.name}
+              </Link>
+            ) : null}
+            {areas.slice(0, 15).map((a) => (
+              <Link key={a.id} href={withSort(landingPath(city, category, a))} className="chip shrink-0 py-0.5" aria-current={area?.id === a.id}>
+                {a.name}
+              </Link>
+            ))}
           </div>
         ) : null}
         <div className="no-scrollbar mt-2 flex items-center gap-3 overflow-x-auto text-sm" role="group" aria-label="Sort">

@@ -1,4 +1,5 @@
 import { ListingPage, landingMetadata } from '@/components/Listing';
+import { NationalCategory, nationalMetadata } from '@/components/NationalListing';
 import { SORTS, type SortKey } from '@/lib/vendors';
 
 export const dynamic = 'force-dynamic';
@@ -13,13 +14,20 @@ const sortOf = async (sp: P['searchParams']): Promise<SortKey> => {
 };
 
 const ratingOf = async (sp: P['searchParams']) => (String((await sp).rating ?? '') === '4' ? 4 : null);
+/** ?date=2027-02-14 keeps vendors whose calendar is free that day. */
+const dateOf = async (sp: P['searchParams']) => {
+  const d = String((await sp).date ?? '');
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d)) ? d : null;
+};
 
 export async function generateMetadata({ params, searchParams }: P) {
   const { city, category } = await params;
+  if (city === 'india') return nationalMetadata(category);
   return landingMetadata(city, category, undefined, await pageOf(searchParams));
 }
 
 export default async function Page({ params, searchParams }: P) {
   const { city, category } = await params;
-  return <ListingPage citySlug={city} categorySlug={category} page={await pageOf(searchParams)} sort={await sortOf(searchParams)} minRating={await ratingOf(searchParams)} />;
+  if (city === 'india') return <NationalCategory categorySlug={category} />;
+  return <ListingPage citySlug={city} categorySlug={category} page={await pageOf(searchParams)} sort={await sortOf(searchParams)} minRating={await ratingOf(searchParams)} freeOn={await dateOf(searchParams)} />;
 }

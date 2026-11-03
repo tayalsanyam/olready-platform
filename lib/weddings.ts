@@ -9,13 +9,15 @@ export type Wedding = {
   partner_name: string;
   wedding_date: string | null;
   city_id: number | null;
+  locality_id: number | null;
+  pincode: string | null;
   join_code: string;
   created_at: Date;
 };
 
 const weddingCols = (db: Db) =>
   db`w.id, w.owner_profile_id, w.title, w.partner_name, to_char(w.wedding_date, 'YYYY-MM-DD') as wedding_date,
-     w.city_id, w.join_code, w.created_at`;
+     w.city_id, w.locality_id, w.pincode, w.join_code, w.created_at`;
 
 export async function weddingFor(db: Db, profileId: string) {
   const [w] = await db<(Wedding & { member_role: string })[]>`

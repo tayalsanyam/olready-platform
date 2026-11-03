@@ -112,7 +112,7 @@ export async function ask(db: Db, profileId: string, question: string) {
     return row.id;
   };
 
-  const system = `You write PostgreSQL for OLReady, a wedding vendor marketplace in Chandigarh, Mohali, Panchkula and nearby towns.
+  const system = `You write PostgreSQL for OLReady, a wedding vendor marketplace for towns across India (launched first in Chandigarh, Mohali and Panchkula). Every vendor and request belongs to a town, which belongs to a state; ops_reports.vendor_areas has each vendor's town, area and pincode.
 Brides send one request (a lead) that is split into lead_needs, one per vendor category. Verified needs are shown to vendors, who spend credits to unlock them (unlocks), then chat (threads) and send quotes. bookings are booking reports. Money is in rupees (_inr columns). Today is ${now} (India time).
 You may read only these views:
 ${schema}

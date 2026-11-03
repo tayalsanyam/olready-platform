@@ -134,7 +134,7 @@ function render(template: EmailTemplate, p: Record<string, string>) {
     case 'newsletter_welcome':
       return {
         subject: 'Wedding ideas from OLReady',
-        text: `Thanks for signing up. We will send you new ideas, real Tricity weddings and planning guides now and then.\n\nStart here: ${site()}/blog\n\nTo stop these emails: ${site()}/unsubscribe/${p.token}\n\nOLReady`,
+        text: `Thanks for signing up. We will send you new ideas, real weddings and planning guides now and then.\n\nStart here: ${site()}/blog\n\nTo stop these emails: ${site()}/unsubscribe/${p.token}\n\nOLReady`,
       };
     case 'booking_confirmed':
       return {

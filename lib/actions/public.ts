@@ -11,6 +11,7 @@ import { saveRsvp } from '../weddings';
 import { attempt, back, num, str } from './run';
 import { LEGAL_VERSION } from '../legal';
 import { functionsFromForm } from '../functions';
+import { resolvePlace } from '../locations';
 
 export async function submitEnquiry(fd: FormData) {
   await attempt(back(fd, '/enquire'), async () => {
@@ -22,8 +23,7 @@ export async function submitEnquiry(fd: FormData) {
     if (n >= 3) throw new DomainError('too_many', 'We already have your requests from today. Our team will call you shortly.');
     const profile = await currentProfile();
     const wedding = profile ? await weddingFor(sql, profile.id) : null;
-    const cityId = num(fd, 'city_id');
-    if (!cityId) throw new DomainError('no_city', 'Choose your wedding city');
+    const place = await resolvePlace(sql, { cityId: num(fd, 'city_id'), localityId: num(fd, 'locality_id'), pincode: str(fd, 'pincode') || null });
     const directSlug = str(fd, 'vendor');
     const direct = directSlug ? await getVendorBySlug(sql, directSlug) : null;
     const categoryIds = fd.getAll('category_id').map(Number).filter(Boolean);
@@ -41,7 +41,9 @@ export async function submitEnquiry(fd: FormData) {
       name: str(fd, 'name'),
       phone: str(fd, 'phone'),
       email,
-      cityId,
+      cityId: place.cityId,
+      localityId: place.localityId,
+      pincode: place.pincode,
       eventDate: str(fd, 'event_date') || null,
       guestCount: Number(str(fd, 'guest_count')) || null,
       functions: fns,

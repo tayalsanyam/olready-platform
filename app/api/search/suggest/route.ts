@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { listCities } from '@/lib/catalog';
+import { getCityBySlug, listCities } from '@/lib/catalog';
 import { searchPages, searchVendors } from '@/lib/search';
 
 // Typeahead for the header search: a few vendors and matching category pages, in the chosen city.
 export async function GET(req: Request) {
   const u = new URL(req.url);
   const q = (u.searchParams.get('q') ?? '').slice(0, 60);
-  const cities = await listCities(sql);
-  const city = cities.find((c) => c.slug === u.searchParams.get('city')) ?? null;
+  const slug = u.searchParams.get('city');
+  const [cities, city] = await Promise.all([listCities(sql), slug ? getCityBySlug(sql, slug) : null]);
   if (q.trim().length < 2) return NextResponse.json({ vendors: [], pages: [] });
   const [vendors, pages] = await Promise.all([searchVendors(sql, q, city?.id ?? null, 5), searchPages(sql, q, city ?? cities[0])]);
   return NextResponse.json(

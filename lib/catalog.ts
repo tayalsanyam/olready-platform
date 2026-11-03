@@ -32,7 +32,10 @@ export type Category = {
   price_unit: string;
   price_bands?: PriceBand[];
 };
-export type City = { id: number; slug: string; name: string; state: string; active: boolean };
+export type City = {
+  id: number; slug: string; name: string; state: string; state_code: string; district: string; active: boolean; launched: boolean;
+  aliases: string[]; lat: string | null; lng: string | null; // numeric comes back as text
+};
 export type BudgetTier = {
   id: number;
   category_id: number;
@@ -53,8 +56,29 @@ export async function getCategoryBySlug(db: Db, slug: string) {
   return c ?? null;
 }
 
+/** The launched towns: menus, the home page, footers and quick picks. Any active town works everywhere else. */
 export async function listCities(db: Db) {
-  return db<City[]>`select * from mkt.cities where active order by sort`;
+  return db<City[]>`select * from mkt.cities where active and launched order by sort`;
+}
+
+export async function getCity(db: Db, id: number | null | undefined) {
+  if (!id) return null;
+  const [c] = await db<City[]>`select * from mkt.cities where id = ${id} and active`;
+  return c ?? null;
+}
+
+export async function citiesByIds(db: Db, ids: number[]) {
+  if (!ids.length) return [] as City[];
+  return db<City[]>`select * from mkt.cities where id = any(${ids}::int[]) order by launched desc, sort`;
+}
+
+/** Towns that have something in them (live vendors or requests), for Ops filters. */
+export async function citiesInUse(db: Db) {
+  return db<City[]>`
+    select * from mkt.cities c where c.active and (c.launched
+      or exists (select 1 from mkt.vendors v where v.city_id = c.id)
+      or exists (select 1 from mkt.leads l where l.city_id = c.id))
+    order by c.launched desc, c.sort, c.name`;
 }
 
 export async function getCityBySlug(db: Db, slug: string) {

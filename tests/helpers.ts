@@ -7,7 +7,7 @@ process.env.DATABASE_URL = TEST_DB;
 
 export function resetDb() {
   execFileSync('node', [path.resolve(__dirname, '../scripts/migrate.mjs'), '--reset'], {
-    env: { ...process.env, DATABASE_URL: TEST_DB },
+    env: { ...process.env, DATABASE_URL: TEST_DB, MKT_PLACE_STATES: process.env.MKT_PLACE_STATES ?? '04,03,06,07' },
     stdio: 'pipe',
   });
 }

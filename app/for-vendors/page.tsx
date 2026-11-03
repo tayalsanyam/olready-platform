@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'List your wedding business on OLReady',
   description:
-    'Get wedding enquiries from brides in Chandigarh, Mohali, Panchkula and nearby towns. Every request is verified on a call before you see it. List free; pay only for the leads you choose.',
+    'Get wedding enquiries from brides in your town, anywhere in India. Every request is verified on a call before you see it. List free; pay only for the leads you choose.',
   alternates: { canonical: '/for-vendors' },
 };
 
@@ -81,7 +81,7 @@ export default async function ForVendors() {
         <Toran />
         <Container className="grid items-center gap-10 pb-12 pt-2 md:grid-cols-[1.15fr_1fr] md:pb-16 md:pt-6">
           <div>
-            <p className="text-sm font-semibold text-[var(--color-pink-deep)]">For wedding businesses in the Tricity</p>
+            <p className="text-sm font-semibold text-[var(--color-pink-deep)]">For wedding businesses across India</p>
             <h1 className="mt-2 max-w-xl text-4xl leading-[1.08] sm:text-5xl">Wedding enquiries that are real before you pay for them.</h1>
             <p className="mt-4 max-w-lg text-lg text-[var(--color-muted)]">
               Brides tell us what they need. Our team calls every one of them to check. You see the verified requests in your category and city, and

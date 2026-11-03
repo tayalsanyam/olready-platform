@@ -5,7 +5,7 @@ import { queueEmail } from './email';
 
 export const SECTIONS: Record<string, { label: string; blurb: string }> = {
   planning: { label: 'Planning', blurb: 'Timelines, checklists and how to get it all done.' },
-  budget: { label: 'Budget', blurb: 'What things cost in the Tricity and where to save.' },
+  budget: { label: 'Budget', blurb: 'What things cost and where to save.' },
   ideas: { label: 'Ideas', blurb: 'Decor, looks, themes and little touches.' },
   fashion: { label: 'Outfits and jewellery', blurb: 'Lehengas, sherwanis and bridal sets.' },
   vendors: { label: 'Choosing vendors', blurb: 'What to ask, what to check, what to sign.' },

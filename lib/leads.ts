@@ -11,6 +11,8 @@ export type Lead = {
   phone: string;
   email: string | null;
   city_id: number;
+  locality_id: number | null;
+  pincode: string | null;
   event_date: string | null;
   guest_count: number | null;
   whatsapp_opt_in: boolean;
@@ -47,6 +49,8 @@ export type EnquiryInput = {
   phone: string;
   email?: string | null;
   cityId: number;
+  localityId?: number | null;
+  pincode?: string | null;
   eventDate?: string | null;
   guestCount?: number | null;
   whatsappOptIn?: boolean;
@@ -77,9 +81,9 @@ export async function createEnquiry(sql: Sql, input: EnquiryInput) {
   const guestCount = h.guests ?? input.guestCount ?? null;
   return sql.begin(async (tx) => {
     const [lead] = await tx<Lead[]>`
-      insert into mkt.leads (wedding_id, bride_profile_id, bride_name, phone, email, city_id, event_date, guest_count, whatsapp_opt_in, whatsapp_opt_in_at, source)
+      insert into mkt.leads (wedding_id, bride_profile_id, bride_name, phone, email, city_id, locality_id, pincode, event_date, guest_count, whatsapp_opt_in, whatsapp_opt_in_at, source)
       values (${input.weddingId ?? null}, ${input.brideProfileId ?? null}, ${input.name.trim()}, ${phone},
-        ${input.email?.toLowerCase() ?? null}, ${input.cityId}, ${eventDate || null},
+        ${input.email?.toLowerCase() ?? null}, ${input.cityId}, ${input.localityId ?? null}, ${input.pincode ?? null}, ${eventDate || null},
         ${guestCount && guestCount > 0 && guestCount <= 20000 ? Math.round(guestCount) : null},
         ${Boolean(input.whatsappOptIn)}, ${input.whatsappOptIn ? new Date() : null},
         ${input.directVendorId ? 'direct_request' : (input.source ?? 'website')})

@@ -4,7 +4,7 @@ import { recordView, visitorKey } from '@/lib/analytics';
 import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { currentProfile, STAFF_ROLES } from '@/lib/auth';
-import { displayValue, fieldsFor, formatInr, listCities } from '@/lib/catalog';
+import { citiesByIds, displayValue, fieldsFor, formatInr } from '@/lib/catalog';
 import { costGuide, costPath } from '@/lib/costGuide';
 import { getVendorBySlug, publicVendor, recentDemand, similarVendors, vendorFaq, vendorMedia } from '@/lib/vendors';
 import { SPACE_KINDS, spacesFor } from '@/lib/venueSpaces';
@@ -76,7 +76,7 @@ export default async function VendorPage({ params, searchParams }: P) {
     similarVendors(sql, v),
     recentDemand(sql, v.id),
   ]);
-  const cityNames = await listCities(sql);
+  const cityNames = await citiesByIds(sql, [...new Set([raw.city_id, ...raw.service_city_ids])]);
   // Review filters: all, with photos, positive (4 and above), critical (2 and below).
   const overall = (r: { rating_artist: number; rating_service: number }) => (r.rating_artist + r.rating_service) / 2;
   const rf = ['photos', 'positive', 'critical'].includes(String(q.reviews)) ? String(q.reviews) : 'all';
@@ -111,7 +111,7 @@ export default async function VendorPage({ params, searchParams }: P) {
       <Container>
         <JsonLd
           data={[
-            vendorLd(raw, {
+            vendorLd({ ...raw, ...v } as typeof raw, {
               reviews: allReviews,
               images: media.map((m) => m.url),
               areaServed: cityNames.filter((c) => c.id === raw.city_id || raw.service_city_ids.includes(c.id)).map((c) => c.name),
@@ -182,10 +182,33 @@ export default async function VendorPage({ params, searchParams }: P) {
             <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--color-muted)]">
               <span className="inline-flex items-center gap-1">
                 <IconPin size={14} />
-                {v.city_name}
+                {v.locality_name && v.locality_slug ? (
+                  <>
+                    <Link href={`/vendors/${v.city_slug}/${v.category_slug}/${v.locality_slug}`} className="hover:underline">
+                      {v.locality_name}
+                    </Link>
+                    , {v.city_name}
+                  </>
+                ) : (
+                  v.city_name
+                )}
               </span>
               {v.review_count ? <Stars value={v.rating} count={v.review_count} /> : null}
             </p>
+            {v.address_public && (v.address_line || v.maps_url || v.lat) ? (
+              <p className="mt-2 text-sm">
+                <span className="sr-only">Address: </span>
+                {[v.address_line, v.locality_name, v.city_name, v.pincode].filter(Boolean).join(', ')}{' '}
+                <a
+                  href={v.maps_url ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.lat && v.lng ? `${v.lat},${v.lng}` : [v.business_name, v.address_line, v.city_name].filter(Boolean).join(', '))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="whitespace-nowrap font-medium text-[var(--color-pink-deep)] underline"
+                >
+                  Open in Maps
+                </a>
+              </p>
+            ) : null}
             {demand >= 3 ? (
               <p className="mt-2 inline-flex rounded-full bg-[var(--color-pink-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-pink-deep)]">
                 {demand} families asked about {v.business_name} in the last 7 days

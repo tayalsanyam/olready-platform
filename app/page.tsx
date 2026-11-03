@@ -75,7 +75,7 @@ export default async function Home() {
           <div>
             <h1 className="max-w-xl text-4xl leading-[1.08] sm:text-5xl">Plan your wedding with vendors we have checked first.</h1>
             <p className="mt-4 max-w-lg text-lg text-[var(--color-muted)]">
-              Venues, caterers, makeup, photography, decor and more across Chandigarh, Mohali, Panchkula and nearby towns. Tell us once; our
+              Venues, caterers, makeup, photography, decor and more, in towns across India. Tell us once; our
               team confirms your details, then verified vendors send you quotes.
             </p>
             <form action="/vendors/go" className="mt-6 rounded-2xl border border-[var(--color-line)] bg-white p-2 sm:flex sm:items-center sm:gap-2 sm:rounded-full">
@@ -258,7 +258,7 @@ export default async function Home() {
           </Link>
           <Link href="/ideas" className="group grid grid-cols-[1fr_auto] items-center gap-4 rounded-[22px] border border-[var(--color-line)] p-5 hover:border-[var(--color-pink)]">
             <div>
-              <p className="font-semibold group-hover:text-[var(--color-pink-deep)]">Ideas from Tricity weddings</p>
+              <p className="font-semibold group-hover:text-[var(--color-pink-deep)]">Ideas from real weddings</p>
               <p className="mt-1 text-sm text-[var(--color-muted)]">Looks, mehendi, decor and outfits from real vendors. Save the ones you love to your wedding wall.</p>
             </div>
             {photos.length ? (

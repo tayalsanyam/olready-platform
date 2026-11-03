@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { requireProfile, STAFF_ROLES } from '@/lib/auth';
-import { formatInr, listCities } from '@/lib/catalog';
+import { formatInr, getCity, listCities } from '@/lib/catalog';
+import { getLocality } from '@/lib/locations';
+import { PlacePicker } from '@/components/PlacePicker';
 import { threadsForBride } from '@/lib/threads';
 import { weddingFor } from '@/lib/weddings';
 import { activatePerkAction, closeNeedAction, saveWeddingAction } from '@/lib/actions/bride';
@@ -41,6 +43,7 @@ export default async function MyWedding({ searchParams }: P) {
   if (p.role === 'vendor') redirect('/vendor');
   if (STAFF_ROLES.includes(p.role)) redirect('/ops');
   const [wedding, cities, threads] = await Promise.all([weddingFor(sql, p.id), listCities(sql), threadsForBride(sql, p.id)]);
+  const [town, area] = await Promise.all([getCity(sql, wedding?.city_id), getLocality(sql, wedding?.locality_id)]);
   const needs = await sql<NeedRow[]>`
     select ln.id as need_id, l.id as lead_id, l.status as lead_status, c.name as category_name, ln.status, ln.budget_inr,
       bv.business_name as booked_vendor, ln.booked_outside,
@@ -63,7 +66,7 @@ export default async function MyWedding({ searchParams }: P) {
     <>
       <PageTitle
         title={wedding ? wedding.title : 'Welcome to OLReady'}
-        sub={wedding ? [wedding.wedding_date, cities.find((c) => c.id === wedding.city_id)?.name].filter(Boolean).join(' · ') : 'Tell us a little about your wedding to start planning.'}
+        sub={wedding ? [wedding.wedding_date, [area?.name, town?.name].filter(Boolean).join(', ')].filter(Boolean).join(' · ') : 'Tell us a little about your wedding to start planning.'}
         action={
           <Link href="/enquire" className="btn btn-pink btn-sm">
             Get more quotes
@@ -98,15 +101,15 @@ export default async function MyWedding({ searchParams }: P) {
           <Field label="Wedding date" hint="Your checklist is dated back from this.">
             <input name="wedding_date" type="date" className="input" defaultValue={wedding?.wedding_date ?? ''} />
           </Field>
-          <Field label="City">
-            <select name="city_id" className="input" defaultValue={wedding?.city_id ?? cities[0]?.id}>
-              {cities.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <div className="sm:col-span-2">
+            <PlacePicker
+              withArea
+              label="Where is the wedding?"
+              town={town ? { id: town.id, name: town.name, state: town.state } : null}
+              area={area ? { id: area.id, name: area.name, pincode: wedding?.pincode ?? area.pincode } : wedding?.pincode ? { id: null, name: '', pincode: wedding.pincode } : null}
+              quick={cities.map((c) => ({ id: c.id, name: c.name, state: c.state }))}
+            />
+          </div>
           <label className="flex items-center gap-2 self-end py-2 text-sm">
             <input type="checkbox" name="notify_email" defaultChecked={notify} className="h-4 w-4 accent-[var(--color-pink)]" />
             Email me when vendors reply or quote

@@ -8,7 +8,7 @@ import { JsonLd } from './VendorCard';
 
 /** A price guide: the range as a band, then the figures behind it, then where to go next. */
 export function CostGuidePage({ g, otherCities }: { g: CostGuide; otherCities: { slug: string; name: string }[] }) {
-  const where = g.city?.name ?? 'Chandigarh Tricity';
+  const where = g.city?.name ?? 'India';
   const faq = costFaq(g);
   const span = Math.max(1, g.max - g.min);
   const at = (x: number) => `${Math.round(((x - g.min) / span) * 100)}%`;
@@ -150,7 +150,7 @@ export function CostGuidePage({ g, otherCities }: { g: CostGuide; otherCities: {
             {g.city ? (
               <li>
                 <Link href={costPath(g.category.slug)} className="chip">
-                  Whole Tricity
+                  All of India
                 </Link>
               </li>
             ) : null}

@@ -21,6 +21,7 @@ import { queueEmail } from '../email';
 import { notifyNewLead, notifyRmAssigned } from '../notify';
 import { slugify } from '../catalog';
 import { STATE_CODES } from '../gst';
+import { opsSaveLocality, opsSetPincodeTown, opsSetTownLaunch } from '../locations';
 import { addRmNote, approveEngagement, reassign, rejectEngagement } from '../rm';
 import { attempt, attrsFromForm, back, num, str } from './run';
 
@@ -233,26 +234,44 @@ export async function opsSaveCategory(fd: FormData) {
 }
 
 // ---------------------------------------------------------------- cities and towns
+/** Renames, re-states, switches off, launches or adds a town. Admins only: towns drive pages and tax. */
 export async function opsSaveCity(fd: FormData) {
-  await attempt('/ops/catalog#cities', async () => {
+  await attempt(back(fd, '/ops/places'), async () => {
     const p = await requireRole(ADMIN);
     const id = num(fd, 'id');
     const name = str(fd, 'name').slice(0, 60);
-    const state = str(fd, 'state');
+    const code = str(fd, 'state_code');
     if (!name) throw new DomainError('empty', 'Name the town');
-    if (!Object.values(STATE_CODES).includes(state)) throw new DomainError('state', 'Pick the state, so tax invoices show the right place of supply');
+    if (!STATE_CODES[code]) throw new DomainError('state', 'Pick the state, so tax invoices show the right place of supply');
     if (id) {
-      await sql`update mkt.cities set name = ${name}, state = ${state}, sort = ${num(fd, 'sort') ?? 0}, active = ${fd.get('active') === 'on'} where id = ${id}`;
+      await sql`update mkt.cities set name = ${name}, state_code = ${code}, active = ${fd.get('active') === 'on'} where id = ${id}`;
+      await opsSetTownLaunch(sql, id, fd.get('launched') === 'on', p.id);
       await audit(sql, p.id, 'city.update', 'city', String(id));
       return { ok: `${name} saved` };
     }
     const slug = slugify(name);
     const [dup] = await sql`select 1 from mkt.cities where slug = ${slug}`;
     if (dup) throw new DomainError('dup', `${name} is already listed`);
-    const [{ sort }] = await sql<{ sort: number }[]>`select coalesce(max(sort), 0) + 1 as sort from mkt.cities`;
-    const [c] = await sql<{ id: number }[]>`insert into mkt.cities (slug, name, state, sort) values (${slug}, ${name}, ${state}, ${sort}) returning id`;
-    await audit(sql, p.id, 'city.create', 'city', String(c.id), { name, state });
-    return { ok: `${name} added. Its city and category pages appear once vendors there go live.` };
+    const [c] = await sql<{ id: number }[]>`insert into mkt.cities (slug, name, state_code, sort) values (${slug}, ${name}, ${code}, 2000) returning id`;
+    await audit(sql, p.id, 'city.create', 'city', String(c.id), { name, code });
+    return { ok: `${name} added. Its pages appear once vendors there go live.` };
+  });
+}
+
+export async function opsSaveLocalityAction(fd: FormData) {
+  const cityId = num(fd, 'city_id') ?? 0;
+  await attempt(`/ops/places/${cityId}`, async () => {
+    const p = await requireRole(OPS);
+    await opsSaveLocality(sql, { id: num(fd, 'id'), cityId, name: str(fd, 'name'), kind: str(fd, 'kind') || 'area', pincode: str(fd, 'pincode') || null, active: fd.get('active') !== 'off' && (fd.get('active') === 'on' || !num(fd, 'id')) }, p.id);
+    return { ok: 'Area saved' };
+  });
+}
+
+export async function opsSetPincodeTownAction(fd: FormData) {
+  await attempt(back(fd, '/ops/places'), async () => {
+    const p = await requireRole(ADMIN);
+    await opsSetPincodeTown(sql, str(fd, 'pincode'), num(fd, 'city_id'), p.id);
+    return { ok: `Pincode ${str(fd, 'pincode')} moved` };
   });
 }
 
@@ -474,7 +493,7 @@ export async function opsSaveFunctionAction(fd: FormData) {
     const p = await requireRole(OPS);
     const { opsSaveFunction } = await import('../functions');
     const guests = Number(str(fd, 'guests').replace(/[^\d]/g, '')) || null;
-    await opsSaveFunction(sql, leadId, { id: str(fd, 'event_id') || null, name: str(fd, 'name'), date: str(fd, 'date') || null, guests, needIds: fd.getAll('need_id').map(String) }, p.id);
+    await opsSaveFunction(sql, leadId, { id: str(fd, 'event_id') || null, name: str(fd, 'name'), date: str(fd, 'date') || null, guests, place: str(fd, 'place') || null, needIds: fd.getAll('need_id').map(String) }, p.id);
     return { ok: 'Function saved' };
   });
 }

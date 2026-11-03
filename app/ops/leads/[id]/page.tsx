@@ -22,8 +22,9 @@ export default async function VerifyLead({ params, searchParams }: P) {
   const q = await searchParams;
   await requireRole(['ops', 'admin']);
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
-  const [lead] = await sql<(Lead & { city: string; event: string | null })[]>`
-    select l.*, ci.name as city, to_char(l.event_date, 'YYYY-MM-DD') as event from mkt.leads l join mkt.cities ci on ci.id = l.city_id where l.id = ${id}`;
+  const [lead] = await sql<(Lead & { city: string; state_name: string; area: string | null; event: string | null })[]>`
+    select l.*, ci.name as city, ci.state as state_name, lo.name as area, to_char(l.event_date, 'YYYY-MM-DD') as event
+    from mkt.leads l join mkt.cities ci on ci.id = l.city_id left join mkt.localities lo on lo.id = l.locality_id where l.id = ${id}`;
   if (!lead) notFound();
   const needs = await sql<{ id: string; category_id: number; category: string; budget_inr: number | null; tier: string | null; status: string; unlock_cap: number; reopen_rounds: number; unlocks: number; direct: string | null; booked: string | null }[]>`
     select ln.id, ln.category_id, c.name as category, ln.budget_inr, bt.label as tier, ln.status, ln.unlock_cap, ln.reopen_rounds,
@@ -54,7 +55,7 @@ export default async function VerifyLead({ params, searchParams }: P) {
               {lead.phone}
             </a>
             {lead.email ? <span>{lead.email}</span> : null}
-            <span>· {lead.city}</span>
+            <span>· {[lead.area, lead.city, lead.state_name].filter(Boolean).join(', ')}{lead.pincode ? ` ${lead.pincode}` : ''}</span>
             <span>· wedding {lead.event ?? 'not fixed'}</span>
             {lead.guest_count ? <span>· about {lead.guest_count} guests</span> : null}
             {lead.whatsapp_opt_in ? <Badge tone="ok">WhatsApp updates: yes</Badge> : null}
@@ -79,6 +80,7 @@ export default async function VerifyLead({ params, searchParams }: P) {
                     <input name="date" type="date" defaultValue={f.event_date ?? ''} className="input py-1" aria-label={`Date of ${f.name}`} />
                     <input name="guests" defaultValue={f.guests ?? ''} inputMode="numeric" className="input py-1" placeholder="Guests" aria-label={`Guests at ${f.name}`} />
                     <button className="btn btn-ghost btn-sm">Save</button>
+                    <input name="place" defaultValue={f.place ?? ''} maxLength={80} className="input py-1 sm:col-span-4" placeholder="Where (home, venue name, area)" aria-label={`Where is ${f.name}`} />
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm sm:col-span-4">
                       <span className="text-[var(--color-muted)]">Needed for</span>
                       {liveNeeds.map((n) => (

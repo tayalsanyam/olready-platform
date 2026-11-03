@@ -1,9 +1,9 @@
 import type { Db } from './db';
 import { getSetting } from './db';
-import { type Category, type City, displayValue, fieldsFor, formatInr, listCategories, listCities } from './catalog';
+import { type Category, type City, displayValue, fieldsFor, formatInr, getCityBySlug, listCategories } from './catalog';
 
-// Price guides: "How much does a wedding venue cost in Mohali?" answered from live OLReady
-// listings and real quotes. A guide is indexed only when enough vendors list a price.
+// Price guides: "How much does a wedding photographer cost in India?" and "...in Jaipur?" answered
+// from live OLReady listings and real quotes. A guide is indexed only when enough vendors list a price.
 
 export type CostGuide = {
   category: Category;
@@ -29,7 +29,7 @@ export async function costGuide(db: Db, categorySlug: string, citySlug: string |
   const cats = await listCategories(db, { activeOnly: true });
   const category = cats.find((c) => c.slug === categorySlug);
   if (!category) return null;
-  const city = citySlug ? ((await listCities(db)).find((c) => c.slug === citySlug) ?? null) : null;
+  const city = citySlug ? await getCityBySlug(db, citySlug) : null;
   if (citySlug && !city) return null;
   const cityId = city?.id ?? null;
   const vendors = await db<{ slug: string; name: string; city: string; price: number | null; attributes: Record<string, unknown>; rating: number | null; reviews: number }[]>`
@@ -86,11 +86,11 @@ export async function costGuide(db: Db, categorySlug: string, citySlug: string |
 const noun = (c: Category) => c.name.replace(/^Wedding /, '').replace(/^Bridal /, 'bridal ').toLowerCase();
 export const costPath = (categorySlug: string, citySlug?: string | null) => `/cost/${categorySlug}${citySlug ? `/${citySlug}` : ''}`;
 export const costTitle = (g: Pick<CostGuide, 'category' | 'city' | 'year'>) =>
-  `${g.category.name} cost in ${g.city?.name ?? 'Chandigarh Tricity'} (${g.year})`;
+  `${g.category.name} cost in ${g.city?.name ?? 'India'} (${g.year})`;
 
 /** Questions people search, answered from the figures on the page. */
 export function costFaq(g: CostGuide) {
-  const where = g.city?.name ?? 'the Tricity';
+  const where = g.city?.name ?? 'India';
   const unit = g.category.price_unit;
   const faq: { q: string; a: string }[] = [
     {
@@ -111,22 +111,28 @@ export function costFaq(g: CostGuide) {
   return faq;
 }
 
-/** Every guide worth listing: Tricity-wide per category, and per city where vendors list prices. */
+/** Every guide worth listing: India-wide per category, and per town where enough vendors list prices. */
 export async function costEntries(db: Db) {
-  const [cats, cities] = await Promise.all([listCategories(db, { activeOnly: true }), listCities(db)]);
+  const cats = await listCategories(db, { activeOnly: true });
   const min = await getSetting<number>(db, 'min_vendors_to_index', 3);
-  const rows = await db<{ category_id: number; city_id: number; n: number }[]>`
-    select v.category_id, ci.id as city_id, count(*)::int as n
+  const rows = await db<{ category_id: number; slug: string; name: string; n: number }[]>`
+    select v.category_id, ci.slug, ci.name, count(distinct v.id)::int as n
     from mkt.vendors v join mkt.cities ci on ci.id = v.city_id or ci.id = any(v.service_city_ids)
-    where v.status = 'live' and v.starting_price_inr > 0 group by v.category_id, ci.id`;
+    where v.status = 'live' and v.starting_price_inr > 0 and ci.active group by v.category_id, ci.slug, ci.name, ci.launched, ci.sort
+    having count(distinct v.id) >= ${min} order by ci.launched desc, ci.sort, ci.name`;
   const totals = await db<{ category_id: number; n: number }[]>`
     select category_id, count(*)::int as n from mkt.vendors where status = 'live' and starting_price_inr > 0 group by category_id`;
   const out: { path: string; title: string }[] = [];
   for (const c of cats) {
-    if ((totals.find((t) => t.category_id === c.id)?.n ?? 0) >= min) out.push({ path: costPath(c.slug), title: `${c.name} cost in Chandigarh Tricity` });
-    for (const ci of cities) {
-      if ((rows.find((r) => r.category_id === c.id && r.city_id === ci.id)?.n ?? 0) >= min) out.push({ path: costPath(c.slug, ci.slug), title: `${c.name} cost in ${ci.name}` });
-    }
+    if ((totals.find((t) => t.category_id === c.id)?.n ?? 0) >= min) out.push({ path: costPath(c.slug), title: `${c.name} cost in India` });
+    for (const r of rows.filter((x) => x.category_id === c.id)) out.push({ path: costPath(c.slug, r.slug), title: `${c.name} cost in ${r.name}` });
   }
   return out;
+}
+
+/** Other towns with a guide for this category, from the guide list. */
+export async function costTowns(db: Db, categorySlug: string, except?: string | null) {
+  return (await costEntries(db))
+    .filter((e) => e.path.startsWith(`/cost/${categorySlug}/`) && e.path !== costPath(categorySlug, except ?? null))
+    .map((e) => ({ slug: e.path.split('/')[3], name: e.title.split(' cost in ')[1] }));
 }

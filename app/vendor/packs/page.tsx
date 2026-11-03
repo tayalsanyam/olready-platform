@@ -146,6 +146,9 @@ export default async function Packs({ searchParams }: P) {
               <textarea name="billing_address" className="input" rows={2} defaultValue={vendor.billing_address ?? ''} maxLength={300} />
             </Field>
           </div>
+          <Field label="Billing pincode" hint="Sets the state on your invoice when you have no GSTIN.">
+            <input name="billing_pincode" className="input" inputMode="numeric" maxLength={6} pattern="[1-9][0-9]{5}" defaultValue={vendor.billing_pincode ?? ''} />
+          </Field>
           <button className="btn btn-ghost btn-sm justify-self-start">Save billing details</button>
         </form>
       </Card>

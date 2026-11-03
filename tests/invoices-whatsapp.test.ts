@@ -44,7 +44,7 @@ describe('GST arithmetic', () => {
 
 describe('tax invoices', () => {
   it('issues a numbered invoice on payment and a credit note per refund, with the right tax', async () => {
-    process.env.SELLER_GSTIN = '04AAACK1234A1Z5';
+    process.env.SELLER_GSTIN = '04AAACK1234A1ZI';
     const admin = await profile(sql, 'admin');
     const a = await profile(sql, 'vendor', 'Tricity Lens');
     const va = await liveVendor(sql, a.id, 'photographers', 'mohali', 'Tricity Lens');
@@ -76,7 +76,7 @@ describe('tax invoices', () => {
     expect([Number(cn.taxable_paise), Number(cn.cgst_paise), Number(cn.sgst_paise)]).toEqual([100000, 9000, 9000]);
 
     // A GSTIN saved later changes future invoices only.
-    await sql`update mkt.vendors set gstin = '04AABCT1332L1ZZ', legal_name = 'City Decor LLP' where id = ${vb.id}`;
+    await sql`update mkt.vendors set gstin = '04AABCT1332L1ZM', legal_name = 'City Decor LLP' where id = ${vb.id}`;
     expect((await taxDocuments(sql, o2.id))[0].buyer.gstin).toBeNull();
 
     const pdf = await invoicePdf(cn);

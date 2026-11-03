@@ -3,7 +3,10 @@ import { sql } from '@/lib/db';
 import { requireVendor } from '@/lib/vendorSession';
 import { fieldsFor } from '@/lib/catalog';
 import { vendorMedia } from '@/lib/vendors';
-import { addMedia, removeMedia, saveVendorProfile, setCoverAction } from '@/lib/actions/vendor';
+import { addMedia, removeMedia, saveVendorPlaceAction, saveVendorProfile, setCoverAction } from '@/lib/actions/vendor';
+import { citiesByIds, getCity } from '@/lib/catalog';
+import { getLocality } from '@/lib/locations';
+import { PlacePicker, TownChips } from '@/components/PlacePicker';
 import { vendorTagPhoto } from '@/lib/actions/ideas';
 import { vendorKnownForAction } from '@/lib/actions/look';
 import { topicTags } from '@/lib/ideas';
@@ -36,6 +39,8 @@ export default async function ProfilePage({ searchParams }: P) {
   const tags = topic ? await topicTags(sql, topic.id) : [];
   const [cat] = await sql<{ slug: string }[]>`select slug from mkt.categories where id = ${vendor.category_id}`;
   const spaces = cat?.slug === 'venues' ? await spacesFor(sql, vendor.id) : null;
+  const [town, area, serving] = await Promise.all([getCity(sql, vendor.city_id), getLocality(sql, vendor.locality_id), citiesByIds(sql, vendor.service_city_ids)]);
+  const t = (c: { id: number; name: string; state: string }) => ({ id: c.id, name: c.name, state: c.state });
   return (
     <>
       <PageTitle
@@ -107,6 +112,38 @@ export default async function ProfilePage({ searchParams }: P) {
         </label>
         <button className="btn btn-pink">Save profile</button>
       </form>
+
+      <div className="scroll-mt-24" id="where" />
+      <Card className="mt-6">
+        <h2 className="font-semibold">Where you are</h2>
+        <p className="hint">
+          Brides search by town and area. {cat?.slug === 'venues' ? 'Venues show the full address and a map.' : 'Show your full address only if brides visit you, for example a studio or a store.'}
+        </p>
+        <form action={saveVendorPlaceAction} className="mt-3 space-y-4">
+          <PlacePicker
+            withArea
+            required
+            label="Base town or city *"
+            town={town ? t(town) : null}
+            area={area ? { id: area.id, name: area.name, pincode: vendor.pincode ?? area.pincode } : vendor.pincode ? { id: null, name: '', pincode: vendor.pincode } : null}
+          />
+          <Field label="Street address" hint="Building, street or landmark. Shown only if you tick the box below.">
+            <input name="address_line" className="input" maxLength={200} defaultValue={vendor.address_line ?? ''} placeholder="SCO 12, Madhya Marg" />
+          </Field>
+          <Field label="Google Maps link (optional)" hint="Open your place in Google Maps, tap Share, and paste the link here.">
+            <input name="maps_url" className="input" inputMode="url" maxLength={500} defaultValue={vendor.maps_url ?? ''} placeholder="https://maps.app.goo.gl/…" />
+          </Field>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="address_public" defaultChecked={vendor.address_public ?? cat?.slug === 'venues'} className="h-4 w-4 accent-[var(--color-pink)]" />
+            Show my full address and map on my page
+          </label>
+          <div>
+            <p className="label">Towns you work in</p>
+            <TownChips base={town ? t(town) : null} towns={serving.map(t)} />
+          </div>
+          <button className="btn">Save address</button>
+        </form>
+      </Card>
 
       <Card className="mt-6">
         <h2 className="font-semibold">Work photos</h2>

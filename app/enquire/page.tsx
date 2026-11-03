@@ -5,7 +5,9 @@ import { after } from 'next/server';
 import { bump, visitorKey } from '@/lib/analytics';
 import { sql } from '@/lib/db';
 import { currentProfile } from '@/lib/auth';
-import { formatInr, listCategories, listCities } from '@/lib/catalog';
+import { formatInr, getCity, getCityBySlug, listCategories, listCities } from '@/lib/catalog';
+import { getLocality } from '@/lib/locations';
+import { PlacePicker } from '@/components/PlacePicker';
 import { getVendorBySlug } from '@/lib/vendors';
 import { weddingFor } from '@/lib/weddings';
 import { submitEnquiry } from '@/lib/actions/public';
@@ -25,7 +27,9 @@ export default async function Enquire({ searchParams }: P) {
   // One category or several (from Ask OLReady: ?category=venues,caterers&guests=400).
   const preCats = new Set((sp(q.category) ?? '').split(',').filter(Boolean));
   const preGuests = Number(sp(q.guests)) > 0 ? Math.min(20000, Math.round(Number(sp(q.guests)))) : undefined;
-  const preCity = cities.find((c) => c.slug === sp(q.city))?.id ?? vendor?.city_id ?? wedding?.city_id ?? cities[0]?.id;
+  const preTown =
+    (sp(q.city) ? await getCityBySlug(sql, sp(q.city)!) : null) ?? (await getCity(sql, vendor?.city_id ?? wedding?.city_id ?? null));
+  const preArea = wedding?.locality_id ? await getLocality(sql, wedding.locality_id) : null;
   // Her functions from the wedding plan, else one Wedding row with what we know.
   const planned = await weddingFunctions(sql, wedding?.id ?? null);
   const initialFns = planned.length ? planned : [{ name: 'Wedding', date: wedding?.wedding_date ?? null, guests: preGuests ?? null }];
@@ -60,15 +64,18 @@ export default async function Enquire({ searchParams }: P) {
           <Field label="Email" hint="Sign in later with this email to track replies and quotes.">
             <input name="email" type="email" className="input" defaultValue={profile?.email ?? ''} autoComplete="email" />
           </Field>
-          <Field label="City *">
-            <select name="city_id" className="input" defaultValue={preCity} required>
-              {cities.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </Field>
+        </Card>
+        <Card>
+          <h2 className="mb-3 font-semibold">Where is the wedding?</h2>
+          <PlacePicker
+            withArea
+            required
+            label="Town or city *"
+            town={preTown ? { id: preTown.id, name: preTown.name, state: preTown.state } : null}
+            area={preArea ? { id: preArea.id, name: preArea.name, pincode: wedding?.pincode ?? preArea.pincode } : wedding?.pincode ? { id: null, name: '', pincode: wedding.pincode } : null}
+            quick={cities.map((c) => ({ id: c.id, name: c.name, state: c.state }))}
+          />
+          <p className="hint mt-2">Anywhere in India. The area helps vendors plan travel; each function can have its own place below.</p>
         </Card>
         <RequestFunctions
           cats={cats.map((c) => ({ id: c.id, slug: c.slug, plural_name: c.plural_name, price_unit: c.price_unit }))}

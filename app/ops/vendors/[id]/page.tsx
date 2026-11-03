@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
-import { displayValue, fieldsFor, formatInr, listCities } from '@/lib/catalog';
+import { citiesByIds, displayValue, fieldsFor, formatInr } from '@/lib/catalog';
+import { TownChips } from '@/components/PlacePicker';
 import { balances } from '@/lib/leads';
 import { vendorStats } from '@/lib/vendorStats';
 import type { Vendor } from '@/lib/vendors';
@@ -17,14 +18,15 @@ export default async function OpsVendor({ params, searchParams }: P) {
   const q = await searchParams;
   const me = await requireRole(['ops', 'admin']);
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
-  const [v] = await sql<(Vendor & { category: string; city: string; owner_email: string | null })[]>`
-    select v.*, c.name as category, ci.name as city, p.email as owner_email
+  const [v] = await sql<(Vendor & { category: string; city: string; state_name: string; area: string | null; owner_email: string | null })[]>`
+    select v.*, c.name as category, ci.name as city, ci.state as state_name, lo.name as area, p.email as owner_email
     from mkt.vendors v join mkt.categories c on c.id = v.category_id join mkt.cities ci on ci.id = v.city_id
+    left join mkt.localities lo on lo.id = v.locality_id
     left join mkt.profiles p on p.id = v.owner_profile_id where v.id = ${id}`;
   if (!v) notFound();
   const [fields, cities, bal, stats, ledger] = await Promise.all([
     fieldsFor(sql, v.category_id),
-    listCities(sql),
+    citiesByIds(sql, v.service_city_ids),
     balances(sql, v.id),
     vendorStats(sql, v.id),
     sql<{ id: number; credit_kind: string; delta: number; reason: string; note: string; created_at: Date }[]>`
@@ -34,7 +36,7 @@ export default async function OpsVendor({ params, searchParams }: P) {
     <>
       <PageTitle
         title={v.business_name}
-        sub={`${v.category} · ${v.city} · owner ${v.owner_email ?? 'none yet'}`}
+        sub={`${v.category} · ${[v.address_line, v.area, v.city, v.state_name, v.pincode].filter(Boolean).join(', ')} · owner ${v.owner_email ?? 'none yet'}`}
         action={
           <Link href={`/v/${v.slug}`} className="btn btn-ghost btn-sm">
             View profile
@@ -69,15 +71,9 @@ export default async function OpsVendor({ params, searchParams }: P) {
               </label>
             </div>
             <fieldset>
-              <legend className="label">Cities served (who sees her in leads)</legend>
-              <div className="flex flex-wrap gap-3 text-sm">
-                {cities.map((c) => (
-                  <label key={c.id} className="flex items-center gap-1.5">
-                    <input type="checkbox" name="service_city_id" value={c.id} defaultChecked={c.id === v.city_id || v.service_city_ids.includes(c.id)} />
-                    {c.name}
-                  </label>
-                ))}
-              </div>
+              <legend className="label">Towns served (who sees them in leads and listings)</legend>
+              <input type="hidden" name="service_city_id" value={v.city_id} />
+              <TownChips base={{ id: v.city_id, name: v.city, state: '' }} towns={cities.map((c) => ({ id: c.id, name: c.name, state: c.state }))} />
             </fieldset>
             <button className="btn btn-sm">Save</button>
           </form>

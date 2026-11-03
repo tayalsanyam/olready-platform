@@ -7,7 +7,7 @@ import { Toran } from '@/components/Toran';
 export const metadata = {
   title: 'About OLReady',
   description:
-    'OLReady is the Tricity’s wedding marketplace: venues, caterers, makeup artists, photographers and more in Chandigarh, Mohali, Panchkula and nearby towns, with every enquiry verified on a call.',
+    'OLReady is a wedding marketplace for India: venues, caterers, makeup artists, photographers and more, with every enquiry verified on a call. It started in Chandigarh, Mohali and Panchkula.',
   alternates: { canonical: '/about' },
 };
 
@@ -27,7 +27,8 @@ export default async function About() {
           <h1 className="text-4xl leading-tight sm:text-5xl">A wedding marketplace that picks up the phone.</h1>
           <p className="mt-4 text-lg text-[var(--color-muted)]">
             OLReady began in Chandigarh as a marketplace for bridal makeup artists. It now covers the whole wedding, from the venue and caterer to the
-            mehendi and the dhol, with the same promise: real enquiries, honest prices and reviews from people who were there.
+            mehendi and the dhol, for weddings anywhere in India, with the same promise: real enquiries, honest prices and reviews from people who were
+            there.
           </p>
         </Container>
       </section>
@@ -59,6 +60,10 @@ export default async function About() {
         <p className="mt-3 text-[15px] leading-relaxed">
           OLReady is operated by Katalyst Infomedia from Sector 17, Chandigarh. Katalyst Infomedia took over the OLReady brand, its clients and running
           plans from KSM Beauty Pvt Ltd, and runs both the marketplace and the vendor plans.
+        </p>
+        <p className="mt-6 text-xs text-[var(--color-muted)]">
+          Pincodes and post office names: All India Pincode Directory, Department of Posts, published on data.gov.in under the Government Open Data
+          License – India.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link href="/enquire" className="btn btn-pink">

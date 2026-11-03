@@ -8,7 +8,7 @@ import { IdeaGrid } from '@/components/IdeaGrid';
 export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'Wedding ideas: makeup, mehendi, decor, venues and outfits',
-  description: 'Browse bridal makeup looks, mehendi designs, decor, venues, outfits and real wedding photos from Tricity vendors. Save what you love and get quotes.',
+  description: 'Browse bridal makeup looks, mehendi designs, decor, venues, outfits and real wedding photos from OLReady vendors. Save what you love and get quotes.',
   alternates: { canonical: '/ideas' },
 };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
@@ -26,7 +26,7 @@ export default async function Ideas({ searchParams }: P) {
     <Container>
       <PageTitle
         title="Wedding ideas"
-        sub="Real work from Tricity vendors and real weddings. Tap the heart to save an idea to your wedding wall."
+        sub="Real work from OLReady vendors and real weddings. Tap the heart to save an idea to your wedding wall."
         action={
           <Link href="/look" className="btn btn-ghost">
             Search by photo

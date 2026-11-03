@@ -5,7 +5,7 @@ export function Newsletter({ backPath, source = 'blog' }: { backPath: string; so
   return (
     <div className="rounded-[18px] bg-[var(--color-pink-soft)] p-5">
       <h2 className="text-lg font-semibold">Wedding ideas in your inbox</h2>
-      <p className="mt-1 text-sm text-[var(--color-muted)]">New guides, real Tricity weddings and ideas, now and then. Unsubscribe any time.</p>
+      <p className="mt-1 text-sm text-[var(--color-muted)]">New guides, real weddings and ideas, now and then. Unsubscribe any time.</p>
       <form action={subscribeAction} className="mt-3 flex flex-wrap gap-2">
         <input type="hidden" name="_back" value={backPath} />
         <input type="hidden" name="source" value={source} />

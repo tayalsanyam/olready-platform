@@ -1,3 +1,4 @@
+import { PlacePicker } from '@/components/PlacePicker';
 import { redirect } from 'next/navigation';
 import { AcceptTerms } from '@/components/PolicyPage';
 import { sql } from '@/lib/db';
@@ -51,15 +52,7 @@ export default async function Onboard({ searchParams }: P) {
             <Field label="Your name">
               <input name="owner_name" className="input" defaultValue={profile.full_name} />
             </Field>
-            <Field label="Base city *">
-              <select name="city_id" className="input" required>
-                {cities.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            <PlacePicker required label="Base town or city *" townHint="Anywhere in India. You can add the towns you travel to later." quick={cities.map((c) => ({ id: c.id, name: c.name, state: c.state }))} />
             <Field label={`Starting price (${chosen.price_unit})`}>
               <input name="starting_price_inr" className="input" inputMode="numeric" placeholder="₹" />
             </Field>

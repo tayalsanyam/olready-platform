@@ -67,7 +67,7 @@ describe('big days', () => {
     // Her plan takes the dates: the default Mehendi gets its date; the Anand Karaj and Reception are added.
     const planned = await events(sql, w.id);
     expect(planned.map((e) => e.name)).toEqual(expect.arrayContaining(['Mehendi', 'Anand Karaj', 'Reception']));
-    expect((await weddingFunctions(sql, w.id)).find((f) => f.name === 'Mehendi')).toEqual({ name: 'Mehendi', date: '2027-02-12', guests: null });
+    expect((await weddingFunctions(sql, w.id)).find((f) => f.name === 'Mehendi')).toEqual({ name: 'Mehendi', date: '2027-02-12', guests: null, place: null });
 
     // Ops adds the Sangeet on the call, for makeup only.
     await opsSaveFunction(sql, lead.id, { name: 'Sangeet', date: '2027-02-13', guests: 300, needIds: [muaNeed.id] }, ops.id);

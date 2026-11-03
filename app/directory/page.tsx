@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { landingEntries } from '@/lib/seo';
 import { costEntries } from '@/lib/costGuide';
-import { listCities } from '@/lib/catalog';
+import { townsWithVendors } from '@/lib/locations';
 import { ideaTopics } from '@/lib/ideas';
 import { publishedCollections } from '@/lib/collections';
 import { SECTIONS } from '@/lib/articles';
@@ -11,28 +11,45 @@ import { Container } from '@/components/ui';
 export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'All wedding vendor pages',
-  description: 'Every OLReady page for wedding vendors, prices and ideas in Chandigarh, Mohali, Panchkula and nearby towns, in one place.',
+  description: 'Every OLReady page for wedding vendors, prices and ideas across India, in one place.',
   alternates: { canonical: '/directory' },
 };
 
 /** A browsable map of every public page, by town, then prices and ideas. */
 export default async function Directory() {
-  const [landing, costs, cities, topics, collections] = await Promise.all([landingEntries(sql), costEntries(sql), listCities(sql), ideaTopics(sql), publishedCollections(sql)]);
-  const byCity = cities
-    .map((c) => ({
-      city: c,
-      pages: landing.filter((l) => l.path.startsWith(`/vendors/${c.slug}/`)),
-    }))
+  const [landing, costs, towns, topics, collections] = await Promise.all([landingEntries(sql), costEntries(sql), townsWithVendors(sql), ideaTopics(sql), publishedCollections(sql)]);
+  // Every town with pages, launched towns first, grouped by state.
+  const byCity = towns
+    .map((c) => ({ city: c, pages: landing.filter((l) => l.path.startsWith(`/vendors/${c.slug}/`)) }))
     .filter((x) => x.pages.length);
+  const national = landing.filter((l) => l.path.startsWith('/vendors/india/'));
+  const states = [...new Set(byCity.map((x) => x.city.state))];
   return (
     <Container className="max-w-6xl">
       <h1 className="text-3xl font-semibold">All wedding vendor pages</h1>
       <p className="mt-2 max-w-2xl text-[var(--color-muted)]">Every town, category and price guide on OLReady. Pages appear here once enough vendors are listed to make them useful.</p>
 
-      <section className="mt-8">
-        <h2 className="text-xl font-semibold">Vendors by town</h2>
+      {national.length ? (
+        <section className="mt-8">
+          <h2 className="text-xl font-semibold">Across India</h2>
+          <ul className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            {national.map((p) => (
+              <li key={p.path}>
+                <Link href={p.path} className="hover:text-[var(--color-pink-deep)]">
+                  {p.title}
+                </Link>{' '}
+                <span className="text-[var(--color-muted)]">{p.vendors}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {states.map((state) => (
+      <section key={state} className="mt-10">
+        <h2 className="text-xl font-semibold">{state}</h2>
         <div className="mt-4 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {byCity.map(({ city, pages }) => (
+          {byCity.filter((x) => x.city.state === state).map(({ city, pages }) => (
             <div key={city.slug}>
               <h3 className="font-semibold">
                 <Link href={`/vendors/${city.slug}`} className="hover:text-[var(--color-pink-deep)]">
@@ -68,6 +85,7 @@ export default async function Directory() {
           ))}
         </div>
       </section>
+      ))}
 
       {costs.length ? (
         <section className="mt-12 scroll-mt-24" id="costs">
@@ -82,7 +100,7 @@ export default async function Directory() {
                   <span className="mt-0.5 flex flex-wrap gap-x-3">
                     {group.map((c) => (
                       <Link key={c.path} href={c.path} className="text-[var(--color-muted)] hover:text-[var(--color-pink-deep)]" aria-label={c.title}>
-                        {c.title.split(' cost in ')[1]?.replace('Chandigarh Tricity', 'Whole Tricity')}
+                        {c.title.split(' cost in ')[1]?.replace(/^India$/, 'All of India')}
                       </Link>
                     ))}
                   </span>

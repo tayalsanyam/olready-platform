@@ -1,5 +1,7 @@
 'use server';
 
+import { pincodeInfo, saveVendorPlace } from '../locations';
+import { STATE_CODES, gstinValid } from '../gst';
 import { sql, DomainError, audit } from '../db';
 import { requireProfile } from '../auth';
 import { requireVendor } from '../vendorSession';
@@ -43,6 +45,27 @@ export async function onboardVendor(fd: FormData) {
         where id = ${profile.id}`;
     });
     return { to: '/vendor/profile', ok: 'Profile created. Add photos and details; our team reviews it before it goes live.' };
+  });
+}
+
+export async function saveVendorPlaceAction(fd: FormData) {
+  await attempt('/vendor/profile#where', async () => {
+    const { profile, vendor } = await requireVendor();
+    await saveVendorPlace(
+      sql,
+      vendor.id,
+      {
+        cityId: num(fd, 'city_id'),
+        localityId: num(fd, 'locality_id'),
+        pincode: str(fd, 'pincode') || null,
+        addressLine: str(fd, 'address_line'),
+        mapsUrl: str(fd, 'maps_url'),
+        addressPublic: fd.get('address_public') === 'on',
+        serviceCityIds: fd.getAll('service_city_id').map(Number),
+      },
+      profile.id
+    );
+    return { ok: 'Address saved' };
   });
 }
 
@@ -152,11 +175,19 @@ export async function buyPack(fd: FormData) {
 export async function saveBillingAction(fd: FormData) {
   await attempt('/vendor/packs', async () => {
     const { profile, vendor } = await requireVendor('/vendor/packs');
-    const gstin = str(fd, 'gstin').toUpperCase() || null;
-    if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin)) throw new DomainError('bad_gstin', 'That GSTIN does not look right');
+    const gstin = str(fd, 'gstin').replace(/\s/g, '').toUpperCase() || null;
+    if (gstin && !gstinValid(gstin)) throw new DomainError('bad_gstin', 'That GSTIN does not look right. Check each character against your GST certificate.');
+    const pin = str(fd, 'billing_pincode').replace(/\s/g, '') || null;
+    const info = pin ? await pincodeInfo(sql, pin) : null;
+    if (pin && !info) throw new DomainError('bad_pincode', `We could not find pincode ${pin}`);
+    // The state on the invoice: the GST registration's state, else the billing pincode's.
+    if (gstin && info && gstin.slice(0, 2) !== info.state_code) {
+      throw new DomainError('state_mismatch', `This GSTIN is registered in ${STATE_CODES[gstin.slice(0, 2)]}, but pincode ${pin} is in ${info.state}. Use the address on your GST registration.`);
+    }
     await sql`
       update mkt.vendors set legal_name = ${str(fd, 'legal_name').slice(0, 120) || null}, gstin = ${gstin},
-        billing_address = ${str(fd, 'billing_address').slice(0, 300) || null}
+        billing_address = ${str(fd, 'billing_address').slice(0, 300) || null}, billing_pincode = ${pin},
+        billing_state_code = ${gstin ? gstin.slice(0, 2) : (info?.state_code ?? null)}
       where id = ${vendor.id}`;
     await audit(sql, profile.id, 'vendor.billing', 'vendor', vendor.id);
     return { ok: 'Billing details saved. They apply to invoices issued from now on.' };

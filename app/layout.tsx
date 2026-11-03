@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: { default: 'OLReady: verified wedding vendors', template: '%s | OLReady' },
   description:
-    'Find verified wedding venues, caterers, makeup artists, photographers, decorators, mehendi artists and more in Chandigarh, Mohali, Panchkula and nearby towns. Compare quotes in one place.',
+    'Find verified wedding venues, caterers, makeup artists, photographers, decorators, mehendi artists and more in towns across India. Every request is checked on a call; compare quotes in one place.',
   applicationName: 'OLReady',
   openGraph: { siteName: 'OLReady', type: 'website', locale: 'en_IN' },
   twitter: { card: 'summary_large_image' },

@@ -1,7 +1,8 @@
 import type { Db } from './db';
 import { DomainError, getSetting } from './db';
 import { aiEnabled } from './ai';
-import { displayValue, fieldsFor, formatInr, listCategories, listCities } from './catalog';
+import { displayValue, fieldsFor, formatInr, getCity, getCityBySlug, listCategories, listCities } from './catalog';
+import { searchPlaces } from './locations';
 import { weddingFor, checklist, shortlist, events } from './weddings';
 import { budgetSummary, canSeeBudget, weddingQuotes } from './budget';
 import { spacesFor } from './venueSpaces';
@@ -120,7 +121,7 @@ const STATUS: Record<ToolName, string> = {
   vendor_details: 'Reading the vendor profile',
   my_wedding: 'Checking your wedding plan',
   compare_quotes: 'Reading your quotes',
-  price_guide: 'Checking prices in the Tricity',
+  price_guide: 'Checking prices',
   find_ideas: 'Finding ideas',
   find_articles: 'Finding guides',
   propose_shortlist: 'Preparing a shortlist card',
@@ -135,11 +136,14 @@ async function categoryBySlug(db: Db, slug: string) {
   const s = slug.toLowerCase();
   return cats.find((c) => c.slug === s || c.name.toLowerCase() === s || c.plural_name.toLowerCase() === s) ?? null;
 }
+/** Any town in India by slug, name or old name ("gurgaon"), or by pincode. */
 async function cityBySlug(db: Db, slug: string) {
-  if (!slug) return null;
-  const cities = await listCities(db);
-  const s = slug.toLowerCase();
-  return cities.find((c) => c.slug === s || c.name.toLowerCase() === s) ?? null;
+  const s = slug.trim().toLowerCase();
+  if (!s) return null;
+  const direct = await getCityBySlug(db, s.replace(/\s+/g, '-'));
+  if (direct) return direct;
+  const [hit] = await searchPlaces(db, s, { limit: 1 });
+  return hit?.city_id ? getCity(db, hit.city_id) : null;
 }
 
 async function searchTool(ctx: Ctx, i: Record<string, unknown>) {
@@ -316,7 +320,7 @@ async function priceTool(ctx: Ctx, i: Record<string, unknown>) {
   if (s.n < 3) return { category: cat.plural_name, note: 'Too few vendors list prices here to give a fair range. Suggest sending a request to get real quotes.' };
   return {
     category: cat.plural_name,
-    city: city?.name ?? 'Tricity',
+    city: city?.name ?? 'India',
     unit: cat.price_unit,
     vendors_with_prices: s.n,
     starting_prices: { lower: formatInr(s.p25), middle: formatInr(s.p50), upper: formatInr(s.p75) },
@@ -478,12 +482,12 @@ export async function checkAnswer(db: Db, text: string, known: Set<string>, used
 
 async function systemPrompt(db: Db) {
   const [cats, cities] = await Promise.all([listCategories(db, { activeOnly: true }), listCities(db)]);
-  return `You are ${ASSISTANT_NAME}, the planning helper inside OLReady, a wedding marketplace for Chandigarh, Mohali, Panchkula and nearby towns. You help a bride (or her family) plan: choosing vendors, budgets, timelines, ideas and comparing quotes. Today is ${today()} (India).
+  return `You are ${ASSISTANT_NAME}, the planning helper inside OLReady, a wedding marketplace for India (it started in Chandigarh, Mohali and Panchkula). You help a bride (or her family) plan: choosing vendors, budgets, timelines, ideas and comparing quotes. Today is ${today()} (India).
 
 How OLReady works: vendors list for free. A bride sends one request for any categories; our team confirms it on a short call; verified vendors then message and quote inside OLReady. Vendor phone numbers are private until she chooses to share hers. You cannot see vendor contact details and must never give any, or say vendors are available on a date (you do not know; a request finds out).
 
 Categories (slug: name, price unit): ${cats.map((c) => `${c.slug}: ${c.plural_name}, ${c.price_unit}`).join('; ')}.
-Cities (slug: name): ${cities.map((c) => `${c.slug}: ${c.name}`).join('; ')}.
+Launched towns (slug: name): ${cities.map((c) => `${c.slug}: ${c.name}`).join('; ')}. Any other town in India works too: pass its name or pincode as city.
 
 Rules:
 - Facts about vendors, prices, her wedding or her quotes come only from tools. Never name a vendor that is not in a tool result from this conversation. Link every vendor you name as [Name](/v/slug) using the link from the tool.

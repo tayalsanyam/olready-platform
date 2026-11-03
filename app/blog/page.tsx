@@ -12,8 +12,8 @@ type P = { searchParams: Promise<Record<string, string | string[]>> };
 export async function generateMetadata({ searchParams }: P) {
   const page = Number(sp((await searchParams).page)) || 1;
   return {
-    title: 'Wedding planning guides and ideas for the Tricity',
-    description: 'Practical guides for weddings in Chandigarh, Mohali and Panchkula: venues, budgets, makeup, photography, decor and real advice from families.',
+    title: 'Wedding planning guides and ideas',
+    description: 'Practical guides for weddings in India: venues, budgets, makeup, photography, decor and real advice from families.',
     alternates: { canonical: page > 1 ? `/blog?page=${page}` : '/blog' },
   };
 }
@@ -26,7 +26,7 @@ export default async function Blog({ searchParams }: P) {
   const [lead, ...rest] = list;
   return (
     <Container>
-      <PageTitle title="Wedding guides" sub="Straight answers for planning a wedding in Chandigarh, Mohali and Panchkula." />
+      <PageTitle title="Wedding guides" sub="Straight answers for planning a wedding in India." />
       <Notice error={sp(q.error)} ok={sp(q.ok)} />
       <div className="no-scrollbar -mx-4 mb-6 flex gap-2 overflow-x-auto px-4" role="group" aria-label="Sections">
         <Link href="/blog" className="chip" aria-current>

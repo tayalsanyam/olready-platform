@@ -3,8 +3,8 @@
 import { useState } from 'react';
 
 type Cat = { id: number; slug: string; plural_name: string; price_unit: string };
-type Row = { key: number; name: string; date: string; guests: string };
-type Fn = { name: string; date: string | null; guests: number | null };
+type Row = { key: number; name: string; date: string; guests: string; place: string };
+type Fn = { name: string; date: string | null; guests: number | null; place?: string | null };
 
 const PRESETS = ['Roka', 'Sagan', 'Engagement', 'Mehendi', 'Haldi', 'Jaggo', 'Sangeet', 'Cocktail', 'Wedding', 'Anand Karaj', 'Reception'];
 const MAX = 8;
@@ -16,14 +16,14 @@ let nextKey = 1;
  */
 export function RequestFunctions(props: { cats: Cat[]; preCats: string[]; initial: Fn[]; single?: { id: number; name: string; budgetHint?: string } }) {
   const [rows, setRows] = useState<Row[]>(() =>
-    (props.initial.length ? props.initial : [{ name: 'Wedding', date: null, guests: null }]).map((f) => ({ key: nextKey++, name: f.name, date: f.date ?? '', guests: f.guests ? String(f.guests) : '' }))
+    (props.initial.length ? props.initial : [{ name: 'Wedding', date: null, guests: null }]).map((f) => ({ key: nextKey++, name: f.name, date: f.date ?? '', guests: f.guests ? String(f.guests) : '', place: f.place ?? '' }))
   );
   const [picked, setPicked] = useState<Set<number>>(() => new Set(props.single ? [props.single.id] : props.cats.filter((c) => props.preCats.includes(c.slug)).map((c) => c.id)));
   // Per category, the row keys it is NOT needed for (so new rows are included by default).
   const [skip, setSkip] = useState<Record<number, number[]>>({});
 
   const update = (key: number, patch: Partial<Row>) => setRows((r) => r.map((x) => (x.key === key ? { ...x, ...patch } : x)));
-  const add = (name = '') => rows.length < MAX && setRows((r) => [...r, { key: nextKey++, name, date: '', guests: '' }]);
+  const add = (name = '') => rows.length < MAX && setRows((r) => [...r, { key: nextKey++, name, date: '', guests: '', place: '' }]);
   const remove = (key: number) => setRows((r) => (r.length > 1 ? r.filter((x) => x.key !== key) : r));
   const named = rows.filter((r) => r.name.trim());
   const toggleFor = (catId: number, key: number) =>
@@ -63,7 +63,7 @@ export function RequestFunctions(props: { cats: Cat[]; preCats: string[]; initia
     <>
       <div className="card p-4 sm:p-5">
         <h2 className="font-semibold">Your functions</h2>
-        <p className="hint">Vendors price per function. Add the ones you know; rough dates and guest counts are fine.</p>
+        <p className="hint">Vendors price per function. Add the ones you know; rough dates, guest counts and places are fine.</p>
         <datalist id="fn-presets">
           {PRESETS.map((p) => (
             <option key={p} value={p} />
@@ -94,6 +94,15 @@ export function RequestFunctions(props: { cats: Cat[]; preCats: string[]; initia
                 className="input col-span-2 min-w-0 sm:col-span-1"
                 placeholder="Guests"
                 aria-label={`Guests at ${r.name || `function ${i + 1}`}`}
+              />
+              <input
+                name={`fn_place_${i}`}
+                value={r.place}
+                onChange={(e) => update(r.key, { place: e.target.value })}
+                className="input col-span-3 min-w-0 sm:col-span-4"
+                placeholder="Where (optional): home, a venue, an area"
+                aria-label={`Where is ${r.name || `function ${i + 1}`}`}
+                maxLength={80}
               />
             </li>
           ))}
