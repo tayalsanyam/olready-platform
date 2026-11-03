@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { after } from 'next/server';
 import { DomainError, sql } from '../db';
 import { flushOutbox } from '../email';
+import { flushWhatsApp, waProvider } from '../whatsapp';
 
 export function withParam(path: string, key: string, value: string) {
   const [base, query = ''] = path.split('?');
@@ -27,6 +28,7 @@ export async function attempt(back: string, fn: () => Promise<string | { to?: st
     else to = back;
     // Send any emails this action queued, after the response is on its way.
     if (process.env.RESEND_API_KEY) after(() => flushOutbox(sql, 20).then(() => undefined, () => undefined));
+    if (waProvider()) after(() => flushWhatsApp(sql, 20).then(() => undefined, () => undefined));
   } catch (e) {
     if (e instanceof DomainError) to = withParam(back, 'error', e.message);
     else throw e;

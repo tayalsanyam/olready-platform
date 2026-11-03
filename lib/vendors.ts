@@ -36,6 +36,10 @@ export type Vendor = {
   verified_at: Date | null;
   assured: boolean;
   known_for?: string[];
+  whatsapp_alerts?: boolean;
+  legal_name?: string | null;
+  billing_address?: string | null;
+  gstin?: string | null;
   created_at: Date;
 };
 

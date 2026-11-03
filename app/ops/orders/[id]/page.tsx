@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/auth';
 import { formatInr } from '@/lib/catalog';
 import { orderProduct, type Order } from '@/lib/payments';
 import { opsRefundAction } from '@/lib/actions/promotion';
+import { taxDocuments } from '@/lib/invoices';
 import { Badge, Card, Field, Notice, PageTitle, sp } from '@/components/ui';
 
 export const metadata = { title: 'Order' };
@@ -20,10 +21,11 @@ export default async function OrderPage({ params, searchParams }: P) {
     select o.*, pr.full_name as buyer, pr.email as buyer_email, v.business_name as vendor_name, v.slug as vendor_slug
     from mkt.orders o join mkt.profiles pr on pr.id = o.profile_id left join mkt.vendors v on v.id = o.vendor_id where o.id = ${id}`;
   if (!o) notFound();
-  const [product, refunds] = await Promise.all([
+  const [product, refunds, docs] = await Promise.all([
     orderProduct(sql, o),
     sql<{ id: string; amount_inr: number; method: string; gateway_refund_id: string | null; reference: string; reason: string; took_back: Record<string, unknown>; created_at: Date; by: string }[]>`
       select r.*, p.full_name as by from mkt.refunds r join mkt.profiles p on p.id = r.created_by where r.order_id = ${id} order by r.created_at desc`,
+    taxDocuments(sql, id),
   ]);
   const left = o.amount_inr - o.refunded_inr;
   return (
@@ -65,6 +67,21 @@ export default async function OrderPage({ params, searchParams }: P) {
               {fmt(o.created_at)} / {fmt(o.paid_at)}
             </dd>
           </dl>
+          {docs.length ? (
+            <>
+              <h2 className="mt-5 font-semibold">Tax documents</h2>
+              <ul className="mt-1 space-y-1 text-sm">
+                {docs.map((d) => (
+                  <li key={d.id}>
+                    <a className="underline" href={`/invoices/${d.id}`} target="_blank" rel="noreferrer">
+                      {d.kind === 'invoice' ? 'Invoice' : 'Credit note'} {d.number}
+                    </a>{' '}
+                    <span className="text-[var(--color-muted)]">₹{(Number(d.total_paise) / 100).toLocaleString('en-IN')}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
           {refunds.length ? (
             <>
               <h2 className="mt-5 font-semibold">Refunds</h2>

@@ -34,11 +34,11 @@ export default async function OpsPayments({ searchParams }: P) {
   ]);
   return (
     <>
-      <PageTitle title="Payments" sub="Plans activate after the invoice and signed contract are uploaded. Top-ups credit on payment." />
+      <PageTitle title="Payments" sub="Plans activate once the signed contract is uploaded; the tax invoice is issued on payment. Top-ups credit on payment." />
       <Notice error={q.error} ok={q.ok} />
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
-          <h2 className="font-semibold">Plans waiting for invoice and contract</h2>
+          <h2 className="font-semibold">Plans waiting for the signed contract</h2>
           {subs.length ? (
             <ul className="mt-2 space-y-3">
               {subs.map((s) => (
@@ -48,7 +48,7 @@ export default async function OpsPayments({ searchParams }: P) {
                   </div>
                   <form action={opsActivateSub} className="mt-2 grid gap-2">
                     <input type="hidden" name="sub_id" value={s.id} />
-                    <input name="invoice_url" required className="input" placeholder="Zoho tax invoice link" />
+                    <input name="invoice_url" className="input" placeholder="Invoice link (leave empty to use our own tax invoice)" />
                     <input name="contract_url" required className="input" placeholder="Signed contract link" />
                     <button className="btn btn-sm justify-self-start">Activate plan</button>
                   </form>

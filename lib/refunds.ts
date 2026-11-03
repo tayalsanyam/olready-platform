@@ -3,6 +3,7 @@ import type { Sql } from './db';
 import { DomainError, audit } from './db';
 import type { Order } from './payments';
 import { queueEmail } from './email';
+import { issueCreditNote } from './invoices';
 
 export type RefundInput = {
   amount: number;
@@ -97,6 +98,7 @@ export async function refundOrder(sql: Sql, orderId: string, i: RefundInput, act
       insert into mkt.refunds (order_id, amount_inr, method, gateway_refund_id, reference, reason, took_back, created_by)
       values (${cur.id}, ${i.amount}, ${i.method}, ${gatewayId}, ${i.reference.trim()}, ${reason}, ${tx.json(took as never)}, ${actor})
       returning id`;
+    await issueCreditNote(tx, r.id, actor);
     const total = cur.refunded_inr + i.amount;
     await tx`update mkt.orders set refunded_inr = ${total}, status = ${total >= cur.amount_inr ? 'refunded' : 'paid'} where id = ${cur.id}`;
     const [buyer] = await tx<{ email: string | null; name: string }[]>`select email, full_name as name from mkt.profiles where id = ${cur.profile_id}`;

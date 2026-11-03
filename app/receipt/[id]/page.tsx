@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { requireProfile } from '@/lib/auth';
 import { formatInr } from '@/lib/catalog';
+import { taxDocuments } from '@/lib/invoices';
 import { Card, Container } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +10,7 @@ export const metadata = { title: 'Payment receipt', robots: { index: false } };
 
 type P = { params: Promise<{ id: string }> };
 
-/** A transaction receipt confirming payment. The tax invoice is issued separately from Zoho. */
+/** A transaction receipt confirming payment, with links to the tax invoice and any credit notes. */
 export default async function Receipt({ params }: P) {
   const { id } = await params;
   const profile = await requireProfile(`/receipt/${id}`);
@@ -22,8 +23,9 @@ export default async function Receipt({ params }: P) {
     left join mkt.services s on s.code = o.service_code
     left join mkt.vendors v on v.id = o.vendor_id
     join mkt.profiles pr on pr.id = o.profile_id
-    where o.id = ${id} and o.profile_id = ${profile.id} and o.status = 'paid'`;
+    where o.id = ${id} and o.profile_id = ${profile.id} and o.status in ('paid', 'refunded')`;
   if (!o) notFound();
+  const docs = await taxDocuments(sql, o.id);
   return (
     <Container className="max-w-xl">
       <Card className="space-y-4 p-6">
@@ -59,7 +61,16 @@ export default async function Receipt({ params }: P) {
             </tr>
           </tbody>
         </table>
-        <p className="hint">This receipt confirms your payment. Your tax invoice is issued separately.</p>
+        {docs.length ? (
+          <div className="flex flex-wrap gap-2">
+            {docs.map((d) => (
+              <a key={d.id} href={`/invoices/${d.id}`} target="_blank" rel="noreferrer" className={`btn btn-sm ${d.kind === 'invoice' ? '' : 'btn-ghost'}`}>
+                {d.kind === 'invoice' ? 'Tax invoice' : 'Credit note'} {d.number} (PDF)
+              </a>
+            ))}
+          </div>
+        ) : null}
+        <p className="hint">This receipt confirms your payment. The tax invoice above is your GST document.</p>
       </Card>
     </Container>
   );

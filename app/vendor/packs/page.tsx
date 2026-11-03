@@ -5,7 +5,7 @@ import { CallbackForm } from '@/components/CallbackForm';
 import { formatInr } from '@/lib/catalog';
 import { balances } from '@/lib/leads';
 import { gatewayStates, packsFor } from '@/lib/payments';
-import { buyPack } from '@/lib/actions/vendor';
+import { buyPack, saveBillingAction } from '@/lib/actions/vendor';
 import { Badge, Card, Field, Notice, PageTitle } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
@@ -22,9 +22,12 @@ export default async function Packs({ searchParams }: P) {
     packsFor(sql, vendor.category_id),
     gatewayStates(sql),
     balances(sql, vendor.id),
-    sql<{ id: string; pack: string; amount_inr: number; gateway: string; status: string; created_at: Date }[]>`
-      select o.id, p.name as pack, o.amount_inr, o.gateway, o.status, o.created_at
-      from mkt.orders o left join mkt.packs p on p.id = o.pack_id where o.vendor_id = ${vendor.id} order by o.created_at desc limit 20`,
+    sql<{ id: string; pack: string; amount_inr: number; gateway: string; status: string; created_at: Date; invoice_id: string | null; invoice_no: string | null }[]>`
+      select o.id, coalesce(p.name, case when o.wallet_topup_inr is not null then 'Ads wallet top-up' end) as pack, o.amount_inr, o.gateway, o.status, o.created_at,
+        d.id as invoice_id, d.number as invoice_no
+      from mkt.orders o left join mkt.packs p on p.id = o.pack_id
+      left join mkt.tax_documents d on d.order_id = o.id and d.kind = 'invoice'
+      where o.vendor_id = ${vendor.id} order by o.created_at desc limit 20`,
     sql<{ id: string; name: string; status: string; ends_at: Date | null }[]>`
       select s.id, p.name, s.status, s.ends_at from mkt.vendor_subscriptions s join mkt.packs p on p.id = s.pack_id
       where s.vendor_id = ${vendor.id} order by s.created_at desc`,
@@ -39,7 +42,7 @@ export default async function Packs({ searchParams }: P) {
       <Notice error={q.error} ok={q.ok} />
       {subs.some((s) => s.status === 'pending_contract') ? (
         <div className="mb-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-pink-soft)] px-3 py-2 text-sm">
-          Your plan is paid. It activates once our team uploads your invoice and the signed contract.
+          Your plan is paid. It activates once our team has your signed contract.
         </div>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -52,7 +55,7 @@ export default async function Packs({ searchParams }: P) {
             <p className="mt-1 text-2xl font-semibold">{formatInr(p.price_inr)}</p>
             <p className="hint">GST included · {p.credits} credits{p.validity_days ? ` · ${Math.round(p.validity_days / 30)} months` : ', no expiry'}</p>
             <p className="mt-2 flex-1 text-sm">{p.description}</p>
-            {p.requires_contract ? <p className="hint mt-1">Activates after invoice and signed contract.</p> : null}
+            {p.requires_contract ? <p className="hint mt-1">Activates once the signed contract is in.</p> : null}
             {usable.length ? (
               <form action={buyPack} className="mt-3 space-y-2">
                 <input type="hidden" name="pack_id" value={p.id} />
@@ -66,7 +69,7 @@ export default async function Packs({ searchParams }: P) {
                 <details>
                   <summary className="hint cursor-pointer">Add GSTIN or a discount code (optional)</summary>
                   <Field label="GSTIN">
-                    <input name="gstin" className="input uppercase" maxLength={15} />
+                    <input name="gstin" className="input uppercase" maxLength={15} defaultValue={vendor.gstin ?? ''} />
                   </Field>
                   <Field label="Discount code">
                     <input name="coupon" className="input uppercase" maxLength={24} />
@@ -83,7 +86,7 @@ export default async function Packs({ searchParams }: P) {
       {orders.length ? (
         <Card className="mt-6 overflow-x-auto">
           <h2 className="mb-2 font-semibold">Orders</h2>
-          <table className="data">
+          <table className="data min-w-[600px] whitespace-nowrap">
             <thead>
               <tr>
                 <th>Date</th>
@@ -103,10 +106,17 @@ export default async function Packs({ searchParams }: P) {
                   <td>{o.gateway}</td>
                   <td>{o.status}</td>
                   <td>
-                    {o.status === 'paid' ? (
-                      <Link className="underline" href={`/receipt/${o.id}`}>
-                        Receipt
-                      </Link>
+                    {o.status === 'paid' || o.status === 'refunded' ? (
+                      <span className="flex flex-wrap gap-x-3">
+                        {o.invoice_id ? (
+                          <a className="underline" href={`/invoices/${o.invoice_id}`} target="_blank" rel="noreferrer">
+                            Invoice {o.invoice_no}
+                          </a>
+                        ) : null}
+                        <Link className="underline" href={`/receipt/${o.id}`}>
+                          Receipt
+                        </Link>
+                      </span>
                     ) : o.status === 'created' ? (
                       <Link className="underline" href={`/pay/${o.id}`}>
                         Pay
@@ -119,6 +129,24 @@ export default async function Packs({ searchParams }: P) {
           </table>
         </Card>
       ) : null}
+      <Card className="mt-6">
+        <h2 className="font-semibold">Billing details</h2>
+        <p className="hint">Printed on your tax invoices. Add your GSTIN to claim input tax credit.</p>
+        <form action={saveBillingAction} className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Field label="Legal name">
+            <input name="legal_name" className="input" defaultValue={vendor.legal_name ?? ''} placeholder={vendor.business_name} maxLength={120} />
+          </Field>
+          <Field label="GSTIN">
+            <input name="gstin" className="input uppercase" defaultValue={vendor.gstin ?? ''} maxLength={15} />
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Billing address">
+              <textarea name="billing_address" className="input" rows={2} defaultValue={vendor.billing_address ?? ''} maxLength={300} />
+            </Field>
+          </div>
+          <button className="btn btn-ghost btn-sm justify-self-start">Save billing details</button>
+        </form>
+      </Card>
       <div className="mt-6">
         <CallbackForm phone={profile.phone ?? vendor.phone} backPath="/vendor/packs" topics={['plans', 'leads', 'profile', 'payments', 'other']} />
       </div>

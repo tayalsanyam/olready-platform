@@ -1,6 +1,8 @@
 import type { Db } from './db';
 import { formatInr } from './catalog';
 import { queueEmail } from './email';
+import { queueWhatsApp } from './whatsapp';
+import { siteUrl } from './seo';
 
 /**
  * Event emails. Each is queued in the outbox with a dedupe key, so retries and repeated
@@ -8,6 +10,12 @@ import { queueEmail } from './email';
  */
 
 const hourKey = () => new Date().toISOString().slice(0, 13);
+// WhatsApp is noisier than email: at most one message per conversation per six hours.
+const sixHourKey = () => {
+  const d = new Date();
+  return `${d.toISOString().slice(0, 10)}-${Math.floor(d.getUTCHours() / 6)}`;
+};
+const firstName = (n: string) => n.trim().split(/\s+/)[0] || 'there';
 
 export async function notifyNewLead(db: Db, leadId: string) {
   const rows = await db<{ need_id: string; vendor_id: string; email: string; business: string; category: string; city: string; date: string | null }[]>`
@@ -26,7 +34,30 @@ export async function notifyNewLead(db: Db, leadId: string) {
   for (const r of rows) {
     await queueEmail(db, r.email, 'vendor_new_lead', { business: r.business, category: r.category.toLowerCase(), city: r.city, date: r.date ?? '' }, `newlead:${r.need_id}:${r.vendor_id}`);
   }
+  await whatsappNewLead(db, leadId);
   return rows.length;
+}
+
+/** WhatsApp for a newly verified request: the bride if she opted in, vendors who turned alerts on. */
+async function whatsappNewLead(db: Db, leadId: string) {
+  const [l] = await db<{ phone: string; name: string; opt_in: boolean; cats: string }[]>`
+    select l.phone, l.bride_name as name, l.whatsapp_opt_in as opt_in,
+      (select string_agg(lower(c.name), ', ' order by c.sort) from mkt.lead_needs ln join mkt.categories c on c.id = ln.category_id
+       where ln.lead_id = l.id and ln.status <> 'removed') as cats
+    from mkt.leads l where l.id = ${leadId} and l.status = 'verified'`;
+  if (!l) return;
+  if (l.opt_in) await queueWhatsApp(db, l.phone, 'request_verified', [firstName(l.name), l.cats ?? 'your wedding'], `wa:verified:${leadId}`);
+  const vendors = await db<{ need_id: string; vendor_id: string; phone: string | null; business: string; category: string; city: string; date: string | null }[]>`
+    select ln.id as need_id, v.id as vendor_id, v.phone, v.business_name as business, lower(c.name) as category, ci.name as city,
+      coalesce(to_char(l.event_date, 'DD Mon YYYY'), 'a date to be confirmed') as date
+    from mkt.lead_needs ln join mkt.leads l on l.id = ln.lead_id
+    join mkt.categories c on c.id = ln.category_id join mkt.cities ci on ci.id = l.city_id
+    join mkt.vendors v on v.category_id = ln.category_id and v.status = 'live' and v.whatsapp_alerts
+      and (v.city_id = l.city_id or l.city_id = any(v.service_city_ids))
+      and (ln.direct_vendor_id is null or ln.direct_vendor_id = v.id)
+    where l.id = ${leadId} and ln.status = 'open'`;
+  for (const v of vendors)
+    await queueWhatsApp(db, v.phone, 'vendor_new_lead', [v.business, v.category, v.city, v.date ?? '', `${siteUrl()}/vendor`], `wa:newlead:${v.need_id}:${v.vendor_id}`);
 }
 
 /** Tells the other side of a conversation; at most one email per recipient per thread per hour. */
@@ -47,6 +78,16 @@ export async function notifyMessage(db: Db, threadId: string, senderId: string, 
   } else if (t.vendor_email) {
     await queueEmail(db, t.vendor_email, 'new_message', { name: t.business, from: t.bride_name.split(' ')[0], preview, path: `/vendor/threads/${threadId}` }, `msg:${threadId}:vendor:${hourKey()}`);
   }
+  const [w] = await db<{ bride_phone: string; opt_in: boolean; vendor_phone: string | null; alerts: boolean }[]>`
+    select l.phone as bride_phone, l.whatsapp_opt_in as opt_in, v.phone as vendor_phone, v.whatsapp_alerts as alerts
+    from mkt.threads t join mkt.vendors v on v.id = t.vendor_id join mkt.lead_needs ln on ln.id = t.lead_need_id join mkt.leads l on l.id = ln.lead_id
+    where t.id = ${threadId}`;
+  if (!w) return;
+  if (senderId === t.vendor_owner) {
+    if (w.opt_in) await queueWhatsApp(db, w.bride_phone, 'bride_message', [firstName(t.bride_name), t.business, `${siteUrl()}/me/threads/${threadId}`], `wa:msg:${threadId}:bride:${sixHourKey()}`);
+  } else if (w.alerts) {
+    await queueWhatsApp(db, w.vendor_phone, 'vendor_message', [t.business, firstName(t.bride_name), `${siteUrl()}/vendor/threads/${threadId}`], `wa:msg:${threadId}:vendor:${sixHourKey()}`);
+  }
 }
 
 export async function notifyQuote(db: Db, quoteId: string, event: 'sent' | 'accepted') {
@@ -65,6 +106,15 @@ export async function notifyQuote(db: Db, quoteId: string, event: 'sent' | 'acce
   if (event === 'accepted' && q.vendor_email) {
     await queueEmail(db, q.vendor_email, 'quote_accepted', { business: q.business, bride: q.bride_name.split(' ')[0], amount: formatInr(q.amount_inr), path: `/vendor/threads/${q.thread_id}` }, `accepted:${quoteId}`);
   }
+  const [w] = await db<{ bride_phone: string; opt_in: boolean; vendor_phone: string | null; alerts: boolean }[]>`
+    select l.phone as bride_phone, l.whatsapp_opt_in as opt_in, v.phone as vendor_phone, v.whatsapp_alerts as alerts
+    from mkt.quotes q join mkt.threads t on t.id = q.thread_id join mkt.vendors v on v.id = t.vendor_id
+    join mkt.lead_needs ln on ln.id = t.lead_need_id join mkt.leads l on l.id = ln.lead_id where q.id = ${quoteId}`;
+  if (!w) return;
+  if (event === 'sent' && w.opt_in)
+    await queueWhatsApp(db, w.bride_phone, 'quote_received', [firstName(q.bride_name), q.business, formatInr(q.amount_inr), `${siteUrl()}/me/compare`], `wa:quote:${quoteId}`);
+  if (event === 'accepted' && w.alerts)
+    await queueWhatsApp(db, w.vendor_phone, 'quote_accepted', [q.business, firstName(q.bride_name), formatInr(q.amount_inr), `${siteUrl()}/vendor/threads/${q.thread_id}`], `wa:accepted:${quoteId}`);
 }
 
 export async function notifyRmAssigned(db: Db, engagementId: string) {

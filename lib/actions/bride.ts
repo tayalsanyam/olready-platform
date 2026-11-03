@@ -49,6 +49,12 @@ export async function saveWeddingAction(fd: FormData) {
     };
     if (str(fd, 'full_name')) await sql`update mkt.profiles set full_name = ${str(fd, 'full_name')} where id = ${p.id}`;
     await sql`update mkt.profiles set notify_email = ${fd.get('notify_email') === 'on'} where id = ${p.id}`;
+    if (fd.get('whatsapp_shown')) {
+      const wa = fd.get('whatsapp_opt_in') === 'on';
+      await sql`
+        update mkt.leads set whatsapp_opt_in = ${wa}, whatsapp_opt_in_at = case when ${wa} and not whatsapp_opt_in then now() else whatsapp_opt_in_at end
+        where bride_profile_id = ${p.id} and whatsapp_opt_in <> ${wa}`;
+    }
     const w = await weddingFor(sql, p.id);
     if (w) await updateWedding(sql, w.id, p.id, input);
     else await createWedding(sql, p.id, input);

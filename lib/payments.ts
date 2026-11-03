@@ -1,4 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { ensureInvoice } from './invoices';
 import type { Db, Sql } from './db';
 import { DomainError, audit } from './db';
 import { grantCredits } from './leads';
@@ -135,6 +136,8 @@ export async function markOrderPaid(sql: Sql, orderId: string, paymentId: string
       // Bride paid first; the team approves and assigns a relationship manager next.
       await tx`update mkt.rm_engagements set status = 'pending_approval' where order_id = ${order.id} and status = 'pending_payment'`;
     }
+    // The tax invoice is numbered the moment the money is in, inside the same transaction.
+    await ensureInvoice(tx, orderId, actor);
     await audit(tx, actor, 'order.paid', 'order', orderId, { paymentId });
     return { order: paid, alreadyPaid: false };
   });
@@ -155,13 +158,21 @@ async function activate(db: Db, subId: string, invoiceUrl: string | null, contra
   await grantCredits(db, sub.vendor_id, 'plan', sub.credits, 'purchase', sub.id, actor, sub.name);
 }
 
-/** Plans activate only after Ops uploads the invoice and the signed contract. */
+/**
+ * Plans activate only after Ops uploads the signed contract. The invoice is OLReady's own tax
+ * invoice for the order unless Ops gives another link.
+ */
 export async function activateSubscription(sql: Sql, subId: string, invoiceUrl: string, contractUrl: string, actor: string) {
-  if (!invoiceUrl.trim() || !contractUrl.trim()) {
-    throw new DomainError('missing_docs', 'Upload both the invoice and the signed contract first');
-  }
+  if (!contractUrl.trim()) throw new DomainError('missing_docs', 'Upload the signed contract first');
   return sql.begin(async (tx) => {
-    await activate(tx, subId, invoiceUrl.trim(), contractUrl.trim(), actor);
+    let invoice = invoiceUrl.trim();
+    if (!invoice) {
+      const [doc] = await tx<{ id: string }[]>`
+        select d.id from mkt.vendor_subscriptions s join mkt.tax_documents d on d.order_id = s.order_id and d.kind = 'invoice' where s.id = ${subId}`;
+      if (!doc) throw new DomainError('missing_docs', 'There is no OLReady invoice for this plan; add the invoice link');
+      invoice = `/invoices/${doc.id}`;
+    }
+    await activate(tx, subId, invoice, contractUrl.trim(), actor);
     await audit(tx, actor, 'subscription.activate', 'subscription', subId);
   });
 }

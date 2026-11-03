@@ -1,6 +1,6 @@
 'use server';
 
-import { sql, DomainError } from '../db';
+import { sql, DomainError, audit } from '../db';
 import { requireProfile } from '../auth';
 import { requireVendor } from '../vendorSession';
 import { createVendor, updateVendorProfile, vendorForOwner } from '../vendors';
@@ -45,6 +45,8 @@ export async function saveVendorProfile(fd: FormData) {
   await attempt('/vendor/profile', async () => {
     const { profile, vendor } = await requireVendor();
     await sql`update mkt.profiles set notify_email = ${fd.get('notify_email') === 'on'} where id = ${profile.id}`;
+    const wa = fd.get('whatsapp_alerts') === 'on';
+    await sql`update mkt.vendors set whatsapp_alerts = ${wa}, whatsapp_alerts_at = case when ${wa} and not whatsapp_alerts then now() else whatsapp_alerts_at end where id = ${vendor.id}`;
     await updateVendorProfile(
       sql,
       vendor.id,
@@ -137,6 +139,20 @@ export async function buyPack(fd: FormData) {
       coupon: str(fd, 'coupon') || null,
     });
     return `/pay/${order.id}`;
+  });
+}
+
+export async function saveBillingAction(fd: FormData) {
+  await attempt('/vendor/packs', async () => {
+    const { profile, vendor } = await requireVendor('/vendor/packs');
+    const gstin = str(fd, 'gstin').toUpperCase() || null;
+    if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin)) throw new DomainError('bad_gstin', 'That GSTIN does not look right');
+    await sql`
+      update mkt.vendors set legal_name = ${str(fd, 'legal_name').slice(0, 120) || null}, gstin = ${gstin},
+        billing_address = ${str(fd, 'billing_address').slice(0, 300) || null}
+      where id = ${vendor.id}`;
+    await audit(sql, profile.id, 'vendor.billing', 'vendor', vendor.id);
+    return { ok: 'Billing details saved. They apply to invoices issued from now on.' };
   });
 }
 

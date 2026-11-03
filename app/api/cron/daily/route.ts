@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { sql } from '@/lib/db';
 import { expireDisputes } from '@/lib/reviews';
+import { flushWhatsApp } from '@/lib/whatsapp';
 import { flushOutbox, queuePostEventFeedback } from '@/lib/email';
 import { endExpiredEngagements } from '@/lib/rm';
 import { expirePlans } from '@/lib/payments';
@@ -24,5 +25,6 @@ export async function GET(req: NextRequest) {
   const boostsEnded = await endFinishedBoosts(sql);
   const checkins = await queueBrideCheckins(sql);
   const mail = await flushOutbox(sql);
-  return NextResponse.json({ expiredDisputes: expired, feedbackQueued: feedback, expiredPlans: plans, rmEnded, boostsEnded, checkins, mail });
+  const whatsapp = await flushWhatsApp(sql, 200);
+  return NextResponse.json({ expiredDisputes: expired, feedbackQueued: feedback, expiredPlans: plans, rmEnded, boostsEnded, checkins, mail, whatsapp });
 }

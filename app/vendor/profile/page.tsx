@@ -101,6 +101,10 @@ export default async function ProfilePage({ searchParams }: P) {
           <input type="checkbox" name="notify_email" defaultChecked={notify} className="h-4 w-4 accent-[var(--color-pink)]" />
           Email me about new leads, messages and accepted quotes
         </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="whatsapp_alerts" defaultChecked={vendor.whatsapp_alerts} className="h-4 w-4 accent-[var(--color-pink)]" />
+          WhatsApp me about new leads, messages and accepted quotes, on the business phone above. Reply STOP any time.
+        </label>
         <button className="btn btn-pink">Save profile</button>
       </form>
 

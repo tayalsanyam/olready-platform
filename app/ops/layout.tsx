@@ -18,6 +18,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
           { href: '/ops/promotions', label: 'Promotions' },
           { href: '/ops/coupons', label: 'Discount codes' },
           { href: '/ops/emails', label: 'Email' },
+          { href: '/ops/whatsapp', label: 'WhatsApp' },
           { href: '/ops/reviews', label: 'Reviews' },
           { href: '/ops/moderation', label: 'Moderation' },
           { href: '/ops/data', label: 'Data' },

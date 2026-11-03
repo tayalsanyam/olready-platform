@@ -53,6 +53,8 @@ export default async function MyWedding({ searchParams }: P) {
       and ln.status <> 'removed'
     order by l.created_at desc, c.sort`;
   const [{ notify_email: notify }] = await sql<{ notify_email: boolean }[]>`select notify_email from mkt.profiles where id = ${p.id}`;
+  const [wa] = await sql<{ any: boolean; on: boolean }[]>`
+    select count(*) > 0 as any, coalesce(bool_or(whatsapp_opt_in), false) as on from mkt.leads where bride_profile_id = ${p.id}`;
   const perks = await sql<{ id: string; perk: string; claim_by: Date; activated_at: Date | null; expires_at: Date | null }[]>`
     select id, perk, claim_by, activated_at, expires_at from mkt.bride_perks where profile_id = ${p.id} order by created_at desc`;
   return (
@@ -96,6 +98,13 @@ export default async function MyWedding({ searchParams }: P) {
             <input type="checkbox" name="notify_email" defaultChecked={notify} className="h-4 w-4 accent-[var(--color-pink)]" />
             Email me when vendors reply or quote
           </label>
+          {wa.any ? (
+            <label className="flex items-center gap-2 self-end py-2 text-sm">
+              <input type="hidden" name="whatsapp_shown" value="1" />
+              <input type="checkbox" name="whatsapp_opt_in" defaultChecked={wa.on} className="h-4 w-4 accent-[var(--color-pink)]" />
+              WhatsApp me when my requests are verified and vendors quote or reply
+            </label>
+          ) : null}
           <div className="self-end">
             <button className="btn">{wedding ? 'Save' : 'Start planning'}</button>
           </div>

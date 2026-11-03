@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { queueEventEve } from '@/lib/automations';
+import { flushWhatsApp } from '@/lib/whatsapp';
 import { flushOutbox } from '@/lib/email';
 
 // 18:00 IST: reminders for tomorrow's functions.
@@ -9,5 +10,6 @@ export async function GET(req: Request) {
   if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) return new NextResponse('unauthorized', { status: 401 });
   const eve = await queueEventEve(sql);
   const mail = await flushOutbox(sql);
-  return NextResponse.json({ eventEve: eve, mail });
+  const whatsapp = await flushWhatsApp(sql, 200);
+  return NextResponse.json({ eventEve: eve, mail, whatsapp });
 }
