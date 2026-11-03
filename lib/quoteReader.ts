@@ -20,8 +20,9 @@ const clean = (xs: unknown) =>
 /** Returns the reading, or null when the reader is off, the cap is reached or the quote is too short to read. */
 export async function readQuote(db: Db, quoteId: string): Promise<QuoteReading | null> {
   if (!aiEnabled()) return null;
-  const [q] = await db<{ details: string; amount_inr: number; category: string; done: boolean }[]>`
+  const [q] = await db<{ details: string; amount_inr: number; category: string; done: boolean; lines: string | null }[]>`
     select q.details, q.amount_inr, c.name as category,
+           (select string_agg(ql.label || ': ₹' || ql.amount_inr, '; ' order by ql.sort) from mkt.quote_lines ql where ql.quote_id = q.id) as lines,
            exists (select 1 from mkt.quote_readings r where r.quote_id = q.id) as done
     from mkt.quotes q join mkt.threads t on t.id = q.thread_id join mkt.lead_needs ln on ln.id = t.lead_need_id
     join mkt.categories c on c.id = ln.category_id where q.id = ${quoteId}`;
@@ -36,7 +37,7 @@ export async function readQuote(db: Db, quoteId: string): Promise<QuoteReading |
 "extra": anything the vendor says costs more, is optional, or is charged separately, with the amount if given.
 "ask": two to four questions worth asking before booking, about things this kind of vendor usually covers that the quote does not mention (for example travel, taxes, hours, number of edited photos, trial sessions, advance and cancellation).
 Each item is under 15 words. Use only what the quote says for "included" and "extra"; never invent prices. Reply with JSON only: {"included":[],"extra":[],"ask":[]}.`,
-    messages: [{ role: 'user', content: `Category: ${q.category}\nQuoted price: ₹${q.amount_inr.toLocaleString('en-IN')}\nThe vendor wrote:\n${q.details.slice(0, 4000)}` }],
+    messages: [{ role: 'user', content: `Category: ${q.category}\nQuoted price: ₹${q.amount_inr.toLocaleString('en-IN')}${q.lines ? `\nPriced per function: ${q.lines}` : ''}\nThe vendor wrote:\n${q.details.slice(0, 4000)}` }],
     maxTokens: 600,
     timeoutMs: 25000,
     offMessage: 'Quote reading is off',

@@ -23,6 +23,7 @@ export type ThreadRow = {
   status: 'open' | 'quoted' | 'quote_accepted' | 'booked' | 'closed';
   last_message_at: Date | null;
   created_at: Date;
+  functions: { name: string; event_date: string | null; guests: number | null }[] | null;
 };
 
 const threadSelect = (db: Db) => db`
@@ -30,7 +31,9 @@ const threadSelect = (db: Db) => db`
          c.name as category_name, l.bride_name, l.phone as bride_phone, l.email as bride_email,
          to_char(l.event_date, 'YYYY-MM-DD') as event_date, ci.name as city_name, ln.budget_inr,
          bt.label as tier_label, ln.status as need_status, t.status,
-         (select max(created_at) from mkt.messages m where m.thread_id = t.id) as last_message_at, t.created_at
+         (select max(created_at) from mkt.messages m where m.thread_id = t.id) as last_message_at, t.created_at,
+         (select json_agg(json_build_object('name', e.name, 'event_date', to_char(e.event_date, 'YYYY-MM-DD'), 'guests', e.guests) order by e.event_date nulls last, e.sort)
+          from mkt.need_events ne join mkt.lead_events e on e.id = ne.event_id where ne.need_id = t.lead_need_id) as functions
   from mkt.threads t
   join mkt.lead_needs ln on ln.id = t.lead_need_id
   join mkt.leads l on l.id = ln.lead_id
@@ -92,8 +95,9 @@ export async function threadMessages(db: Db, threadId: string) {
 }
 
 export async function threadQuotes(db: Db, threadId: string) {
-  return db<{ id: string; amount_inr: number; details: string; status: string; created_at: Date; reading: { included: string[]; extra: string[]; ask: string[] } | null }[]>`
+  return db<{ id: string; amount_inr: number; details: string; status: string; created_at: Date; reading: { included: string[]; extra: string[]; ask: string[] } | null; lines: QuoteLine[] | null }[]>`
     select q.id, q.amount_inr, q.details, q.status, q.created_at,
+           (select json_agg(json_build_object('label', ql.label, 'amount', ql.amount_inr) order by ql.sort) from mkt.quote_lines ql where ql.quote_id = q.id) as lines,
            case when r.quote_id is null then null else json_build_object('included', r.included, 'extra', r.extra, 'ask', r.ask) end as reading
     from mkt.quotes q left join mkt.quote_readings r on r.quote_id = q.id
     where q.thread_id = ${threadId} order by q.created_at desc`;
@@ -115,15 +119,23 @@ export async function postMessage(db: Db, threadId: string, profile: { id: strin
   return m.id;
 }
 
-export async function sendQuote(sql: Sql, threadId: string, profile: { id: string; role: string }, amountInr: number, details: string) {
+export type QuoteLine = { label: string; amount: number };
+
+/** A quote, optionally priced per function; with lines, the total is their sum. */
+export async function sendQuote(sql: Sql, threadId: string, profile: { id: string; role: string }, amountInr: number, details: string, lines: QuoteLine[] = []) {
+  const priced = lines.filter((l) => l.label.trim() && Number.isFinite(l.amount) && l.amount > 0).slice(0, 12);
+  if (priced.length) amountInr = priced.reduce((s, l) => s + Math.round(l.amount), 0);
   return sql.begin(async (tx) => {
     const access = await threadAccess(tx, threadId, profile);
     if (access.side !== 'vendor') throw new DomainError('forbidden', 'Only the vendor can send a quote');
-    if (!Number.isFinite(amountInr) || amountInr <= 0) throw new DomainError('bad_amount', 'Enter the quote amount');
+    if (!Number.isFinite(amountInr) || amountInr <= 0) throw new DomainError('bad_amount', 'Enter the quote amount, or a price for at least one function');
     await tx`update mkt.quotes set status = 'withdrawn' where thread_id = ${threadId} and status = 'sent'`;
     const [q] = await tx<{ id: string }[]>`
       insert into mkt.quotes (thread_id, amount_inr, details) values (${threadId}, ${Math.round(amountInr)}, ${details.trim()})
       returning id`;
+    for (const [i, l] of priced.entries()) {
+      await tx`insert into mkt.quote_lines (quote_id, label, amount_inr, sort) values (${q.id}, ${l.label.trim().slice(0, 60)}, ${Math.round(l.amount)}, ${i})`;
+    }
     await tx`update mkt.threads set status = 'quoted' where id = ${threadId} and status in ('open','quoted')`;
     await audit(tx, profile.id, 'quote.send', 'thread', threadId, { amountInr });
     return q;

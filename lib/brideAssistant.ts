@@ -286,6 +286,7 @@ async function quotesTool(ctx: Ctx, i: Record<string, unknown>) {
       conversation: `/me/threads/${q.thread_id}`,
       category: q.category_name,
       amount: formatInr(q.amount_inr),
+      priced_per_function: q.lines?.map((l) => `${l.label}: ${formatInr(l.amount)}`) ?? [],
       status: q.status,
       vendor_wrote: clip(q.details, 500),
       included: q.reading?.included ?? [],

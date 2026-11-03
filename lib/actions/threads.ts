@@ -26,7 +26,8 @@ export async function postMessageAction(fd: FormData) {
 export async function sendQuoteAction(fd: FormData) {
   await attempt(back(fd, '/vendor/threads'), async () => {
     const p = await requireProfile();
-    const q = await sendQuote(sql, str(fd, 'thread_id'), p, num(fd, 'amount_inr') ?? 0, str(fd, 'details'));
+    const lines = Array.from({ length: 12 }, (_, i) => ({ label: str(fd, `line_label_${i}`), amount: num(fd, `line_amount_${i}`) ?? 0 })).filter((l) => l.label && l.amount > 0);
+    const q = await sendQuote(sql, str(fd, 'thread_id'), p, num(fd, 'amount_inr') ?? 0, str(fd, 'details'), lines);
     await notifyQuote(sql, q.id, 'sent');
     // Read the quote into Included / Extra / Worth asking once it is out; never holds up the send.
     after(() => readQuote(sql, q.id).then(() => undefined, () => undefined));

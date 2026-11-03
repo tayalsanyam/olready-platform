@@ -1,4 +1,5 @@
 import type { Db, Sql } from './db';
+import { type FunctionInput, MAX_FUNCTIONS, headline, saveLeadFunctions, seedWeddingFunctions } from './functions';
 import { DomainError, audit, getSetting } from './db';
 import { tierForBudget, tiersFor } from './catalog';
 
@@ -50,8 +51,10 @@ export type EnquiryInput = {
   guestCount?: number | null;
   whatsappOptIn?: boolean;
   source?: Lead['source'];
-  needs: { categoryId: number; budgetInr?: number | null; preferredVendorIds?: string[] }[];
+  needs: { categoryId: number; budgetInr?: number | null; preferredVendorIds?: string[]; functions?: number[] }[];
   directVendorId?: string | null;
+  /** The big days. Without them, the request is one "Wedding" on eventDate. */
+  functions?: FunctionInput[];
 };
 
 const PHONE_RE = /^\+?[0-9]{10,13}$/;
@@ -66,24 +69,35 @@ export async function createEnquiry(sql: Sql, input: EnquiryInput) {
   if (!input.name.trim()) throw new DomainError('bad_name', 'Name is required');
   if (!input.needs.length) throw new DomainError('no_needs', 'Pick at least one category');
   const phone = normalisePhone(input.phone);
+  const fns: FunctionInput[] = input.functions?.length
+    ? input.functions.slice(0, MAX_FUNCTIONS)
+    : [{ name: 'Wedding', date: input.eventDate || null, guests: input.guestCount && input.guestCount > 0 ? Math.round(input.guestCount) : null }];
+  const h = headline(fns);
+  const eventDate = h.date ?? input.eventDate ?? null;
+  const guestCount = h.guests ?? input.guestCount ?? null;
   return sql.begin(async (tx) => {
     const [lead] = await tx<Lead[]>`
       insert into mkt.leads (wedding_id, bride_profile_id, bride_name, phone, email, city_id, event_date, guest_count, whatsapp_opt_in, whatsapp_opt_in_at, source)
       values (${input.weddingId ?? null}, ${input.brideProfileId ?? null}, ${input.name.trim()}, ${phone},
-        ${input.email?.toLowerCase() ?? null}, ${input.cityId}, ${input.eventDate || null},
-        ${input.guestCount && input.guestCount > 0 && input.guestCount <= 20000 ? Math.round(input.guestCount) : null},
+        ${input.email?.toLowerCase() ?? null}, ${input.cityId}, ${eventDate || null},
+        ${guestCount && guestCount > 0 && guestCount <= 20000 ? Math.round(guestCount) : null},
         ${Boolean(input.whatsappOptIn)}, ${input.whatsappOptIn ? new Date() : null},
         ${input.directVendorId ? 'direct_request' : (input.source ?? 'website')})
       returning *`;
     const seen = new Set<number>();
+    const picks: { needId: string; idx: number[] }[] = [];
     for (const n of input.needs) {
       if (seen.has(n.categoryId)) continue;
       seen.add(n.categoryId);
-      await addNeed(tx, lead.id, n.categoryId, n.budgetInr ?? null, {
+      const need = await addNeed(tx, lead.id, n.categoryId, n.budgetInr ?? null, {
         directVendorId: input.directVendorId ?? null,
         preferredVendorIds: n.preferredVendorIds ?? [],
       });
+      const idx = (n.functions?.length ? n.functions : fns.map((_, i) => i)).filter((i) => i >= 0 && i < fns.length);
+      picks.push({ needId: need.id, idx });
     }
+    await saveLeadFunctions(tx, lead.id, fns, picks);
+    if (input.weddingId) await seedWeddingFunctions(tx, input.weddingId, fns);
     return lead;
   });
 }
@@ -275,7 +289,7 @@ export async function visibleNeeds(db: Db, vendorId: string) {
       and (ln.direct_vendor_id is null or ln.direct_vendor_id = v.id)
       and not exists (select 1 from mkt.unlocks u where u.lead_need_id = ln.id and u.vendor_id = v.id)
       -- A wedding that has already happened is not a lead.
-      and (l.event_date is null or l.event_date >= (now() at time zone 'Asia/Kolkata')::date)
+      and coalesce((select max(e.event_date) from mkt.lead_events e where e.lead_id = l.id), l.event_date, 'infinity'::date) >= (now() at time zone 'Asia/Kolkata')::date
     order by (ln.direct_vendor_id is not null) desc, (v.id = any(ln.preferred_vendor_ids)) desc, l.verified_at desc
     limit 200`;
 }

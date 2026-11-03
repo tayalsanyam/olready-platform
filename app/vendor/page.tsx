@@ -3,6 +3,8 @@ import { sql } from '@/lib/db';
 import { requireVendor } from '@/lib/vendorSession';
 import { formatInr } from '@/lib/catalog';
 import { balances, visibleNeeds } from '@/lib/leads';
+import { needFunctions } from '@/lib/functions';
+import { FunctionList } from '@/components/FunctionList';
 import { vendorStats } from '@/lib/vendorStats';
 import { unlockAction } from '@/lib/actions/vendor';
 import { Badge, Card, Empty, Notice, PageTitle, Stat } from '@/components/ui';
@@ -17,6 +19,7 @@ export default async function VendorHome({ searchParams }: P) {
   const { vendor } = await requireVendor();
   const [bal, needs, stats] = await Promise.all([balances(sql, vendor.id), visibleNeeds(sql, vendor.id), vendorStats(sql, vendor.id)]);
   const credits = (bal.planUsable ? bal.plan : 0) + bal.topup;
+  const fnsByNeed = await needFunctions(sql, needs.map((n) => n.need_id));
   return (
     <>
       <PageTitle title="Verified leads" sub={`${vendor.category_name} · ${vendor.city_name}`} />
@@ -58,8 +61,19 @@ export default async function VendorHome({ searchParams }: P) {
                 {n.shortlisted ? <Badge tone="gold">Shortlisted you</Badge> : null}
               </div>
               <dl className="mt-2 grid grid-cols-2 gap-1 text-sm">
-                <dt className="text-[var(--color-muted)]">Wedding</dt>
-                <dd>{n.event_date ?? 'Date not fixed'}</dd>
+                {(fnsByNeed.get(n.need_id)?.length ?? 0) > 1 ? (
+                  <>
+                    <dt className="col-span-2 text-[var(--color-muted)]">{fnsByNeed.get(n.need_id)!.length} functions</dt>
+                    <dd className="col-span-2 mb-1">
+                      <FunctionList fns={fnsByNeed.get(n.need_id)!} />
+                    </dd>
+                  </>
+                ) : (
+                  <>
+                    <dt className="text-[var(--color-muted)]">Wedding</dt>
+                    <dd>{n.event_date ?? 'Date not fixed'}</dd>
+                  </>
+                )}
                 {n.guest_count ? (
                   <>
                     <dt className="text-[var(--color-muted)]">Guests</dt>

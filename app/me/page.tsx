@@ -7,6 +7,7 @@ import { formatInr, listCities } from '@/lib/catalog';
 import { threadsForBride } from '@/lib/threads';
 import { weddingFor } from '@/lib/weddings';
 import { activatePerkAction, closeNeedAction, saveWeddingAction } from '@/lib/actions/bride';
+import { needFunctions } from '@/lib/functions';
 import { Badge, Card, Empty, Field, Notice, PageTitle } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
@@ -53,6 +54,7 @@ export default async function MyWedding({ searchParams }: P) {
       and ln.status <> 'removed'
     order by l.created_at desc, c.sort`;
   const [{ notify_email: notify }] = await sql<{ notify_email: boolean }[]>`select notify_email from mkt.profiles where id = ${p.id}`;
+  const fnsByNeed = await needFunctions(sql, needs.map((n) => n.need_id));
   const [wa] = await sql<{ any: boolean; on: boolean }[]>`
     select count(*) > 0 as any, coalesce(bool_or(whatsapp_opt_in), false) as on from mkt.leads where bride_profile_id = ${p.id}`;
   const perks = await sql<{ id: string; perk: string; claim_by: Date; activated_at: Date | null; expires_at: Date | null }[]>`
@@ -158,6 +160,9 @@ export default async function MyWedding({ searchParams }: P) {
                   <div className="flex items-center gap-2">
                     <b>{n.category_name}</b>
                     {n.budget_inr != null ? <span className="hint">budget {formatInr(n.budget_inr)}</span> : null}
+                    {(fnsByNeed.get(n.need_id)?.length ?? 0) > 1 ? (
+                      <span className="hint">for {fnsByNeed.get(n.need_id)!.map((f) => f.name).join(', ')}</span>
+                    ) : null}
                   </div>
                   {n.status === 'closed_booked' ? (
                     <Badge tone="ok">Booked: {n.booked_vendor}</Badge>

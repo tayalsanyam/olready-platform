@@ -10,6 +10,7 @@ import { acceptClaim } from '../vendors';
 import { saveRsvp } from '../weddings';
 import { attempt, back, num, str } from './run';
 import { LEGAL_VERSION } from '../legal';
+import { functionsFromForm } from '../functions';
 
 export async function submitEnquiry(fd: FormData) {
   await attempt(back(fd, '/enquire'), async () => {
@@ -28,9 +29,10 @@ export async function submitEnquiry(fd: FormData) {
     const categoryIds = fd.getAll('category_id').map(Number).filter(Boolean);
     // "Also let others quote": an open request that this vendor sees first, flagged as chosen.
     const alsoOthers = Boolean(direct) && fd.get('also_others') === 'on';
+    const { fns, forCategory } = functionsFromForm(fd);
     const needs = direct
-      ? [{ categoryId: direct.category_id, budgetInr: num(fd, `budget_${direct.category_id}`), preferredVendorIds: alsoOthers ? [direct.id] : [] }]
-      : categoryIds.map((id) => ({ categoryId: id, budgetInr: num(fd, `budget_${id}`) }));
+      ? [{ categoryId: direct.category_id, budgetInr: num(fd, `budget_${direct.category_id}`), preferredVendorIds: alsoOthers ? [direct.id] : [], functions: forCategory(direct.category_id) }]
+      : categoryIds.map((id) => ({ categoryId: id, budgetInr: num(fd, `budget_${id}`), functions: forCategory(id) }));
     const email = str(fd, 'email') || profile?.email || null;
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new DomainError('bad_email', 'Check your email address');
     const lead = await createEnquiry(sql, {
@@ -42,6 +44,7 @@ export async function submitEnquiry(fd: FormData) {
       cityId,
       eventDate: str(fd, 'event_date') || null,
       guestCount: Number(str(fd, 'guest_count')) || null,
+      functions: fns,
       needs,
       directVendorId: alsoOthers ? null : (direct?.id ?? null),
       whatsappOptIn: fd.get('whatsapp') === 'on',

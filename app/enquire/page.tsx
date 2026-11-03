@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { RequestFunctions } from '@/components/RequestFunctions';
+import { weddingFunctions } from '@/lib/functions';
 import { after } from 'next/server';
 import { bump, visitorKey } from '@/lib/analytics';
 import { sql } from '@/lib/db';
@@ -24,6 +26,9 @@ export default async function Enquire({ searchParams }: P) {
   const preCats = new Set((sp(q.category) ?? '').split(',').filter(Boolean));
   const preGuests = Number(sp(q.guests)) > 0 ? Math.min(20000, Math.round(Number(sp(q.guests)))) : undefined;
   const preCity = cities.find((c) => c.slug === sp(q.city))?.id ?? vendor?.city_id ?? wedding?.city_id ?? cities[0]?.id;
+  // Her functions from the wedding plan, else one Wedding row with what we know.
+  const planned = await weddingFunctions(sql, wedding?.id ?? null);
+  const initialFns = planned.length ? planned : [{ name: 'Wedding', date: wedding?.wedding_date ?? null, guests: preGuests ?? null }];
   const self = `/enquire?${new URLSearchParams(Object.entries(q).map(([k, v]) => [k, String(Array.isArray(v) ? v[0] : v)]).filter(([k]) => k !== 'error'))}`;
   return (
     <Container className="max-w-3xl">
@@ -55,12 +60,6 @@ export default async function Enquire({ searchParams }: P) {
           <Field label="Email" hint="Sign in later with this email to track replies and quotes.">
             <input name="email" type="email" className="input" defaultValue={profile?.email ?? ''} autoComplete="email" />
           </Field>
-          <Field label="Wedding date">
-            <input name="event_date" type="date" className="input" defaultValue={wedding?.wedding_date ?? ''} />
-          </Field>
-          <Field label="Guests (approx.)" hint="Venues and caterers price per plate, so this helps them quote.">
-            <input name="guest_count" type="number" min={1} max={20000} inputMode="numeric" className="input" defaultValue={preGuests} />
-          </Field>
           <Field label="City *">
             <select name="city_id" className="input" defaultValue={preCity} required>
               {cities.map((c) => (
@@ -71,39 +70,29 @@ export default async function Enquire({ searchParams }: P) {
             </select>
           </Field>
         </Card>
+        <RequestFunctions
+          cats={cats.map((c) => ({ id: c.id, slug: c.slug, plural_name: c.plural_name, price_unit: c.price_unit }))}
+          preCats={[...preCats]}
+          initial={initialFns}
+          single={
+            vendor
+              ? {
+                  id: vendor.category_id,
+                  name: vendor.category_name,
+                  budgetHint: vendor.starting_price_inr != null ? `${vendor.business_name} starts at ${formatInr(vendor.starting_price_inr)} ${vendor.price_unit}.` : undefined,
+                }
+              : undefined
+          }
+        />
         {vendor ? (
-          <Card>
-            <Field
-              label={`Your budget for ${vendor.category_name.toLowerCase()} (optional)`}
-              hint={vendor.starting_price_inr != null ? `${vendor.business_name} starts at ${formatInr(vendor.starting_price_inr)} ${vendor.price_unit}.` : undefined}
-            >
-              <input name={`budget_${vendor.category_id}`} className="input" inputMode="numeric" placeholder="₹" />
-            </Field>
-            <label className="mt-3 flex items-start gap-2 text-sm">
-              <input type="checkbox" name="also_others" className="mt-0.5 h-4 w-4 accent-[var(--color-pink)]" />
-              <span>
-                Also let other verified {vendor.category_name.toLowerCase()}s send me quotes, so I can compare.{' '}
-                <span className="text-[var(--color-muted)]">{vendor.business_name} still sees your request first.</span>
-              </span>
-            </label>
-          </Card>
-        ) : (
-          <Card>
-            <h2 className="font-semibold">What do you need?</h2>
-            <p className="hint">Add a budget if you have one. It helps us send vendors who fit.</p>
-            <ul className="mt-3 divide-y divide-[var(--color-line)]">
-              {cats.map((c) => (
-                <li key={c.id} className="grid items-center gap-2 py-3 sm:grid-cols-[1fr_200px]">
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" name="category_id" value={c.id} defaultChecked={preCats.has(c.slug)} className="h-4 w-4 accent-[var(--color-pink)]" />
-                    <span>{c.plural_name}</span>
-                  </label>
-                  <input name={`budget_${c.id}`} className="input" inputMode="numeric" placeholder={`Budget ₹ (${c.price_unit})`} aria-label={`Budget for ${c.plural_name}`} />
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="also_others" className="mt-0.5 h-4 w-4 accent-[var(--color-pink)]" />
+            <span>
+              Also let other verified {vendor.category_name.toLowerCase()}s send me quotes, so I can compare.{' '}
+              <span className="text-[var(--color-muted)]">{vendor.business_name} still sees your request first.</span>
+            </span>
+          </label>
+        ) : null}
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" name="whatsapp" className="mt-0.5 h-4 w-4 accent-[var(--color-pink)]" />
           <span>Send me updates about this request on WhatsApp</span>

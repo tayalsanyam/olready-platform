@@ -4,6 +4,7 @@ import { REPORT_REASONS } from '@/lib/moderation';
 import { reportMessageAction } from '@/lib/actions/threads';
 import { Badge, Card, Field } from './ui';
 import { QuoteReading } from './QuoteReading';
+import { FunctionList } from './FunctionList';
 import type { QuoteReading as QR } from '@/lib/quoteReader';
 
 type Msg = {
@@ -18,7 +19,7 @@ type Msg = {
   review_status: 'none' | 'flagged' | 'cleared' | 'hidden';
   created_at: Date;
 };
-type Quote = { id: string; amount_inr: number; details: string; status: string; created_at: Date; reading?: QR | null };
+type Quote = { id: string; amount_inr: number; details: string; status: string; created_at: Date; reading?: QR | null; lines?: { label: string; amount: number }[] | null };
 type Action = (fd: FormData) => Promise<void>;
 
 const fmt = (d: Date) =>
@@ -131,8 +132,19 @@ export function ThreadView(props: {
           <dl className="mt-2 grid grid-cols-2 gap-1 text-sm">
             <dt className="text-[var(--color-muted)]">For</dt>
             <dd>{t.category_name}</dd>
-            <dt className="text-[var(--color-muted)]">Wedding</dt>
-            <dd>{t.event_date ?? 'Not fixed'}</dd>
+            {t.functions && t.functions.length > 1 ? (
+              <>
+                <dt className="col-span-2 mt-1 text-[var(--color-muted)]">Functions</dt>
+                <dd className="col-span-2">
+                  <FunctionList fns={t.functions} />
+                </dd>
+              </>
+            ) : (
+              <>
+                <dt className="text-[var(--color-muted)]">Wedding</dt>
+                <dd>{t.event_date ?? 'Not fixed'}</dd>
+              </>
+            )}
             <dt className="text-[var(--color-muted)]">City</dt>
             <dd>{t.city_name}</dd>
             <dt className="text-[var(--color-muted)]">Budget</dt>
@@ -160,6 +172,16 @@ export function ThreadView(props: {
                     <b>{formatInr(q.amount_inr)}</b>
                     <Badge tone={q.status === 'accepted' ? 'ok' : q.status === 'sent' ? 'gold' : 'plain'}>{q.status}</Badge>
                   </div>
+                  {q.lines?.length ? (
+                    <ul className="mt-1.5 space-y-0.5">
+                      {q.lines.map((l) => (
+                        <li key={l.label} className="flex justify-between gap-3">
+                          <span className="text-[var(--color-muted)]">{l.label}</span>
+                          <span className="tabular-nums">{formatInr(l.amount)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                   {q.details ? <p className="mt-1 whitespace-pre-wrap">{q.details}</p> : null}
                   {q.reading && q.status !== 'withdrawn' ? <QuoteReading r={q.reading} compact /> : null}
                   {props.decideQuote && q.status === 'sent' ? (
@@ -184,8 +206,24 @@ export function ThreadView(props: {
             <form action={props.sendQuote} className="mt-3 space-y-2">
               <input type="hidden" name="thread_id" value={t.id} />
               <input type="hidden" name="_back" value={props.backPath} />
-              <Field label="Send a quote (₹)">
-                <input name="amount_inr" required className="input" inputMode="numeric" />
+              {t.functions && t.functions.length > 1 ? (
+                <fieldset className="space-y-1.5">
+                  <legend className="label">Price each function (optional)</legend>
+                  {t.functions.map((f, i) => (
+                    <label key={`${f.name}-${i}`} className="grid grid-cols-[1fr_120px] items-center gap-2 text-sm">
+                      <span>
+                        {f.name}
+                        {f.event_date ? <span className="text-[var(--color-muted)]">, {new Date(`${f.event_date}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span> : null}
+                      </span>
+                      <input type="hidden" name={`line_label_${i}`} value={f.name} />
+                      <input name={`line_amount_${i}`} className="input py-1" inputMode="numeric" placeholder="₹" aria-label={`Price for ${f.name}`} />
+                    </label>
+                  ))}
+                  <p className="hint">With prices here, the total is their sum.</p>
+                </fieldset>
+              ) : null}
+              <Field label={t.functions && t.functions.length > 1 ? 'Or one total (₹)' : 'Send a quote (₹)'}>
+                <input name="amount_inr" required={!(t.functions && t.functions.length > 1)} className="input" inputMode="numeric" />
               </Field>
               <textarea name="details" rows={2} className="input" placeholder="What is included" />
               <button className="btn btn-sm">Send quote</button>

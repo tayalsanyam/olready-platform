@@ -3,7 +3,9 @@ import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { formatInr, listCategories } from '@/lib/catalog';
 import type { Lead } from '@/lib/leads';
-import { opsAddNeed, opsAdvance, opsMarkFake, opsRejectLead, opsRemoveNeed, opsReopen, opsSetBudget, opsSetGuests } from '@/lib/actions/ops';
+import { opsAddNeed, opsAdvance, opsMarkFake, opsRejectLead, opsRemoveNeed, opsReopen, opsSetBudget } from '@/lib/actions/ops';
+import { FUNCTION_PRESETS, MAX_FUNCTIONS, leadFunctions } from '@/lib/functions';
+import { opsRemoveFunctionAction, opsSaveFunctionAction } from '@/lib/actions/ops';
 import { Badge, Card, Notice, PageTitle } from '@/components/ui';
 
 export const metadata = { title: 'Verify lead' };
@@ -37,6 +39,8 @@ export default async function VerifyLead({ params, searchParams }: P) {
     from mkt.unlocks u join mkt.lead_needs ln on ln.id = u.lead_need_id join mkt.vendors v on v.id = u.vendor_id
     join mkt.categories c on c.id = ln.category_id where ln.lead_id = ${id} order by u.created_at`;
   const cats = await listCategories(sql, { activeOnly: true });
+  const fns = await leadFunctions(sql, id);
+  const liveNeeds = needs.filter((n) => n.status !== 'removed');
   const missing = cats.filter((c) => !needs.some((n) => n.category_id === c.id && n.status !== 'removed'));
   const closed = lead.status === 'fake' || lead.status === 'rejected';
   const self = `/ops/leads/${id}`;
@@ -62,15 +66,57 @@ export default async function VerifyLead({ params, searchParams }: P) {
       <Notice error={q.error} ok={q.ok} />
       <div className="grid gap-5 lg:grid-cols-[3fr_2fr]">
         <div className="space-y-5">
-          <form action={opsSetGuests} className="flex flex-wrap items-end gap-2">
-            <input type="hidden" name="lead_id" value={lead.id} />
-            <input type="hidden" name="_back" value={self} />
-            <label className="text-sm">
-              <span className="block text-[var(--color-muted)]">Guests (ask on the call; venues and caterers need it)</span>
-              <input name="guest_count" type="number" min={1} max={20000} defaultValue={lead.guest_count ?? ''} className="input w-32 py-1" />
-            </label>
-            <button className="btn btn-ghost btn-sm">Save guests</button>
-          </form>
+          <Card>
+            <h2 className="font-semibold">Functions</h2>
+            <p className="hint">Confirm each function on the call: date, guests, and which vendors it needs. The headline date and guests follow these.</p>
+            <ul className="mt-3 space-y-3">
+              {fns.map((f) => (
+                <li key={f.id} className="rounded-xl border border-[var(--color-line)] p-3">
+                  <form action={opsSaveFunctionAction} className="grid gap-2 sm:grid-cols-[1.2fr_1fr_100px_auto]">
+                    <input type="hidden" name="lead_id" value={lead.id} />
+                    <input type="hidden" name="event_id" value={f.id} />
+                    <input name="name" defaultValue={f.name} className="input py-1" aria-label="Function" list="fn-presets-ops" required />
+                    <input name="date" type="date" defaultValue={f.event_date ?? ''} className="input py-1" aria-label={`Date of ${f.name}`} />
+                    <input name="guests" defaultValue={f.guests ?? ''} inputMode="numeric" className="input py-1" placeholder="Guests" aria-label={`Guests at ${f.name}`} />
+                    <button className="btn btn-ghost btn-sm">Save</button>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm sm:col-span-4">
+                      <span className="text-[var(--color-muted)]">Needed for</span>
+                      {liveNeeds.map((n) => (
+                        <label key={n.id} className="flex items-center gap-1.5">
+                          <input type="checkbox" name="need_id" value={n.id} defaultChecked={f.need_ids.includes(n.id)} className="h-4 w-4 accent-[var(--color-pink)]" />
+                          {n.category}
+                        </label>
+                      ))}
+                    </div>
+                  </form>
+                  {fns.length > 1 ? (
+                    <form action={opsRemoveFunctionAction} className="mt-1">
+                      <input type="hidden" name="lead_id" value={lead.id} />
+                      <input type="hidden" name="event_id" value={f.id} />
+                      <button className="text-xs text-[var(--color-muted)] underline">Remove {f.name}</button>
+                    </form>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            <datalist id="fn-presets-ops">
+              {FUNCTION_PRESETS.map((x) => (
+                <option key={x} value={x} />
+              ))}
+            </datalist>
+            {fns.length < MAX_FUNCTIONS ? (
+              <form action={opsSaveFunctionAction} className="mt-3 grid gap-2 border-t border-[var(--color-line)] pt-3 sm:grid-cols-[1.2fr_1fr_100px_auto]">
+                <input type="hidden" name="lead_id" value={lead.id} />
+                {liveNeeds.map((n) => (
+                  <input key={n.id} type="hidden" name="need_id" value={n.id} />
+                ))}
+                <input name="name" className="input py-1" placeholder="Add a function, e.g. Sangeet" aria-label="New function" list="fn-presets-ops" required />
+                <input name="date" type="date" className="input py-1" aria-label="Date of the new function" />
+                <input name="guests" inputMode="numeric" className="input py-1" placeholder="Guests" aria-label="Guests at the new function" />
+                <button className="btn btn-sm">Add</button>
+              </form>
+            ) : null}
+          </Card>
           <Card>
             <h2 className="font-semibold">Categories</h2>
             <div className="-mx-4 mt-2 overflow-x-auto px-4">

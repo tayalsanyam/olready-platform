@@ -466,3 +466,25 @@ export async function opsCloseContact(fd: FormData) {
     return { ok: 'Marked done' };
   });
 }
+
+// ---------------------------------------------------------------- functions on a request
+export async function opsSaveFunctionAction(fd: FormData) {
+  const leadId = str(fd, 'lead_id');
+  await attempt(`/ops/leads/${leadId}`, async () => {
+    const p = await requireRole(OPS);
+    const { opsSaveFunction } = await import('../functions');
+    const guests = Number(str(fd, 'guests').replace(/[^\d]/g, '')) || null;
+    await opsSaveFunction(sql, leadId, { id: str(fd, 'event_id') || null, name: str(fd, 'name'), date: str(fd, 'date') || null, guests, needIds: fd.getAll('need_id').map(String) }, p.id);
+    return { ok: 'Function saved' };
+  });
+}
+
+export async function opsRemoveFunctionAction(fd: FormData) {
+  const leadId = str(fd, 'lead_id');
+  await attempt(`/ops/leads/${leadId}`, async () => {
+    const p = await requireRole(OPS);
+    const { opsRemoveFunction } = await import('../functions');
+    await opsRemoveFunction(sql, leadId, str(fd, 'event_id'), p.id);
+    return { ok: 'Function removed' };
+  });
+}

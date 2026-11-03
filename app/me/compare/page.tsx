@@ -56,6 +56,16 @@ export default async function Compare({ searchParams }: P) {
                             {x.rating ? <span className="rating">★ {x.rating.toFixed(1)}</span> : null}
                           </div>
                           <p className="figure mt-2 text-3xl">{formatInr(x.amount_inr)}</p>
+                          {x.lines?.length ? (
+                            <ul className="mt-1 space-y-0.5 text-sm">
+                              {x.lines.map((l) => (
+                                <li key={l.label} className="flex justify-between gap-3">
+                                  <span className="text-[var(--color-muted)]">{l.label}</span>
+                                  <span className="tabular-nums">{formatInr(l.amount)}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : null}
                           <div className="mt-1 flex flex-wrap gap-1">
                             {x.status === 'accepted' ? <Badge tone="ok">You accepted</Badge> : null}
                             {low != null && x.amount_inr === low && x.status === 'sent' ? <Badge tone="gold">Lowest</Badge> : null}
