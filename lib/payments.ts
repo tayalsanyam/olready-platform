@@ -25,6 +25,10 @@ export type Order = {
   pack_id: number | null;
   service_code: string | null;
   wallet_topup_inr: number | null;
+  coupon_code: string | null;
+  discount_inr: number;
+  list_price_inr: number | null;
+  refunded_inr: number;
   amount_inr: number;
   gateway: Gateway;
   gateway_order_id: string | null;
@@ -65,7 +69,7 @@ const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
 export async function createOrder(
   db: Db,
-  input: { profileId: string; vendorId: string; packId: number; gateway: Gateway; buyerGstin?: string | null }
+  input: { profileId: string; vendorId: string; packId: number; gateway: Gateway; buyerGstin?: string | null; coupon?: string | null }
 ) {
   const [gw] = await db<{ enabled: boolean }[]>`select enabled from mkt.gateway_settings where gateway = ${input.gateway}`;
   if (!gw?.enabled || !isConfigured(input.gateway)) {
@@ -75,23 +79,28 @@ export async function createOrder(
   if (!pack) throw new DomainError('bad_pack', 'That pack is not available');
   const gstin = input.buyerGstin?.trim().toUpperCase() || null;
   if (gstin && !GSTIN_RE.test(gstin)) throw new DomainError('bad_gstin', 'That GSTIN does not look right');
+  const { couponDiscount } = await import('./coupons');
+  const c = await couponDiscount(db, input.coupon ?? '', { product: pack.code, amount: pack.price_inr, profileId: input.profileId });
   const [order] = await db<Order[]>`
-    insert into mkt.orders (vendor_id, profile_id, pack_id, amount_inr, gateway, buyer_gstin)
-    values (${input.vendorId}, ${input.profileId}, ${pack.id}, ${pack.price_inr}, ${input.gateway}, ${gstin})
+    insert into mkt.orders (vendor_id, profile_id, pack_id, amount_inr, gateway, buyer_gstin, coupon_code, discount_inr, list_price_inr)
+    values (${input.vendorId}, ${input.profileId}, ${pack.id}, ${pack.price_inr - c.discount}, ${input.gateway}, ${gstin}, ${c.code}, ${c.discount}, ${pack.price_inr})
     returning *`;
   return { order, pack };
 }
 
 /** Ads wallet top-up: the amount (GST included) becomes wallet credit once paid. */
-export async function createWalletOrder(db: Db, input: { profileId: string; vendorId: string; amountInr: number; gateway: Gateway; buyerGstin?: string | null }) {
+export async function createWalletOrder(db: Db, input: { profileId: string; vendorId: string; amountInr: number; gateway: Gateway; buyerGstin?: string | null; coupon?: string | null }) {
   const [gw] = await db<{ enabled: boolean }[]>`select enabled from mkt.gateway_settings where gateway = ${input.gateway}`;
   if (!gw?.enabled || !isConfigured(input.gateway)) throw new DomainError('gateway_off', 'This payment method is temporarily unavailable');
   if (![2000, 5000, 10000].includes(input.amountInr)) throw new DomainError('bad_amount', 'Pick a top-up amount');
   const gstin = input.buyerGstin?.trim().toUpperCase() || null;
   if (gstin && !GSTIN_RE.test(gstin)) throw new DomainError('bad_gstin', 'That GSTIN does not look right');
+  // A wallet code is a bonus: the vendor pays less, and still gets the full amount as credit.
+  const { couponDiscount } = await import('./coupons');
+  const c = await couponDiscount(db, input.coupon ?? '', { product: 'wallet', amount: input.amountInr, profileId: input.profileId });
   const [order] = await db<Order[]>`
-    insert into mkt.orders (vendor_id, profile_id, wallet_topup_inr, amount_inr, gateway, buyer_gstin)
-    values (${input.vendorId}, ${input.profileId}, ${input.amountInr}, ${input.amountInr}, ${input.gateway}, ${gstin})
+    insert into mkt.orders (vendor_id, profile_id, wallet_topup_inr, amount_inr, gateway, buyer_gstin, coupon_code, discount_inr, list_price_inr)
+    values (${input.vendorId}, ${input.profileId}, ${input.amountInr}, ${input.amountInr - c.discount}, ${input.gateway}, ${gstin}, ${c.code}, ${c.discount}, ${input.amountInr})
     returning *`;
   return order;
 }

@@ -33,15 +33,17 @@ export async function currentEngagement(db: Db, profileId: string) {
 }
 
 /** The bride pays first. The engagement waits for the team once payment arrives. */
-export async function buyRm(db: Db, input: { profileId: string; weddingId: string | null; gateway: Gateway }) {
+export async function buyRm(db: Db, input: { profileId: string; weddingId: string | null; gateway: Gateway; coupon?: string | null }) {
   const svc = await rmService(db);
   if (!svc?.active) throw new DomainError('unavailable', 'The relationship-manager service is not available right now');
   if (await currentEngagement(db, input.profileId)) throw new DomainError('already', 'You already have a relationship-manager request');
   const [gw] = await db<{ enabled: boolean }[]>`select enabled from mkt.gateway_settings where gateway = ${input.gateway}`;
   if (!gw?.enabled || !isConfigured(input.gateway)) throw new DomainError('gateway_off', 'This payment method is temporarily unavailable');
+  const { couponDiscount } = await import('./coupons');
+  const c = await couponDiscount(db, input.coupon ?? '', { product: svc.code, amount: svc.price_inr, profileId: input.profileId });
   const [order] = await db<{ id: string }[]>`
-    insert into mkt.orders (profile_id, service_code, amount_inr, gateway)
-    values (${input.profileId}, ${svc.code}, ${svc.price_inr}, ${input.gateway}) returning id`;
+    insert into mkt.orders (profile_id, service_code, amount_inr, gateway, coupon_code, discount_inr, list_price_inr)
+    values (${input.profileId}, ${svc.code}, ${svc.price_inr - c.discount}, ${input.gateway}, ${c.code}, ${c.discount}, ${svc.price_inr}) returning id`;
   await db`
     insert into mkt.rm_engagements (profile_id, wedding_id, source, order_id, status, length_days)
     values (${input.profileId}, ${input.weddingId}, 'paid', ${order.id}, 'pending_payment', ${svc.length_days})`;

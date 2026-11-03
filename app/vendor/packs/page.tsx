@@ -64,9 +64,12 @@ export default async function Packs({ searchParams }: P) {
                   ))}
                 </select>
                 <details>
-                  <summary className="hint cursor-pointer">Add GSTIN (optional)</summary>
+                  <summary className="hint cursor-pointer">Add GSTIN or a discount code (optional)</summary>
                   <Field label="GSTIN">
                     <input name="gstin" className="input uppercase" maxLength={15} />
+                  </Field>
+                  <Field label="Discount code">
+                    <input name="coupon" className="input uppercase" maxLength={24} />
                   </Field>
                 </details>
                 <button className="btn btn-pink w-full">Buy {p.name}</button>

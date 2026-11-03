@@ -39,7 +39,10 @@ export default async function Pay({ params, searchParams }: P) {
       : null;
   return (
     <Container className="max-w-lg">
-      <PageTitle title={`Pay for ${product.name}`} sub={`${formatInr(order.amount_inr)} · GST included`} />
+      <PageTitle
+        title={`Pay for ${product.name}`}
+        sub={`${formatInr(order.amount_inr)} · GST included${order.discount_inr ? ` · ${formatInr(order.discount_inr)} off with ${order.coupon_code}` : ''}`}
+      />
       <Notice error={q.error} />
       <Card className="space-y-3">
         {order.status !== 'created' ? (

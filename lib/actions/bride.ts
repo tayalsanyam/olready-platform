@@ -97,7 +97,7 @@ export async function buyRmAction(fd: FormData) {
   await attempt('/me/rm', async () => {
     const p = await requireBride('/me/rm');
     const w = await weddingFor(sql, p.id);
-    const order = await buyRm(sql, { profileId: p.id, weddingId: w?.id ?? null, gateway: str(fd, 'gateway') as Gateway });
+    const order = await buyRm(sql, { profileId: p.id, weddingId: w?.id ?? null, gateway: str(fd, 'gateway') as Gateway, coupon: str(fd, 'coupon') || null });
     return `/pay/${order.id}`;
   });
 }

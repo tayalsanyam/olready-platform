@@ -18,6 +18,7 @@ export async function topUpWalletAction(fd: FormData) {
       amountInr: num(fd, 'amount') ?? 0,
       gateway: str(fd, 'gateway') as Gateway,
       buyerGstin: str(fd, 'gstin') || null,
+      coupon: str(fd, 'coupon') || null,
     });
     return `/pay/${order.id}`;
   });
@@ -116,5 +117,64 @@ export async function opsTeamBanner(fd: FormData) {
     const imageUrl = await storeImage(f, 'vendors');
     await teamBanner(sql, { placement, cityId: num(fd, 'city_id'), month: str(fd, 'month'), headline: str(fd, 'headline'), imageUrl, linkUrl: str(fd, 'link_url'), vendorId: str(fd, 'vendor_id') || null }, p.id);
     return { ok: 'Banner placed' };
+  });
+}
+
+// ---------------------------------------------------------------- refunds and coupons
+export async function opsRefundAction(fd: FormData) {
+  const id = str(fd, 'order_id');
+  await attempt(`/ops/orders/${id}`, async () => {
+    const p = await requireRole(['admin']);
+    const { refundOrder } = await import('../refunds');
+    const method = (['razorpay', 'payu', 'recorded'] as const).find((m) => m === str(fd, 'method')) ?? 'recorded';
+    const r = await refundOrder(
+      sql,
+      id,
+      {
+        amount: num(fd, 'amount') ?? 0,
+        method,
+        reference: str(fd, 'reference'),
+        reason: str(fd, 'reason'),
+        takeBackCredits: fd.get('take_credits') === 'on',
+        endPlan: fd.get('end_plan') === 'on',
+        takeBackWallet: fd.get('take_wallet') === 'on',
+      },
+      p.id
+    );
+    const parts = Object.entries(r.took).map(([k, v]) => `${k}: ${v}`);
+    return { ok: `Refund done${parts.length ? ` (took back ${parts.join(', ')})` : ''}` };
+  });
+}
+
+export async function opsCreateCoupon(fd: FormData) {
+  await attempt('/ops/coupons', async () => {
+    const p = await requireRole(['admin']);
+    const { createCoupon } = await import('../coupons');
+    await createCoupon(
+      sql,
+      {
+        code: str(fd, 'code'),
+        kind: str(fd, 'kind') === 'fixed' ? 'fixed' : 'percent',
+        value: num(fd, 'value') ?? 0,
+        maxDiscount: num(fd, 'max_discount'),
+        minAmount: num(fd, 'min_amount') ?? 0,
+        appliesTo: fd.getAll('applies_to').map(String),
+        endsAt: str(fd, 'ends_at') || null,
+        maxUses: num(fd, 'max_uses'),
+        perBuyer: num(fd, 'per_buyer') ?? 1,
+        note: str(fd, 'note'),
+      },
+      p.id
+    );
+    return { ok: `Code ${str(fd, 'code').toUpperCase()} created` };
+  });
+}
+
+export async function opsToggleCoupon(fd: FormData) {
+  await attempt('/ops/coupons', async () => {
+    const p = await requireRole(['admin']);
+    const { setCouponActive } = await import('../coupons');
+    await setCouponActive(sql, str(fd, 'id'), str(fd, 'active') === '1', p.id);
+    return { ok: 'Saved' };
   });
 }

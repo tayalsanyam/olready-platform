@@ -83,6 +83,7 @@ export default async function Promote({ searchParams }: P) {
                 ))}
               </select>
               <input name="gstin" className="input" placeholder="GSTIN (optional)" aria-label="GSTIN" />
+              <input name="coupon" className="input uppercase" placeholder="Discount code (optional)" aria-label="Discount code" maxLength={24} />
               <button className="btn btn-pink btn-sm">Top up</button>
             </form>
           ) : (

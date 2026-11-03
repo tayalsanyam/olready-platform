@@ -81,6 +81,12 @@ export async function requireProfile(next = '/'): Promise<Profile> {
 export async function requireRole(roles: Role[], next = '/'): Promise<Profile> {
   const p = await requireProfile(next);
   if (!roles.includes(p.role)) redirect('/?denied=1');
+  // Staff pass the authenticator check once per session before any staff page or action.
+  if (STAFF_ROLES.includes(p.role)) {
+    const { mfaNeeded } = await import('./mfa');
+    const need = await mfaNeeded(p.id);
+    if (need) redirect(`/mfa?next=${encodeURIComponent(next)}`);
+  }
   return p;
 }
 

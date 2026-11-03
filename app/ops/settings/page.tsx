@@ -21,6 +21,9 @@ const labels: Record<string, string> = {
   banner_price_city: 'Banner: city page, rupees a month',
   banner_slots: 'Banner slots per page per month',
   banners_self_serve: 'Vendors can book banners themselves (1 yes, 0 no)',
+  staff_mfa_required: 'Staff must use an authenticator app (1 yes, 0 no)',
+  look_per_visitor_day: 'Photo searches per visitor a day',
+  look_site_day: 'Photo searches for the whole site a day',
 };
 
 export default async function Settings({ searchParams }: P) {

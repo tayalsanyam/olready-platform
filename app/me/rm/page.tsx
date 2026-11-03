@@ -81,6 +81,7 @@ export default async function RelationshipManager({ searchParams }: P) {
                   </option>
                 ))}
               </select>
+              <input name="coupon" className="input uppercase" placeholder="Discount code (optional)" aria-label="Discount code" maxLength={24} />
               <button className="btn btn-pink w-full">Get a relationship manager</button>
             </form>
           ) : (

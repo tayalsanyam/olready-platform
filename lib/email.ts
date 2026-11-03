@@ -19,6 +19,7 @@ export type EmailTemplate =
   | 'event_eve_vendor'
   | 'checkin_7'
   | 'still_looking_15'
+  | 'refund_issued'
   | 'newsletter_welcome';
 
 const site = () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
@@ -113,6 +114,11 @@ function render(template: EmailTemplate, p: Record<string, string>) {
       return {
         subject: 'Still looking for the right vendors?',
         text: `Hi ${p.name},\n\nWe have not heard from you in a while. If you are still looking, tell us what is missing and we will ask more verified vendors to quote. If you have booked, tell us so we stop sending requests:\n\n${site()}/me\n\nOLReady`,
+      };
+    case 'refund_issued':
+      return {
+        subject: `Refund of ₹${p.amount} for order ${p.order}`,
+        text: `Hi ${p.name},\n\nWe have refunded ₹${p.amount} for order ${p.order}. Card and UPI refunds usually reach you in 5 to 7 working days, depending on your bank.\n\nQuestions? Reply to this email.\n\nOLReady`,
       };
     case 'callback_booked':
       return {

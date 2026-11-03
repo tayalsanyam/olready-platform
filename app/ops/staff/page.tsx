@@ -1,6 +1,7 @@
 import { sql } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { opsSetStaffRole, opsSyncSalesStaff } from '@/lib/actions/staff';
+import { opsResetMfa } from '@/lib/actions/mfa';
 import { Badge, Card, Field, Notice, PageTitle } from '@/components/ui';
 
 export const metadata = { title: 'Staff' };
@@ -16,8 +17,8 @@ const ROLE_LABEL: Record<string, string> = {
 export default async function Staff({ searchParams }: P) {
   const q = await searchParams;
   await requireAdmin();
-  const staff = await sql<{ id: string; email: string; full_name: string; role: string; role_source: string; signed_in: boolean }[]>`
-    select id, email, full_name, role, role_source, auth_user_id is not null as signed_in
+  const staff = await sql<{ id: string; email: string; full_name: string; role: string; role_source: string; signed_in: boolean; totp_enabled: boolean }[]>`
+    select id, email, full_name, role, role_source, auth_user_id is not null as signed_in, totp_enabled
     from mkt.profiles where role in ('admin','ops','rm','content') order by role, email`;
   const salesAdmin = process.env.SALES_ADMIN_URL;
   const canSync = Boolean(process.env.SALES_DATABASE_URL);
@@ -53,6 +54,14 @@ export default async function Staff({ searchParams }: P) {
                     {s.email}
                     {s.full_name ? <span className="block text-xs text-[var(--color-muted)]">{s.full_name}</span> : null}
                     {s.signed_in ? null : <span className="block text-xs text-[var(--color-muted)]">Not signed in yet</span>}
+                    {s.totp_enabled ? (
+                      <form action={opsResetMfa} className="mt-1">
+                        <input type="hidden" name="email" value={s.email} />
+                        <button className="text-xs underline">Reset authenticator</button>
+                      </form>
+                    ) : (
+                      <span className="block text-xs text-[var(--color-muted)]">No authenticator yet</span>
+                    )}
                   </td>
                   <td>{s.role}</td>
                   <td>{s.role_source === 'sales_admin' ? <Badge tone="gold">Sales admin</Badge> : <Badge>Ops</Badge>}</td>

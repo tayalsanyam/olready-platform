@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { formatInr } from '@/lib/catalog';
@@ -19,14 +20,17 @@ export default async function OpsPayments({ searchParams }: P) {
       from mkt.vendor_subscriptions s join mkt.vendors v on v.id = s.vendor_id join mkt.packs p on p.id = s.pack_id
       left join mkt.orders o on o.id = s.order_id where s.status = 'pending_contract' order by s.created_at`,
     sql<{ id: string; vendor: string; pack: string; amount_inr: number; created_at: Date }[]>`
-      select o.id, v.business_name as vendor, p.name as pack, o.amount_inr, o.created_at
-      from mkt.orders o join mkt.vendors v on v.id = o.vendor_id join mkt.packs p on p.id = o.pack_id
+      select o.id, coalesce(v.business_name, pr.full_name) as vendor, coalesce(p.name, s.name, 'Ads wallet ₹' || o.wallet_topup_inr) as pack, o.amount_inr, o.created_at
+      from mkt.orders o left join mkt.vendors v on v.id = o.vendor_id left join mkt.packs p on p.id = o.pack_id
+      left join mkt.services s on s.code = o.service_code join mkt.profiles pr on pr.id = o.profile_id
       where o.status = 'created' and o.gateway = 'manual' order by o.created_at`,
     sql<{ id: number; code: string; name: string; kind: string; credits: number; price_inr: number; validity_days: number | null; active: boolean; description: string }[]>`
       select id, code, name, kind, credits, price_inr, validity_days, active, description from mkt.packs order by sort`,
     sql<{ id: string; vendor: string; pack: string; amount_inr: number; gateway: string; status: string; created_at: Date }[]>`
-      select o.id, v.business_name as vendor, p.name as pack, o.amount_inr, o.gateway, o.status, o.created_at
-      from mkt.orders o join mkt.vendors v on v.id = o.vendor_id join mkt.packs p on p.id = o.pack_id order by o.created_at desc limit 30`,
+      select o.id, coalesce(v.business_name, pr.full_name) as vendor, coalesce(p.name, s.name, 'Ads wallet ₹' || o.wallet_topup_inr) as pack, o.amount_inr, o.gateway, o.status, o.created_at
+      from mkt.orders o left join mkt.vendors v on v.id = o.vendor_id left join mkt.packs p on p.id = o.pack_id
+      left join mkt.services s on s.code = o.service_code join mkt.profiles pr on pr.id = o.profile_id
+      order by o.created_at desc limit 50`,
   ]);
   return (
     <>
@@ -109,7 +113,11 @@ export default async function OpsPayments({ searchParams }: P) {
                   <td>{o.pack}</td>
                   <td>{formatInr(o.amount_inr)}</td>
                   <td>{o.gateway}</td>
-                  <td>{o.status}</td>
+                  <td>
+                    <Link className="underline" href={`/ops/orders/${o.id}`}>
+                      {o.status}
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

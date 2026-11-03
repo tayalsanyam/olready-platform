@@ -134,6 +134,7 @@ export async function buyPack(fd: FormData) {
       packId: num(fd, 'pack_id') ?? 0,
       gateway: str(fd, 'gateway') as Gateway,
       buyerGstin: str(fd, 'gstin') || null,
+      coupon: str(fd, 'coupon') || null,
     });
     return `/pay/${order.id}`;
   });
