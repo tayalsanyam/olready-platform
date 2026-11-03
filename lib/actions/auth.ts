@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { sql } from '../db';
 import { DEV_COOKIE, devAuthEnabled, supabaseServer } from '../auth';
+import { MFA_COOKIE } from '../mfa';
 import { str, withParam } from './run';
 
 const safeNext = (n: string) => (n.startsWith('/') && !n.startsWith('//') ? n : '/');
@@ -27,11 +28,15 @@ export async function verifyCode(fd: FormData) {
   if (error) {
     redirect(withParam(`/login?step=code&email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`, 'error', 'That code did not work. Check it or ask for a new one.'));
   }
+  // A new sign-in always asks staff for their authenticator code again.
+  (await cookies()).delete(MFA_COOKIE);
   redirect(next);
 }
 
 export async function signOut() {
-  (await cookies()).delete(DEV_COOKIE);
+  const jar = await cookies();
+  jar.delete(DEV_COOKIE);
+  jar.delete(MFA_COOKIE);
   if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
     const supabase = await supabaseServer();
     await supabase.auth.signOut();
@@ -45,6 +50,8 @@ export async function devSignIn(fd: FormData) {
   const id = str(fd, 'profile_id');
   const [p] = await sql<{ id: string; role: string }[]>`select id, role from mkt.profiles where id = ${id}`;
   if (!p) redirect('/dev-login');
-  (await cookies()).set(DEV_COOKIE, p.id, { httpOnly: true, sameSite: 'lax', path: '/' });
+  const jar = await cookies();
+  jar.delete(MFA_COOKIE);
+  jar.set(DEV_COOKIE, p.id, { httpOnly: true, sameSite: 'lax', path: '/' });
   redirect(p.role === 'vendor' ? '/vendor' : p.role === 'bride' ? '/me' : '/ops');
 }

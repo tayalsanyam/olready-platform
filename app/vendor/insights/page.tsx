@@ -74,9 +74,8 @@ export default async function Insights({ searchParams }: P) {
             const h = (d.views / max) * 36;
             return (
               <rect key={d.day} x={i * w + w * 0.15} y={40 - h} width={w * 0.7} height={Math.max(h, d.views ? 0.6 : 0.2)} rx={0.4} fill={d.views ? 'var(--color-pink)' : 'var(--color-line)'}>
-                <title>
-                  {d.day}: {d.views} view{d.views === 1 ? '' : 's'}, {d.impressions} in search
-                </title>
+                {/* One text child: React 19 mismatches a <title> built from several pieces. */}
+                <title>{`${d.day}: ${d.views} view${d.views === 1 ? '' : 's'}, ${d.impressions} in search`}</title>
               </rect>
             );
           })}

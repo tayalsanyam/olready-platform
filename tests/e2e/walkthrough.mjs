@@ -3,6 +3,20 @@
 // Usage: node tests/e2e/walkthrough.mjs [screenshot-dir]
 import { chromium } from 'playwright-core';
 import { mkdir } from 'node:fs/promises';
+// RFC 6238 code from a base32 secret, for the sign-in code step.
+import { createHmac } from 'node:crypto';
+function totp(secret, now = Date.now()) {
+  const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  for (const ch of secret.replace(/=+$/, '').toUpperCase()) bits += A.indexOf(ch).toString(2).padStart(5, '0');
+  const key = Buffer.from(bits.match(/.{8}/g).map((b) => parseInt(b, 2)));
+  const msg = Buffer.alloc(8);
+  msg.writeBigUInt64BE(BigInt(Math.floor(now / 30000)));
+  const h = createHmac('sha1', key).update(msg).digest();
+  const o = h[h.length - 1] & 15;
+  return String(((h.readUInt32BE(o) & 0x7fffffff) % 1e6)).padStart(6, '0');
+}
+
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
 const OUT = process.argv[2] ?? 'walkthrough-shots';
@@ -70,7 +84,7 @@ await step('home search lands on a city × category page', async () => {
   await go('/');
   await shot('home');
   await page.getByLabel('Vendor type').selectOption('bridal-makeup');
-  await page.getByRole('button', { name: 'Search' }).click();
+  await page.locator('form[action="/vendors/go"]').getByRole('button', { name: 'Search' }).click();
   await page.waitForURL('**/vendors/chandigarh/bridal-makeup');
   await see('Bridal makeup artists in Chandigarh');
   await see('Glow by Kirti');
@@ -138,7 +152,7 @@ await step('bride sets up her wedding and gets a dated checklist', async () => {
 await step('bride shortlists two vendors', async () => {
   for (const slug of ['frames-and-phere-demo', 'marigold-decor-co-demo']) {
     await go(`/v/${slug}`);
-    await submit(page.getByRole('button', { name: 'Shortlist' }));
+    await submit(page.getByRole('button', { name: 'Shortlist', exact: true }).filter({ visible: true }).first());
     await see('Added to your shortlist');
   }
   await go('/me/shortlist');
@@ -165,11 +179,14 @@ await step('bride adds guests and a guest answers the RSVP link', async () => {
 
 await step('bride publishes an e-invite', async () => {
   await go('/me/invite');
+  await page.getByLabel("Bride's name *").fill('Simran');
+  await page.getByLabel("Groom's name *").fill('Arjun');
   await submit(page.getByRole('button', { name: 'Save invite' }));
   await see('Invite saved');
   const href = await page.getByRole('link', { name: 'Open my invite' }).getAttribute('href');
   await go(href);
-  await see('Simran weds Arjun');
+  await see('Simran');
+  await see('Arjun');
   await shot('invite');
 });
 
@@ -246,7 +263,7 @@ await step('bride reviews the artist and the service separately', async () => {
   await see('Thank you for your review');
   await go('/v/glow-by-kirti-demo');
   await see('Booked via OLReady');
-  await see('Artist 5/5, service 3/5');
+  await see('Work 5/5, service 3/5');
 });
 
 await step('bride shares a real wedding for review', async () => {
@@ -282,17 +299,17 @@ await step('vendor buys a top-up and a plan', async () => {
   await pro.locator('select[name=gateway]').selectOption('test');
   await submit(pro.getByRole('button', { name: 'Buy Pro' }));
   await submit(page.getByRole('button', { name: 'Complete test payment' }));
-  await see('activates once our team uploads your invoice');
+  await see('activates once our team has your signed contract');
   await page.getByRole('link', { name: 'Receipt' }).first().click();
   await page.waitForLoadState('networkidle');
   await see('Payment receipt');
 });
 
 // ------------------------------------------------------------------ ops: plan, dispute, content
-await step('ops activates the plan only with invoice and contract', async () => {
+await step('ops activates the plan once the contract is in; the invoice was issued on payment', async () => {
   await signInAs('Rohit (ops)');
   await go('/ops/payments');
-  await page.getByPlaceholder('Zoho tax invoice link').fill('https://books.zoho.in/demo-invoice');
+  // The tax invoice is issued on payment; Ops only adds the signed contract.
   await page.getByPlaceholder('Signed contract link').fill('https://sign.zoho.in/demo-contract');
   await submit(page.getByRole('button', { name: 'Activate plan' }));
   await see('Plan activated');
@@ -431,6 +448,123 @@ await step('admin gives a new teammate Ops access; the price list follows Ops', 
   const packs = await (await page.request.get(BASE + '/api/public/packs')).json();
   const pro = packs.packs.find((p) => p.code === 'pro');
   if (!pro || pro.price_inr !== 18999 || !packs.gst_included) throw new Error('price list wrong: ' + JSON.stringify(pro));
+});
+
+// ------------------------------------------------------------------ features added since the first walkthrough
+await step('bride compares quotes with the AI reading and sets a budget', async () => {
+  await signInAs('Simran Kaur');
+  await go('/me/compare');
+  await see('Glow by Kirti');
+  await see('Included');
+  await see('Worth asking');
+  await shot('compare-quotes');
+  await go('/me/budget');
+  await page.getByLabel('Total wedding budget (₹)').fill('2500000');
+  await submit(page.getByRole('button', { name: 'Save', exact: true }).first());
+  await ok();
+  await see('Likely total');
+  await shot('budget');
+});
+
+await step('bride asks OLReady and confirms a shortlist card', async () => {
+  await go('/me/assistant');
+  await shot('assistant-start');
+  await page.getByLabel('Your question').fill('Find a venue for 300 guests');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await page.getByRole('button', { name: 'Confirm' }).waitFor({ timeout: 30000 });
+  await shot('assistant-answer');
+  await page.getByRole('button', { name: 'Confirm' }).click();
+  await page.getByText('Done', { exact: true }).waitFor();
+  await go('/me/shortlist');
+  await see('Rosewood Banquets');
+});
+
+await step('bride browses ideas, guides, search and invitation designs', async () => {
+  for (const [path, text] of [
+    ['/ideas', 'Ideas'],
+    ['/blog', 'Guides'],
+    ['/search?q=glow', 'Glow by Kirti'],
+    ['/invitations', 'Invitation'],
+    ['/look', 'photo'],
+    ['/real-weddings', 'Real weddings'],
+  ]) {
+    await go(path);
+    await see(text);
+  }
+  await go('/ideas');
+  await shot('ideas');
+  await go('/invitations');
+  await shot('invitations');
+});
+
+await step('vendor sees insights, tops up the ads wallet and starts a Boost', async () => {
+  await signInAs('Glow by Kirti owner');
+  await go('/vendor/insights');
+  await see('Profile views by day');
+  await shot('vendor-insights');
+  await go('/vendor/promote');
+  await page.locator('select[name=gateway]').first().selectOption('test');
+  await submit(page.getByRole('button', { name: 'Top up' }));
+  await submit(page.getByRole('button', { name: 'Complete test payment' }));
+  await go('/vendor/promote');
+  await submit(page.getByRole('button', { name: /Start (the )?Boost/ }));
+  await ok();
+  await see('Pause');
+  await shot('vendor-promote');
+});
+
+await step('vendor opens the GST invoice for a purchase', async () => {
+  await go('/vendor/packs');
+  const link = page.getByRole('link', { name: /^Invoice OLR\// }).first();
+  const href = await link.getAttribute('href');
+  const res = await page.request.get(BASE + href);
+  if (res.status() !== 200 || !String(res.headers()['content-type']).includes('application/pdf')) throw new Error(`invoice: ${res.status()} ${res.headers()['content-type']}`);
+  const body = await res.body();
+  if (body.subarray(0, 5).toString() !== '%PDF-') throw new Error('invoice is not a PDF');
+});
+
+await step('ops uses Data, Ask the data, WhatsApp and the Ask OLReady review', async () => {
+  await signInAs('Rohit (ops)');
+  await go('/ops/data/leads?status=verified');
+  await see('Simran Kaur');
+  await shot('ops-data');
+  if (await page.getByRole('link', { name: 'Download CSV' }).count()) throw new Error('ops employee offered a download');
+  await go('/ops/assistant');
+  await submit(page.getByRole('button', { name: /How many leads were verified/ }));
+  await see('rows');
+  await shot('ops-ask-the-data');
+  await go('/ops/whatsapp');
+  await see('Send a test');
+  await go('/ops/bride-ai');
+  await see('Answers to review');
+});
+
+await step('admin downloads a filtered list', async () => {
+  await signInAs('Asha (admin)');
+  await go('/ops/data/vendors?city=chandigarh');
+  const href = await page.getByRole('link', { name: 'Download CSV' }).getAttribute('href');
+  const res = await page.request.get(BASE + href);
+  const csv = await res.text();
+  if (res.status() !== 200 || !csv.startsWith('id,')) throw new Error(`export: ${res.status()}`);
+  if (!csv.includes('Chandigarh') || csv.includes(',Mohali,')) throw new Error('export ignored the city filter');
+});
+
+await step('admin turns on a sign-in code and needs it to get back into Ops', async () => {
+  await go('/mfa');
+  await submit(page.getByRole('button', { name: 'Start setup' }));
+  const key = (await page.getByText('Or type this key:').innerText()).replace('Or type this key:', '').trim();
+  await shot('mfa-setup');
+  await page.getByLabel('6-digit code').fill(totp(key));
+  await submit(page.getByRole('button', { name: 'Turn on and continue' }));
+  await page.waitForURL((u) => u.pathname.startsWith('/ops'));
+  // A fresh sign-in asks again; the same 30-second code cannot be used twice, so wait for the next one.
+  await signInAs('Asha (admin)');
+  await go('/ops/settings');
+  await page.waitForURL((u) => u.pathname === '/mfa');
+  await page.waitForTimeout(31000 - (Date.now() % 30000));
+  await page.getByLabel('6-digit code').fill(totp(key));
+  await submit(page.getByRole('button', { name: 'Continue' }));
+  await page.waitForURL((u) => u.pathname.startsWith('/ops'));
 });
 
 await step('cron endpoint needs its secret', async () => {

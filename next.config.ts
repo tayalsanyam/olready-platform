@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The dev badge sits over phone-width buttons and screenshots; it never ships.
+  devIndicators: false,
   images: { remotePatterns: [{ protocol: 'https', hostname: '**' }] },
   async headers() {
     const common = [
