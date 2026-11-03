@@ -17,6 +17,7 @@ export async function submitRealWeddingAction(fd: FormData) {
     await submitRealWedding(sql, p.id, {
       title: str(fd, 'title'),
       coupleNames: str(fd, 'couple_names'),
+      culture: str(fd, 'culture'),
       cityId: num(fd, 'city_id'),
       weddingDate: str(fd, 'wedding_date') || null,
       story: str(fd, 'story'),

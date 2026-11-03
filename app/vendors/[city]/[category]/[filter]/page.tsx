@@ -12,6 +12,8 @@ const sortOf = async (sp: P['searchParams']): Promise<SortKey> => {
   return SORTS.some((x) => x.key === s) ? (s as SortKey) : 'recommended';
 };
 
+const ratingOf = async (sp: P['searchParams']) => (String((await sp).rating ?? '') === '4' ? 4 : null);
+
 export async function generateMetadata({ params, searchParams }: P) {
   const { city, category, filter } = await params;
   return landingMetadata(city, category, filter, await pageOf(searchParams));
@@ -19,5 +21,5 @@ export async function generateMetadata({ params, searchParams }: P) {
 
 export default async function Page({ params, searchParams }: P) {
   const { city, category, filter } = await params;
-  return <ListingPage citySlug={city} categorySlug={category} filterSlug={filter} page={await pageOf(searchParams)} sort={await sortOf(searchParams)} />;
+  return <ListingPage citySlug={city} categorySlug={category} filterSlug={filter} page={await pageOf(searchParams)} sort={await sortOf(searchParams)} minRating={await ratingOf(searchParams)} />;
 }

@@ -5,8 +5,12 @@ insert into mkt.cities (slug, name, state, sort) values
   ('chandigarh', 'Chandigarh', 'Chandigarh', 1),
   ('mohali', 'Mohali', 'Punjab', 2),
   ('panchkula', 'Panchkula', 'Haryana', 3),
-  ('ludhiana', 'Ludhiana', 'Punjab', 4),
-  ('delhi-ncr', 'Delhi NCR', 'Delhi', 5)
+  ('zirakpur', 'Zirakpur', 'Punjab', 4),
+  ('kharar', 'Kharar', 'Punjab', 5),
+  ('new-chandigarh', 'New Chandigarh', 'Punjab', 6),
+  ('dera-bassi', 'Dera Bassi', 'Punjab', 7),
+  ('ludhiana', 'Ludhiana', 'Punjab', 8),
+  ('delhi-ncr', 'Delhi NCR', 'Delhi', 9)
 on conflict (slug) do nothing;
 
 -- ---------------------------------------------------------------- categories
@@ -55,11 +59,11 @@ join (values
   ('mehendi-artists','travels_to_venue','Travels to venue','bool','[]',true,true,true,'Does {name} travel to the venue?','travels-to-venue',3),
   ('djs-dhol','services','Services','multiselect','[{"value":"dj","label":"DJ","seo":"dj"},{"value":"dhol","label":"Dhol","seo":"dhol"},{"value":"sound","label":"Sound and lights","seo":"sound"}]',true,true,true,'What does {name} provide?',null,1),
   ('djs-dhol','hours_included','Hours included','number','[]',false,false,true,'How many hours are included?',null,2),
-  ('venues','venue_type','Venue type','select','[{"value":"banquet","label":"Banquet hall","seo":"banquet-halls"},{"value":"lawn","label":"Marriage lawn","seo":"marriage-lawns"},{"value":"hotel","label":"Hotel","seo":"hotels"},{"value":"resort","label":"Resort","seo":"resorts"},{"value":"farmhouse","label":"Farmhouse","seo":"farmhouses"},{"value":"club","label":"Club","seo":"clubs"}]',true,true,true,'What kind of venue is {name}?',null,1),
+  ('venues','venue_type','Venue type','select','[{"value":"banquet","label":"Banquet hall","seo":"banquet-halls"},{"value":"lawn","label":"Marriage lawn","seo":"marriage-lawns"},{"value":"hotel","label":"Hotel","seo":"hotels"},{"value":"resort","label":"Resort","seo":"resorts"},{"value":"farmhouse","label":"Farmhouse","seo":"farmhouses"},{"value":"club","label":"Club","seo":"clubs"},{"value":"palace","label":"Marriage palace","seo":"marriage-palaces"},{"value":"heritage","label":"Heritage property","seo":"heritage"},{"value":"terrace","label":"Terrace or rooftop","seo":"terrace"}]',true,true,true,'What kind of venue is {name}?',null,1),
   ('venues','capacity_max','Maximum guests','number','[{"value":"small","label":"Under 200 guests","seo":"under-200-guests","max":199},{"value":"200","label":"200+ guests","seo":"200-guests","min":200},{"value":"500","label":"500+ guests","seo":"500-guests","min":500},{"value":"1000","label":"1,000+ guests","seo":"1000-guests","min":1000}]',true,true,true,'How many guests can {name} host?',null,2),
   ('venues','non_veg_per_plate','Non-veg per plate','money','[]',false,false,true,'What does a non-veg plate cost at {name}?',null,3),
   ('venues','rooms','Rooms','number','[]',false,false,false,'How many rooms does {name} have?',null,4),
-  ('venues','setting','Setting','multiselect','[{"value":"indoor","label":"Indoor"},{"value":"outdoor","label":"Outdoor","seo":"outdoor"},{"value":"poolside","label":"Poolside","seo":"poolside"}]',false,true,false,'Is {name} indoor or outdoor?',null,5),
+  ('venues','setting','Setting','multiselect','[{"value":"indoor","label":"Indoor"},{"value":"outdoor","label":"Outdoor","seo":"outdoor"},{"value":"poolside","label":"Poolside","seo":"poolside"},{"value":"terrace","label":"Terrace","seo":"terrace-venues"}]',false,true,false,'Is {name} indoor or outdoor?',null,5),
   ('venues','alcohol_allowed','Alcohol allowed','bool','[]',false,true,false,'Can we serve alcohol at {name}?','alcohol-allowed',6),
   ('venues','outside_catering','Outside caterers allowed','bool','[]',false,true,false,'Can we bring our own caterer to {name}?','outside-catering',7),
   ('venues','outside_decor','Outside decorators allowed','bool','[]',false,false,false,'Can we bring our own decorator to {name}?',null,8),
@@ -235,3 +239,19 @@ on conflict (code) do update set name = excluded.name, theme = excluded.theme, k
   culture = excluded.culture, themes = excluded.themes, sort = excluded.sort;
 -- The three first designs stay as classic layouts.
 update mkt.invite_templates set layout = 'classic', culture = 'generic', themes = '{traditional,elegant}', sort = 1 where code in ('ivory-gold','midnight','marigold');
+
+-- ---------------------------------------------------------------- price-band filters (starting price, GST as quoted)
+update mkt.categories c set price_bands = b.bands::jsonb
+from (values
+  ('venues', '[{"seo":"under-1000-per-plate","label":"Under ₹1,000 a plate","max":999},{"seo":"1000-1500-per-plate","label":"₹1,000–1,500 a plate","min":1000,"max":1500},{"seo":"1500-2000-per-plate","label":"₹1,500–2,000 a plate","min":1501,"max":2000},{"seo":"2000-3000-per-plate","label":"₹2,000–3,000 a plate","min":2001,"max":3000},{"seo":"above-3000-per-plate","label":"Above ₹3,000 a plate","min":3001}]'),
+  ('caterers', '[{"seo":"under-700-per-plate","label":"Under ₹700 a plate","max":699},{"seo":"700-1200-per-plate","label":"₹700–1,200 a plate","min":700,"max":1200},{"seo":"above-1200-per-plate","label":"Above ₹1,200 a plate","min":1201}]'),
+  ('bridal-makeup', '[{"seo":"under-15000","label":"Under ₹15,000","max":14999},{"seo":"15000-25000","label":"₹15,000–25,000","min":15000,"max":25000},{"seo":"25000-40000","label":"₹25,000–40,000","min":25001,"max":40000},{"seo":"above-40000","label":"Above ₹40,000","min":40001}]'),
+  ('photographers', '[{"seo":"under-50000","label":"Under ₹50,000 a day","max":49999},{"seo":"50000-100000","label":"₹50,000–1 lakh a day","min":50000,"max":100000},{"seo":"100000-200000","label":"₹1–2 lakh a day","min":100001,"max":200000},{"seo":"above-200000","label":"Above ₹2 lakh a day","min":200001}]'),
+  ('decorators', '[{"seo":"under-100000","label":"Under ₹1 lakh","max":99999},{"seo":"100000-300000","label":"₹1–3 lakh","min":100000,"max":300000},{"seo":"300000-500000","label":"₹3–5 lakh","min":300001,"max":500000},{"seo":"above-500000","label":"Above ₹5 lakh","min":500001}]'),
+  ('mehendi-artists', '[{"seo":"under-5000","label":"Under ₹5,000","max":4999},{"seo":"5000-10000","label":"₹5,000–10,000","min":5000,"max":10000},{"seo":"10000-20000","label":"₹10,000–20,000","min":10001,"max":20000},{"seo":"above-20000","label":"Above ₹20,000","min":20001}]'),
+  ('djs-dhol', '[{"seo":"under-20000","label":"Under ₹20,000","max":19999},{"seo":"20000-40000","label":"₹20,000–40,000","min":20000,"max":40000},{"seo":"above-40000","label":"Above ₹40,000","min":40001}]'),
+  ('planners', '[{"seo":"under-100000","label":"Under ₹1 lakh","max":99999},{"seo":"100000-300000","label":"₹1–3 lakh","min":100000,"max":300000},{"seo":"above-300000","label":"Above ₹3 lakh","min":300001}]'),
+  ('bridal-wear', '[{"seo":"under-50000","label":"Under ₹50,000","max":49999},{"seo":"50000-150000","label":"₹50,000–1.5 lakh","min":50000,"max":150000},{"seo":"above-150000","label":"Above ₹1.5 lakh","min":150001}]'),
+  ('jewellery', '[{"seo":"under-100000","label":"Under ₹1 lakh","max":99999},{"seo":"100000-500000","label":"₹1–5 lakh","min":100000,"max":500000},{"seo":"above-500000","label":"Above ₹5 lakh","min":500001}]')
+) as b(slug, bands)
+where c.slug = b.slug and c.price_bands = '[]'::jsonb;

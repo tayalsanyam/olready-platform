@@ -76,6 +76,13 @@ export default async function Enquire({ searchParams }: P) {
             >
               <input name={`budget_${vendor.category_id}`} className="input" inputMode="numeric" placeholder="₹" />
             </Field>
+            <label className="mt-3 flex items-start gap-2 text-sm">
+              <input type="checkbox" name="also_others" className="mt-0.5 h-4 w-4 accent-[var(--color-pink)]" />
+              <span>
+                Also let other verified {vendor.category_name.toLowerCase()}s send me quotes, so I can compare.{' '}
+                <span className="text-[var(--color-muted)]">{vendor.business_name} still sees your request first.</span>
+              </span>
+            </label>
           </Card>
         ) : (
           <Card>
@@ -94,6 +101,10 @@ export default async function Enquire({ searchParams }: P) {
             </ul>
           </Card>
         )}
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" name="whatsapp" className="mt-0.5 h-4 w-4 accent-[var(--color-pink)]" />
+          <span>Send me updates about this request on WhatsApp</span>
+        </label>
         <button className="btn btn-pink w-full sm:w-auto">Send my request</button>
         <p className="hint">An enquiry is a chance to connect with vendors, not a confirmed booking.</p>
       </form>

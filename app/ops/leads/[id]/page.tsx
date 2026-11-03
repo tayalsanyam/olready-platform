@@ -53,6 +53,7 @@ export default async function VerifyLead({ params, searchParams }: P) {
             <span>· {lead.city}</span>
             <span>· wedding {lead.event ?? 'not fixed'}</span>
             {lead.guest_count ? <span>· about {lead.guest_count} guests</span> : null}
+            {lead.whatsapp_opt_in ? <Badge tone="ok">WhatsApp updates: yes</Badge> : null}
             <span>· via {lead.source}</span>
             <Badge tone={lead.status === 'verified' ? 'ok' : closed ? 'bad' : 'warn'}>{lead.status}</Badge>
           </span>

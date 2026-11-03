@@ -10,20 +10,21 @@ import { currentProfile } from '@/lib/auth';
 import { shortlistedIds } from '@/lib/weddings';
 import { breadcrumbLd, faqLd, indexable, itemListLd, landingFaq, landingPath, landingTitle } from '@/lib/seo';
 import { Container, Empty, PageTitle } from './ui';
+import { publishedCollections } from '@/lib/collections';
 import { JsonLd, VendorCard } from './VendorCard';
 
 export const PAGE_SIZE = 24;
 
-export async function resolveLanding(citySlug: string, categorySlug: string, filterSlug?: string, page = 1, sort: SortKey = 'recommended') {
+export async function resolveLanding(citySlug: string, categorySlug: string, filterSlug?: string, page = 1, sort: SortKey = 'recommended', minRating: number | null = null) {
   const [city, category] = await Promise.all([getCityBySlug(sql, citySlug), getCategoryBySlug(sql, categorySlug)]);
   if (!city || !category || !category.active) return null;
   const fields = await fieldsFor(sql, category.id);
-  const filters = filtersFor(fields);
+  const filters = filtersFor(fields, category.price_bands ?? []);
   const filter = filterSlug ? (filters.find((f) => f.slug === filterSlug) ?? null) : null;
   if (filterSlug && !filter) return null;
   const [vendors, total] = await Promise.all([
-    browseVendors(sql, { categoryId: category.id, cityId: city.id, filter, sort, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
-    countVendors(sql, { categoryId: category.id, cityId: city.id, filter }),
+    browseVendors(sql, { categoryId: category.id, cityId: city.id, filter, sort, minRating, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
+    countVendors(sql, { categoryId: category.id, cityId: city.id, filter, minRating }),
   ]);
   return { city, category, fields, filters, filter, vendors, total, page, pages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
 }
@@ -35,7 +36,7 @@ export async function landingMetadata(citySlug: string, categorySlug: string, fi
   const index = await indexable(sql, r.total);
   const path = landingPath(r.city, r.category, r.filter);
   return {
-    title: `${title}: prices and reviews${page > 1 ? ` (page ${page})` : ''}`,
+    title: `${r.total >= 3 ? `Best ${title.charAt(0).toLowerCase()}${title.slice(1)}` : title} with prices, photos and reviews${page > 1 ? ` (page ${page})` : ''}`,
     description: `Compare ${r.total} ${title.toLowerCase()} on OLReady. See starting prices, verified profiles and reviews, then get quotes from verified vendors.`,
     alternates: { canonical: page > 1 ? `${path}?page=${page}` : path },
     robots: index ? undefined : { index: false, follow: true },
@@ -48,23 +49,26 @@ export async function ListingPage({
   filterSlug,
   page = 1,
   sort = 'recommended',
+  minRating = null,
 }: {
   citySlug: string;
   categorySlug: string;
   filterSlug?: string;
   page?: number;
   sort?: SortKey;
+  minRating?: number | null;
 }) {
-  const r = await resolveLanding(citySlug, categorySlug, filterSlug, page, sort);
+  const r = await resolveLanding(citySlug, categorySlug, filterSlug, page, sort, minRating);
   if (!r || (page > 1 && page > r.pages)) notFound();
   const { city, category, fields, filters, filter, vendors, total, pages } = r;
   const here = landingPath(city, category, filter);
   const viewer = await currentProfile();
   if (vendors.length && (await visitorKey())) after(() => bump(sql, vendors.map((v) => v.id), 'impressions').catch(() => undefined));
   const hearts = await shortlistedIds(sql, viewer?.role === 'bride' ? viewer.id : null);
-  const withSort = (path: string, p = 1) => {
+  const withSort = (path: string, p = 1, rating: number | null = minRating) => {
     const q = new URLSearchParams();
     if (sort !== 'recommended') q.set('sort', sort);
+    if (rating) q.set('rating', String(rating));
     if (p > 1) q.set('page', String(p));
     const s = q.toString();
     return s ? `${path}?${s}` : path;
@@ -73,6 +77,7 @@ export async function ListingPage({
   const title = landingTitle(category, city, filter);
   const faq = landingFaq(category, city, vendors, filter);
   const otherCities = (await listCities(sql)).filter((c) => c.id !== city.id);
+  const collections = await publishedCollections(sql, { categoryId: category.id });
   const crumbs = [
     { name: 'Vendors', path: '/vendors' },
     { name: city.name, path: `/vendors/${city.slug}` },
@@ -110,21 +115,41 @@ export async function ListingPage({
             <Link href={withSort(landingPath(city, category))} className="chip" aria-current={!filter}>
               All
             </Link>
-            {filters.map((f) => (
-              <Link key={f.slug} href={withSort(landingPath(city, category, f))} className="chip" aria-current={filter?.slug === f.slug}>
-                {f.label}
-              </Link>
-            ))}
+            {filters
+              .filter((f) => f.field.key !== '__price')
+              .map((f) => (
+                <Link key={f.slug} href={withSort(landingPath(city, category, f))} className="chip" aria-current={filter?.slug === f.slug}>
+                  {f.label}
+                </Link>
+              ))}
+            {filters.some((f) => f.field.key === '__price') ? <span className="self-center whitespace-nowrap pl-2 text-sm text-[var(--color-muted)]">Price</span> : null}
+            {filters
+              .filter((f) => f.field.key === '__price')
+              .map((f) => (
+                <Link key={f.slug} href={withSort(landingPath(city, category, f))} className="chip" aria-current={filter?.slug === f.slug}>
+                  {f.label}
+                </Link>
+              ))}
           </div>
         ) : null}
         <div className="no-scrollbar mt-2 flex items-center gap-3 overflow-x-auto text-sm" role="group" aria-label="Sort">
+          <Link
+            href={withSort(here, 1, minRating ? null : 4)}
+            className="chip shrink-0 py-0.5"
+            aria-current={Boolean(minRating)}
+            rel="nofollow"
+          >
+            ★ 4+ rated
+          </Link>
           <span className="text-[var(--color-muted)]">Sort</span>
           {SORTS.map((s) => {
-            const q = s.key === 'recommended' ? '' : `?sort=${s.key}`;
+            const q = new URLSearchParams();
+            if (s.key !== 'recommended') q.set('sort', s.key);
+            if (minRating) q.set('rating', String(minRating));
             return (
               <Link
                 key={s.key}
-                href={here + q}
+                href={here + (q.toString() ? `?${q}` : '')}
                 aria-current={sort === s.key}
                 className={`whitespace-nowrap ${sort === s.key ? 'font-semibold text-[var(--color-pink-deep)]' : 'text-[var(--color-ink)]'}`}
               >
@@ -178,6 +203,20 @@ export async function ListingPage({
           </dl>
         </div>
         <div>
+          {collections.length ? (
+            <>
+              <h2 className="font-semibold text-xl">Hand-picked lists</h2>
+              <ul className="mb-6 mt-3 space-y-1 text-sm">
+                {collections.map((c) => (
+                  <li key={c.id}>
+                    <Link className="underline-offset-4 hover:underline" href={`/collections/${c.slug}`}>
+                      {c.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
           <h2 className="font-semibold text-xl">Nearby</h2>
           <ul className="mt-3 space-y-1 text-sm">
             {otherCities.map((c) => (

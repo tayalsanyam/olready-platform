@@ -3,6 +3,7 @@
 import { sql } from '../db';
 import { requireRole } from '../auth';
 import { saveArticle, setArticleStatus, subscribeNewsletter } from '../articles';
+import { saveCollection } from '../collections';
 import { storeImage } from '../storage';
 import { attempt, back, num, str } from './run';
 
@@ -49,5 +50,26 @@ export async function subscribeAction(fd: FormData) {
     if (str(fd, 'company')) return; // bot trap
     await subscribeNewsletter(sql, str(fd, 'email'), str(fd, 'source') || 'blog');
     return { ok: 'You are on the list. Check your inbox.' };
+  });
+}
+
+export async function opsSaveCollection(fd: FormData) {
+  const id = str(fd, 'id') || null;
+  await attempt(`/ops/collections${id ? `?id=${id}` : ''}`, async () => {
+    const p = await requireRole([...CONTENT]);
+    const saved = await saveCollection(
+      sql,
+      id,
+      {
+        title: str(fd, 'title'),
+        intro: str(fd, 'intro'),
+        categoryId: num(fd, 'category_id'),
+        cityId: num(fd, 'city_id'),
+        vendorIds: fd.getAll('vendor_ids').map(String),
+        publish: fd.get('publish') === 'on',
+      },
+      p.id
+    );
+    return { to: `/ops/collections?id=${saved}`, ok: 'Collection saved' };
   });
 }

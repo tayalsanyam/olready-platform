@@ -10,9 +10,13 @@ export function landingPath(city: City | { slug: string }, category: Category | 
 }
 
 export function landingTitle(category: Category, city: City, filter?: FilterDef | null) {
-  return filter
-    ? `${filter.label} ${category.plural_name.toLowerCase()} in ${city.name}`
-    : `${category.plural_name} in ${city.name}`;
+  const base = `${category.plural_name} in ${city.name}`;
+  if (!filter) return base;
+  const low = filter.label.charAt(0).toLowerCase() + filter.label.slice(1);
+  // Price bands read as "Wedding venues in Mohali, under ₹1,000 a plate"; ranges as "… for 500+ guests".
+  if (filter.field.key === '__price') return `${base}, ${low}`;
+  if (typeof filter.value === 'object') return `${base} for ${low}`;
+  return `${filter.label} ${category.plural_name.toLowerCase()} in ${city.name}`;
 }
 
 /** A landing page is indexed only when it lists enough vendors; thin pages hurt the whole site. */
@@ -29,7 +33,7 @@ export async function landingEntries(db: Db): Promise<LandingEntry[]> {
   const min = await getSetting(db, 'min_vendors_to_index', 3);
   const out: LandingEntry[] = [];
   for (const cat of cats) {
-    const filters = filtersFor(await fieldsFor(db, cat.id));
+    const filters = filtersFor(await fieldsFor(db, cat.id), cat.price_bands ?? []);
     for (const city of cities) {
       const base = await countVendors(db, { categoryId: cat.id, cityId: city.id });
       if (base < min) continue;

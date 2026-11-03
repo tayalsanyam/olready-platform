@@ -1,7 +1,7 @@
 'use server';
 
 import { saveWeddingInvite } from '../invites';
-import { storeImage } from '../storage';
+import { filesFrom, storeImage } from '../storage';
 
 import { redirect } from 'next/navigation';
 import { sql, DomainError, getSetting } from '../db';
@@ -189,6 +189,9 @@ export async function writeReviewAction(fd: FormData) {
       ratingArtist: num(fd, 'rating_artist') ?? 0,
       ratingService: num(fd, 'rating_service') ?? 0,
       body: str(fd, 'body'),
+      amountSpent: num(fd, 'amount_spent'),
+      functionDate: str(fd, 'function_date') || null,
+      photos: await Promise.all(filesFrom(fd, 'photos', 5).map((f) => storeImage(f, 'reviews'))),
     });
     return { ok: 'Thank you for your review' };
   });

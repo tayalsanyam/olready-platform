@@ -118,6 +118,28 @@ try {
         'OLReady team', now() - ${`${art} days`}::interval)`;
   }
 
+  // Halls and lawns inside the demo venues.
+  const spaces = {
+    'Rosewood Banquets': [['Crystal Hall', 'indoor', 400, 600], ['Rose Terrace', 'terrace', 80, 150]],
+    'Sukhna Greens Lawn': [['Main Lawn', 'outdoor', 900, 1500], ['Pavilion', 'indoor', 150, 250]],
+    'Shivalik Courtyard Hotel': [['Grand Ballroom', 'indoor', 220, 300], ['Poolside Deck', 'poolside', 60, 120]],
+  };
+  for (const [name, list] of Object.entries(spaces)) {
+    const [{ id: vid }] = await sql`select id from mkt.vendors where slug = ${slugs[name]}`;
+    let n = 0;
+    for (const [sname, kind, seating, floating] of list) {
+      await sql`insert into mkt.venue_spaces (vendor_id, name, kind, seating, floating, sort) values (${vid}, ${sname}, ${kind}, ${seating}, ${floating}, ${n++})`;
+    }
+  }
+
+  // A hand-picked list, as the content team would write it.
+  const pickVenues = await sql`select id from mkt.vendors where slug in ${sql([slugs['Mango Orchard Farm'], slugs['Sukhna Greens Lawn']])}`;
+  await sql`
+    insert into mkt.collections (slug, title, intro, category_id, city_id, vendor_ids, status)
+    values ('open-air-venues-for-tricity-weddings', 'Open-air venues for Tricity weddings',
+      ${'Lawns and farmhouses where the evening is part of the decor. Each one here hosts outdoor functions and lets you plan around the weather with a covered space.'},
+      ${await cat('venues')}, ${moh}, ${pickVenues.map((r) => r.id)}, 'published')`;
+
   // One draft profile Ops built, waiting to be claimed.
   await sql`
     insert into mkt.vendors (category_id, city_id, service_city_ids, slug, business_name, attributes, email, status, claim_status)

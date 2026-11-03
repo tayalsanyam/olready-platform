@@ -25,8 +25,10 @@ export async function submitEnquiry(fd: FormData) {
     const directSlug = str(fd, 'vendor');
     const direct = directSlug ? await getVendorBySlug(sql, directSlug) : null;
     const categoryIds = fd.getAll('category_id').map(Number).filter(Boolean);
+    // "Also let others quote": an open request that this vendor sees first, flagged as chosen.
+    const alsoOthers = Boolean(direct) && fd.get('also_others') === 'on';
     const needs = direct
-      ? [{ categoryId: direct.category_id, budgetInr: num(fd, `budget_${direct.category_id}`) }]
+      ? [{ categoryId: direct.category_id, budgetInr: num(fd, `budget_${direct.category_id}`), preferredVendorIds: alsoOthers ? [direct.id] : [] }]
       : categoryIds.map((id) => ({ categoryId: id, budgetInr: num(fd, `budget_${id}`) }));
     const email = str(fd, 'email') || profile?.email || null;
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new DomainError('bad_email', 'Check your email address');
@@ -40,7 +42,8 @@ export async function submitEnquiry(fd: FormData) {
       eventDate: str(fd, 'event_date') || null,
       guestCount: Number(str(fd, 'guest_count')) || null,
       needs,
-      directVendorId: direct?.id ?? null,
+      directVendorId: alsoOthers ? null : (direct?.id ?? null),
+      whatsappOptIn: fd.get('whatsapp') === 'on',
     });
     return '/enquire/thanks';
   });

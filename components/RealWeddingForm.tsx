@@ -1,4 +1,5 @@
 import type { City } from '@/lib/catalog';
+import { CULTURES } from '@/lib/inviteDesign';
 import { submitRealWeddingAction } from '@/lib/actions/content';
 import { Card, Field } from './ui';
 import { PhotoInput } from './PhotoInput';
@@ -27,6 +28,15 @@ export function RealWeddingForm({ cities, backPath, defaultVendorSlug }: { citie
         </Field>
         <Field label="Wedding date">
           <input name="wedding_date" type="date" className="input" />
+        </Field>
+        <Field label="Culture">
+          <select name="culture" className="input" defaultValue="generic">
+            {Object.entries(CULTURES).map(([k, c]) => (
+              <option key={k} value={k}>
+                {k === 'generic' ? 'Mixed or other' : c.label}
+              </option>
+            ))}
+          </select>
         </Field>
         <div className="sm:col-span-2">
           <Field label="Story">

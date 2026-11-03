@@ -62,7 +62,13 @@ export type FilterDef = {
   value: string | true | { min?: number; max?: number };
 };
 
-export function filtersFor(fields: CategoryField[]): FilterDef[] {
+/** The pseudo-field price-band filters use: they filter on the starting price, not an attribute. */
+const PRICE_FIELD: CategoryField = {
+  id: 0, category_id: 0, key: '__price', label: 'Starting price', type: 'money', options: [], required: false,
+  filterable: true, on_card: false, faq_question: null, seo_slug: null, sort: 0,
+};
+
+export function filtersFor(fields: CategoryField[], priceBands: { seo: string; label: string; min?: number; max?: number }[] = []): FilterDef[] {
   const out: FilterDef[] = [];
   for (const f of fields) {
     if (!f.filterable) continue;
@@ -74,6 +80,7 @@ export function filtersFor(fields: CategoryField[]): FilterDef[] {
       for (const o of f.options) if (o.seo) out.push({ slug: o.seo, label: o.label, field: f, value: { min: o.min, max: o.max } });
     }
   }
+  for (const b of priceBands) out.push({ slug: b.seo, label: b.label, field: PRICE_FIELD, value: { min: b.min, max: b.max } });
   return out;
 }
 
@@ -90,6 +97,7 @@ type BrowseOpts = {
   categoryId: number;
   cityId?: number | null;
   filter?: FilterDef | null;
+  minRating?: number | null;
   limit?: number;
   offset?: number;
 };
@@ -100,6 +108,10 @@ function browseWhere(db: Db, o: Omit<BrowseOpts, 'limit' | 'offset'>) {
     ? db``
     : f.value === true
       ? db`and (v.attributes ->> ${f.field.key}) = 'true'`
+      : typeof f.value === 'object' && f.field.key === '__price'
+        ? db`and v.starting_price_inr is not null
+            and (${f.value.min ?? null}::int is null or v.starting_price_inr >= ${f.value.min ?? null}::int)
+            and (${f.value.max ?? null}::int is null or v.starting_price_inr <= ${f.value.max ?? null}::int)`
       : typeof f.value === 'object'
         ? db`and (v.attributes ->> ${f.field.key}) ~ '^[0-9]+$'
             and (${f.value.min ?? null}::int is null or (v.attributes ->> ${f.field.key})::int >= ${f.value.min ?? null}::int)
@@ -110,7 +122,10 @@ function browseWhere(db: Db, o: Omit<BrowseOpts, 'limit' | 'offset'>) {
   const citySql = o.cityId
     ? db`and (v.city_id = ${o.cityId} or ${o.cityId} = any(v.service_city_ids))`
     : db``;
-  return db`v.status = 'live' and v.category_id = ${o.categoryId} ${citySql} ${filterSql}`;
+  const ratingSql = o.minRating
+    ? db`and (select avg((rating_artist + rating_service) / 2.0) from mkt.reviews where vendor_id = v.id and status = 'published') >= ${o.minRating}`
+    : db``;
+  return db`v.status = 'live' and v.category_id = ${o.categoryId} ${citySql} ${filterSql} ${ratingSql}`;
 }
 
 export async function browseVendors(db: Db, o: BrowseOpts) {
@@ -194,7 +209,10 @@ export function vendorFaq(v: VendorCard, fields: CategoryField[]) {
     const q = f.faq_question.replaceAll('{name}', name);
     const a =
       f.type === 'bool'
-        ? `${shown}. ${name} ${v.attributes[f.key] ? 'offers' : 'does not offer'} ${f.label.toLowerCase()}.`
+        ? // Policies ("Alcohol allowed", "On rent") read as a plain yes/no; services read as offers.
+          /allowed|rent|order|certified|in-house|travels/i.test(f.label)
+          ? `${v.attributes[f.key] ? 'Yes' : 'No'}. ${f.label}: ${v.attributes[f.key] ? 'yes' : 'no'}.`
+          : `${shown}. ${name} ${v.attributes[f.key] ? 'offers' : 'does not offer'} ${f.label.toLowerCase()}.`
         : `${f.label}: ${shown}.`;
     faq.push({ q, a });
   }
@@ -349,3 +367,20 @@ export function isPubliclyVisible(v: Pick<Vendor, 'status'>) {
 }
 
 export type { Category };
+
+/** Vendors like this one: same category, serving the same city, best rated first. */
+export async function similarVendors(db: Db, v: { id: string; category_id: number; city_id: number }, limit = 4) {
+  return browseVendors(db, { categoryId: v.category_id, cityId: v.city_id, sort: 'rating', limit: limit + 1 }).then((r) =>
+    r.filter((x) => x.id !== v.id).slice(0, limit)
+  );
+}
+
+/** Families who started a request to this vendor or asked for them by name in the last 7 days. */
+export async function recentDemand(db: Db, vendorId: string) {
+  const [{ n }] = await db<{ n: number }[]>`
+    select (
+      coalesce((select sum(quote_starts) from mkt.vendor_daily where vendor_id = ${vendorId} and day > current_date - 7), 0)
+      + (select count(*) from mkt.lead_needs where direct_vendor_id = ${vendorId} and created_at > now() - interval '7 days')
+    )::int as n`;
+  return n;
+}

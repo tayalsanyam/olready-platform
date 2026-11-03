@@ -17,6 +17,7 @@ export type CategoryField = {
   seo_slug: string | null;
   sort: number;
 };
+export type PriceBand = { seo: string; label: string; min?: number; max?: number };
 export type Category = {
   id: number;
   slug: string;
@@ -29,6 +30,7 @@ export type Category = {
   unlock_credit_cost: number;
   unlock_cap: number;
   price_unit: string;
+  price_bands?: PriceBand[];
 };
 export type City = { id: number; slug: string; name: string; state: string; active: boolean };
 export type BudgetTier = {

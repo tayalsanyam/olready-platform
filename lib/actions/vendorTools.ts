@@ -3,6 +3,7 @@
 import { DomainError, sql } from '../db';
 import { currentProfile, requireProfile, requireRole } from '../auth';
 import { requireVendor } from '../vendorSession';
+import { addSpace, removeSpace } from '../venueSpaces';
 import { closeCallback, createReviewRequest, decidePendingReview, requestCallback, submitInvitedReview } from '../vendorTools';
 import { attempt, back, num, str } from './run';
 
@@ -56,5 +57,21 @@ export async function opsDecideInvitedReview(fd: FormData) {
     if (!str(fd, 'review_id')) throw new DomainError('bad', 'Missing review');
     await decidePendingReview(sql, str(fd, 'review_id'), publish, p.id);
     return { ok: publish ? 'Review published' : 'Review removed' };
+  });
+}
+
+export async function vendorAddSpace(fd: FormData) {
+  await attempt('/vendor/profile', async () => {
+    const { vendor } = await requireVendor('/vendor/profile');
+    await addSpace(sql, vendor.id, { name: str(fd, 'name'), kind: str(fd, 'kind'), seating: num(fd, 'seating'), floating: num(fd, 'floating') });
+    return { ok: 'Space added' };
+  });
+}
+
+export async function vendorRemoveSpace(fd: FormData) {
+  await attempt('/vendor/profile', async () => {
+    const { vendor } = await requireVendor('/vendor/profile');
+    await removeSpace(sql, vendor.id, str(fd, 'id'));
+    return { ok: 'Space removed' };
   });
 }

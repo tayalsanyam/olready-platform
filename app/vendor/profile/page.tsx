@@ -6,6 +6,8 @@ import { vendorMedia } from '@/lib/vendors';
 import { addMedia, removeMedia, saveVendorProfile, setCoverAction } from '@/lib/actions/vendor';
 import { vendorTagPhoto } from '@/lib/actions/ideas';
 import { topicTags } from '@/lib/ideas';
+import { SPACE_KINDS, spacesFor } from '@/lib/venueSpaces';
+import { vendorAddSpace, vendorRemoveSpace } from '@/lib/actions/vendorTools';
 import { PhotoInput } from '@/components/PhotoInput';
 import { AttributeInputs } from '@/components/AttributeInputs';
 import { Badge, Card, Field, Notice, PageTitle } from '@/components/ui';
@@ -31,6 +33,8 @@ export default async function ProfilePage({ searchParams }: P) {
   const [topic] = await sql<{ id: number; slug: string; name: string }[]>`
     select id, slug, name from mkt.idea_topics where category_id = ${vendor.category_id}`;
   const tags = topic ? await topicTags(sql, topic.id) : [];
+  const [cat] = await sql<{ slug: string }[]>`select slug from mkt.categories where id = ${vendor.category_id}`;
+  const spaces = cat?.slug === 'venues' ? await spacesFor(sql, vendor.id) : null;
   return (
     <>
       <PageTitle
@@ -135,6 +139,54 @@ export default async function ProfilePage({ searchParams }: P) {
           </ul>
         ) : null}
       </Card>
+
+      {spaces ? (
+        <Card className="mt-6">
+          <h2 className="font-semibold">Halls and lawns</h2>
+          <p className="hint">List each space separately so families can see which one fits their guest count.</p>
+          {spaces.length ? (
+            <ul className="mt-3 divide-y divide-[var(--color-line)] text-sm">
+              {spaces.map((sp) => (
+                <li key={sp.id} className="flex items-center justify-between gap-2 py-2">
+                  <span>
+                    <b>{sp.name}</b> <span className="text-[var(--color-muted)]">{SPACE_KINDS[sp.kind]}</span>
+                    <span className="block text-xs text-[var(--color-muted)]">
+                      {sp.seating ? `${sp.seating} seated` : ''}
+                      {sp.seating && sp.floating ? ', ' : ''}
+                      {sp.floating ? `${sp.floating} floating` : ''}
+                    </span>
+                  </span>
+                  <form action={vendorRemoveSpace}>
+                    <input type="hidden" name="id" value={sp.id} />
+                    <button className="btn btn-ghost btn-sm">Remove</button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <form action={vendorAddSpace} className="mt-3 grid gap-2 sm:grid-cols-[2fr_1.5fr_1fr_1fr_auto] sm:items-end">
+            <Field label="Name">
+              <input name="name" required maxLength={60} className="input" placeholder="Crystal Hall" />
+            </Field>
+            <Field label="Kind">
+              <select name="kind" className="input">
+                {Object.entries(SPACE_KINDS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Seated">
+              <input name="seating" type="number" min={1} max={20000} className="input" />
+            </Field>
+            <Field label="Floating">
+              <input name="floating" type="number" min={1} max={20000} className="input" />
+            </Field>
+            <button className="btn btn-sm">Add</button>
+          </form>
+        </Card>
+      ) : null}
 
       {media.length && topic ? (
         <Card className="mt-6">

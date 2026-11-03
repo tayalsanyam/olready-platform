@@ -58,6 +58,21 @@ export default async function BrideReviews({ searchParams }: P) {
                   </fieldset>
                 ))}
                 <textarea name="body" rows={3} className="input" placeholder="What should other brides know?" />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="text-sm">
+                    <span className="block text-[var(--color-muted)]">What you spent (optional)</span>
+                    <input name="amount_spent" inputMode="numeric" className="input" placeholder="₹" />
+                  </label>
+                  <label className="text-sm">
+                    <span className="block text-[var(--color-muted)]">Function date (optional)</span>
+                    <input name="function_date" type="date" className="input" />
+                  </label>
+                </div>
+                <label className="block text-sm">
+                  <span className="block text-[var(--color-muted)]">Photos (up to 5, optional)</span>
+                  <input type="file" name="photos" multiple accept="image/jpeg,image/png,image/webp" className="block w-full text-sm" />
+                </label>
+                <p className="hint">What you spent is shown with your review as a price guide for other families.</p>
                 <button className="btn btn-sm">Save review</button>
               </form>
             </Card>

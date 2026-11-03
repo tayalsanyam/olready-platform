@@ -12,6 +12,7 @@ export type Lead = {
   city_id: number;
   event_date: string | null;
   guest_count: number | null;
+  whatsapp_opt_in: boolean;
   source: string;
   status: 'new' | 'verifying' | 'verified' | 'rejected' | 'fake';
   verification_stage: number;
@@ -47,6 +48,7 @@ export type EnquiryInput = {
   cityId: number;
   eventDate?: string | null;
   guestCount?: number | null;
+  whatsappOptIn?: boolean;
   source?: Lead['source'];
   needs: { categoryId: number; budgetInr?: number | null; preferredVendorIds?: string[] }[];
   directVendorId?: string | null;
@@ -66,10 +68,11 @@ export async function createEnquiry(sql: Sql, input: EnquiryInput) {
   const phone = normalisePhone(input.phone);
   return sql.begin(async (tx) => {
     const [lead] = await tx<Lead[]>`
-      insert into mkt.leads (wedding_id, bride_profile_id, bride_name, phone, email, city_id, event_date, guest_count, source)
+      insert into mkt.leads (wedding_id, bride_profile_id, bride_name, phone, email, city_id, event_date, guest_count, whatsapp_opt_in, whatsapp_opt_in_at, source)
       values (${input.weddingId ?? null}, ${input.brideProfileId ?? null}, ${input.name.trim()}, ${phone},
         ${input.email?.toLowerCase() ?? null}, ${input.cityId}, ${input.eventDate || null},
         ${input.guestCount && input.guestCount > 0 && input.guestCount <= 20000 ? Math.round(input.guestCount) : null},
+        ${Boolean(input.whatsappOptIn)}, ${input.whatsappOptIn ? new Date() : null},
         ${input.directVendorId ? 'direct_request' : (input.source ?? 'website')})
       returning *`;
     const seen = new Set<number>();

@@ -5,7 +5,9 @@ import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { currentProfile, STAFF_ROLES } from '@/lib/auth';
 import { displayValue, fieldsFor, formatInr } from '@/lib/catalog';
-import { getVendorBySlug, publicVendor, vendorFaq, vendorMedia } from '@/lib/vendors';
+import { getVendorBySlug, publicVendor, recentDemand, similarVendors, vendorFaq, vendorMedia } from '@/lib/vendors';
+import { SPACE_KINDS, spacesFor } from '@/lib/venueSpaces';
+import { JsonLd, VendorCard } from '@/components/VendorCard';
 import { reviewsForVendor } from '@/lib/reviews';
 import { realWeddingsForVendor } from '@/lib/realWeddings';
 import { shortlistedIds } from '@/lib/weddings';
@@ -13,7 +15,6 @@ import { breadcrumbLd, faqLd, vendorLd } from '@/lib/seo';
 import { shortlistAction } from '@/lib/actions/public';
 import { Badge, Container, Cover, Notice, Stars } from '@/components/ui';
 import { IconHeart, IconPhoneOff, IconPin, IconShield } from '@/components/icons';
-import { JsonLd } from '@/components/VendorCard';
 
 export const dynamic = 'force-dynamic';
 type P = { params: Promise<{ slug: string }>; searchParams: Promise<Record<string, string | string[]>> };
@@ -63,17 +64,28 @@ export default async function VendorPage({ params, searchParams }: P) {
   }
   // Contact details never reach the bride's browser.
   const v = publicVendor(raw);
-  const [fields, media, reviews, weddings, hearts] = await Promise.all([
+  const [fields, media, allReviews, weddings, hearts, spaces, similar, demand] = await Promise.all([
     fieldsFor(sql, v.category_id),
     vendorMedia(sql, v.id),
     reviewsForVendor(sql, v.id),
     realWeddingsForVendor(sql, v.id),
     shortlistedIds(sql, viewer?.role === 'bride' ? viewer.id : null),
+    v.category_slug === 'venues' ? spacesFor(sql, v.id) : Promise.resolve([]),
+    similarVendors(sql, v),
+    recentDemand(sql, v.id),
   ]);
+  // Review filters: all, with photos, positive (4 and above), critical (2 and below).
+  const overall = (r: { rating_artist: number; rating_service: number }) => (r.rating_artist + r.rating_service) / 2;
+  const rf = ['photos', 'positive', 'critical'].includes(String(q.reviews)) ? String(q.reviews) : 'all';
+  const reviews = allReviews.filter((r) =>
+    rf === 'photos' ? r.photos?.length : rf === 'positive' ? overall(r) >= 4 : rf === 'critical' ? overall(r) <= 2 : true
+  );
+  const hist = [5, 4, 3, 2, 1].map((s) => ({ s, n: allReviews.filter((r) => Math.round(overall(r)) === s).length }));
+  const word = (x: number) => (x >= 4.7 ? 'Superb' : x >= 4.3 ? 'Excellent' : x >= 3.8 ? 'Very good' : x >= 3 ? 'Good' : 'Mixed');
   const on = hearts.has(v.id);
   const faq = vendorFaq(raw, fields);
   const avg = (k: 'rating_artist' | 'rating_service') =>
-    reviews.length ? reviews.reduce((a, r) => a + r[k], 0) / reviews.length : null;
+    allReviews.length ? allReviews.reduce((a, r) => a + r[k], 0) / allReviews.length : null;
   const facts = fields
     .map((f) => ({ label: f.label, shown: displayValue(f, v.attributes[f.key]) }))
     .filter((f): f is { label: string; shown: string } => f.shown != null);
@@ -166,6 +178,11 @@ export default async function VendorPage({ params, searchParams }: P) {
               </span>
               {v.review_count ? <Stars value={v.rating} count={v.review_count} /> : null}
             </p>
+            {demand >= 3 ? (
+              <p className="mt-2 inline-flex rounded-full bg-[var(--color-pink-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-pink-deep)]">
+                {demand} families asked about {v.business_name} in the last 7 days
+              </p>
+            ) : null}
             <div className="mt-4 md:hidden">{price}</div>
 
             {facts.length ? (
@@ -177,6 +194,33 @@ export default async function VendorPage({ params, searchParams }: P) {
                   </div>
                 ))}
               </dl>
+            ) : null}
+
+            {spaces.length ? (
+              <section className="mt-8">
+                <h2 className="text-xl font-semibold">Halls and lawns</h2>
+                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {spaces.map((sp) => (
+                    <li key={sp.id} className="rounded-[12px] border border-[var(--color-line)] p-3 text-sm">
+                      <p className="font-semibold">{sp.name}</p>
+                      <p className="text-[var(--color-muted)]">{SPACE_KINDS[sp.kind]}</p>
+                      <p className="mt-1">
+                        {sp.seating ? (
+                          <>
+                            <span className="figure text-lg">{sp.seating}</span> seated
+                          </>
+                        ) : null}
+                        {sp.seating && sp.floating ? <span className="text-[var(--color-muted)]"> · </span> : null}
+                        {sp.floating ? (
+                          <>
+                            <span className="figure text-lg">{sp.floating}</span> floating
+                          </>
+                        ) : null}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ) : null}
 
             {v.about ? (
@@ -221,18 +265,48 @@ export default async function VendorPage({ params, searchParams }: P) {
               </section>
             ) : null}
 
-            <section className="mt-8">
+            <section id="reviews" className="mt-8 scroll-mt-32">
               <h2 className="text-xl font-semibold">Reviews</h2>
-              {reviews.length ? (
+              {allReviews.length ? (
                 <>
-                  <div className="mt-3 flex flex-wrap items-center gap-4">
-                    <span className="figure text-4xl">{v.rating?.toFixed(1)}</span>
-                    <span className="text-sm text-[var(--color-muted)]">
-                      Artist {avg('rating_artist')!.toFixed(1)}, service {avg('rating_service')!.toFixed(1)}
-                      <br />
-                      from {reviews.length} review{reviews.length > 1 ? 's' : ''}
-                    </span>
+                  <div className="mt-3 grid gap-5 sm:grid-cols-[auto_1fr] sm:items-center">
+                    <div>
+                      <span className="figure text-5xl">{v.rating?.toFixed(1)}</span>
+                      <p className="font-semibold">{word(v.rating ?? 0)}</p>
+                      <p className="text-sm text-[var(--color-muted)]">
+                        Work {avg('rating_artist')!.toFixed(1)}, service {avg('rating_service')!.toFixed(1)}
+                        <br />
+                        from {allReviews.length} review{allReviews.length > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <ul className="space-y-1 text-sm" aria-label="Rating breakdown">
+                      {hist.map((h) => (
+                        <li key={h.s} className="flex items-center gap-2">
+                          <span className="w-6">{h.s}★</span>
+                          <span className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--color-tint)]">
+                            <span className="block h-full rounded-full bg-[var(--color-pink)]" style={{ width: `${(100 * h.n) / allReviews.length}%` }} />
+                          </span>
+                          <span className="w-6 text-right text-[var(--color-muted)]">{h.n}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
+                  <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Show reviews">
+                    {(
+                      [
+                        ['all', 'All'],
+                        ['photos', 'With photos'],
+                        ['positive', 'Positive'],
+                        ['critical', 'Critical'],
+                      ] as const
+                    ).map(([k, label]) => (
+                      <Link key={k} href={`/v/${v.slug}${k === 'all' ? '' : `?reviews=${k}`}#reviews`} scroll={false} className="chip" aria-current={rf === k} rel="nofollow">
+                        {label}
+                        {k === 'photos' ? ` (${allReviews.filter((r) => r.photos?.length).length})` : k === 'positive' ? ` (${allReviews.filter((r) => overall(r) >= 4).length})` : k === 'critical' ? ` (${allReviews.filter((r) => overall(r) <= 2).length})` : ''}
+                      </Link>
+                    ))}
+                  </div>
+                  {!reviews.length ? <p className="mt-3 text-sm text-[var(--color-muted)]">No reviews match.</p> : null}
                   <ul className="mt-4 divide-y divide-[var(--color-line)] border-y border-[var(--color-line)]">
                     {reviews.map((r) => (
                       <li key={r.id} className="py-4">
@@ -241,9 +315,21 @@ export default async function VendorPage({ params, searchParams }: P) {
                           {r.verified_booking ? <Badge tone="ok">Booked via OLReady</Badge> : null}
                         </div>
                         <p className="mt-1 text-sm text-[var(--color-muted)]">
-                          Artist {r.rating_artist}/5, service {r.rating_service}/5
+                          Work {r.rating_artist}/5, service {r.rating_service}/5
+                          {r.function_date ? `, function on ${new Intl.DateTimeFormat('en-IN', { month: 'short', year: 'numeric' }).format(new Date(r.function_date))}` : ''}
+                          {r.amount_spent_inr ? `, spent about ${formatInr(r.amount_spent_inr)}` : ''}
                         </p>
                         {r.body ? <p className="mt-2 max-w-[68ch] text-sm">{r.body}</p> : null}
+                        {r.photos?.length ? (
+                          <div className="mt-2 flex gap-2">
+                            {r.photos.map((u) => (
+                              <a key={u} href={u} target="_blank" rel="noreferrer" className="block h-16 w-16 overflow-hidden rounded-[8px]">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={u} alt="Review photo" className="h-full w-full object-cover" loading="lazy" />
+                              </a>
+                            ))}
+                          </div>
+                        ) : null}
                         {r.vendor_reply ? (
                           <p className="mt-2 border-l-2 border-[var(--color-pink)] pl-3 text-sm text-[var(--color-muted)]">
                             <b>Reply:</b> {r.vendor_reply}
@@ -271,7 +357,18 @@ export default async function VendorPage({ params, searchParams }: P) {
             </section>
           </div>
 
-          <aside className="hidden md:block">
+          {similar.length ? (
+            <section className="md:col-span-2">
+              <h2 className="text-xl font-semibold">Similar {v.category_name.toLowerCase()}s</h2>
+              <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                {similar.map((x) => (
+                  <VendorCard key={x.id} v={x} fields={fields} backPath={`/v/${v.slug}`} shortlisted={hearts.has(x.id)} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <aside className="hidden md:col-start-2 md:row-start-1 md:block">
             <div className="sticky top-20 rounded-[18px] border border-[var(--color-line)] p-5">
               {price}
               <Link href={quoteHref} className="btn btn-pink mt-4 w-full">

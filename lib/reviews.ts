@@ -11,7 +11,10 @@ export type Review = {
   rating_service: number;
   body: string;
   verified_booking: boolean;
-  status: 'published' | 'under_dispute' | 'hidden' | 'removed';
+  amount_spent_inr: number | null;
+  function_date: string | null;
+  photos: string[];
+  status: 'pending' | 'published' | 'under_dispute' | 'hidden' | 'removed';
   vendor_reply: string | null;
   vendor_replied_at: Date | null;
   created_at: Date;
@@ -36,18 +39,21 @@ export type Dispute = {
 export async function reviewsForVendor(db: Db, vendorId: string, opts: { includeDisputed?: boolean } = {}) {
   return opts.includeDisputed
     ? db<Review[]>`
-        select r.*, p.full_name as author_name from mkt.reviews r join mkt.profiles p on p.id = r.author_profile_id
+        select r.*, to_char(r.function_date, 'YYYY-MM-DD') as function_date, p.full_name as author_name from mkt.reviews r join mkt.profiles p on p.id = r.author_profile_id
         where r.vendor_id = ${vendorId} and r.status in ('published','under_dispute') order by r.created_at desc`
     : db<Review[]>`
-        select r.*, p.full_name as author_name from mkt.reviews r join mkt.profiles p on p.id = r.author_profile_id
+        select r.*, to_char(r.function_date, 'YYYY-MM-DD') as function_date, p.full_name as author_name from mkt.reviews r join mkt.profiles p on p.id = r.author_profile_id
         where r.vendor_id = ${vendorId} and r.status = 'published' order by r.created_at desc`;
 }
 
 /** Brides review vendors they unlocked a conversation with; a booking marks the review verified. */
 export async function writeReview(
   db: Db,
-  input: { vendorId: string; profileId: string; ratingArtist: number; ratingService: number; body: string }
+  input: { vendorId: string; profileId: string; ratingArtist: number; ratingService: number; body: string; amountSpent?: number | null; functionDate?: string | null; photos?: string[] }
 ) {
+  const spent = input.amountSpent != null && Number.isFinite(input.amountSpent) && input.amountSpent >= 0 ? Math.round(input.amountSpent) : null;
+  const when = input.functionDate && /^\d{4}-\d{2}-\d{2}$/.test(input.functionDate) ? input.functionDate : null;
+  const photos = (input.photos ?? []).slice(0, 5);
   const ok = (n: number) => Number.isInteger(n) && n >= 1 && n <= 5;
   if (!ok(input.ratingArtist) || !ok(input.ratingService)) throw new DomainError('bad_rating', 'Ratings are 1 to 5');
   const [link] = await db<{ need_id: string; booked: boolean }[]>`
@@ -61,11 +67,14 @@ export async function writeReview(
     order by booked desc nulls last limit 1`;
   if (!link) throw new DomainError('no_contact', 'You can review vendors you have talked to through OLReady');
   const [r] = await db<{ id: string }[]>`
-    insert into mkt.reviews (vendor_id, author_profile_id, lead_need_id, rating_artist, rating_service, body, verified_booking)
+    insert into mkt.reviews (vendor_id, author_profile_id, lead_need_id, rating_artist, rating_service, body, verified_booking,
+      amount_spent_inr, function_date, photos)
     values (${input.vendorId}, ${input.profileId}, ${link.need_id}, ${input.ratingArtist}, ${input.ratingService},
-      ${input.body.trim().slice(0, 3000)}, ${Boolean(link.booked)})
+      ${input.body.trim().slice(0, 3000)}, ${Boolean(link.booked)}, ${spent}, ${when}, ${photos})
     on conflict (vendor_id, author_profile_id) do update set
-      rating_artist = excluded.rating_artist, rating_service = excluded.rating_service, body = excluded.body
+      rating_artist = excluded.rating_artist, rating_service = excluded.rating_service, body = excluded.body,
+      amount_spent_inr = excluded.amount_spent_inr, function_date = excluded.function_date,
+      photos = case when cardinality(excluded.photos) > 0 then excluded.photos else mkt.reviews.photos end
     returning id`;
   return r;
 }

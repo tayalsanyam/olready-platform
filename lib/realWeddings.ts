@@ -1,6 +1,7 @@
 import type { Db, Sql } from './db';
 import { DomainError, audit } from './db';
 import { slugify } from './catalog';
+import { CULTURES } from './inviteDesign';
 
 export type RealWedding = {
   id: string;
@@ -9,6 +10,8 @@ export type RealWedding = {
   couple_names: string;
   city_id: number | null;
   city_name: string | null;
+  culture: string;
+  vendor_count?: number;
   wedding_date: string | null;
   story: string;
   cover_image_url: string | null;
@@ -20,7 +23,7 @@ export type RealWedding = {
 };
 
 const cols = (db: Db) => db`
-  rw.id, rw.slug, rw.title, rw.couple_names, rw.city_id, ci.name as city_name,
+  rw.id, rw.slug, rw.title, rw.couple_names, rw.city_id, ci.name as city_name, rw.culture,
   to_char(rw.wedding_date, 'YYYY-MM-DD') as wedding_date, rw.story, rw.cover_image_url, rw.consent_confirmed,
   rw.status, rw.review_note, rw.published_at, rw.created_at`;
 
@@ -31,6 +34,7 @@ export async function submitRealWedding(
     title: string;
     coupleNames: string;
     cityId: number | null;
+    culture?: string;
     weddingDate: string | null;
     story: string;
     coverImageUrl: string | null;
@@ -46,9 +50,9 @@ export async function submitRealWedding(
     const [taken] = await tx`select 1 from mkt.real_weddings where slug = ${slug}`;
     if (taken) slug = `${slug}-${Date.now().toString(36)}`;
     const [rw] = await tx<{ id: string; slug: string }[]>`
-      insert into mkt.real_weddings (slug, title, couple_names, city_id, wedding_date, story, cover_image_url,
+      insert into mkt.real_weddings (slug, title, couple_names, city_id, culture, wedding_date, story, cover_image_url,
         consent_confirmed, submitted_by, status)
-      values (${slug}, ${input.title.trim()}, ${input.coupleNames.trim()}, ${input.cityId}, ${input.weddingDate || null},
+      values (${slug}, ${input.title.trim()}, ${input.coupleNames.trim()}, ${input.cityId}, ${input.culture && input.culture in CULTURES ? input.culture : 'generic'}, ${input.weddingDate || null},
         ${input.story.trim()}, ${input.coverImageUrl || null}, true, ${profileId}, 'submitted')
       returning id, slug`;
     let i = 0;
@@ -129,4 +133,15 @@ export async function moderationQueue(db: Db) {
       (select count(*) from mkt.real_wedding_photos x where x.real_wedding_id = rw.id)::int as photo_count
     from mkt.real_weddings rw left join mkt.cities ci on ci.id = rw.city_id
     where rw.status = 'submitted' order by rw.created_at`;
+}
+
+/** Published stories filtered by city and culture, with how many vendors each credits. */
+export async function browseRealWeddings(db: Db, f: { cityId?: number | null; culture?: string | null; limit?: number; offset?: number }) {
+  return db<RealWedding[]>`
+    select ${cols(db)}, (select count(*) from mkt.real_wedding_vendors x where x.real_wedding_id = rw.id)::int as vendor_count
+    from mkt.real_weddings rw left join mkt.cities ci on ci.id = rw.city_id
+    where rw.status = 'published'
+      and (${f.cityId ?? null}::int is null or rw.city_id = ${f.cityId ?? null})
+      and (${f.culture ?? null}::text is null or rw.culture = ${f.culture ?? null})
+    order by rw.published_at desc limit ${f.limit ?? 30} offset ${f.offset ?? 0}`;
 }
