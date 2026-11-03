@@ -2,6 +2,7 @@ import type { Db, Sql } from './db';
 import { DomainError, audit } from './db';
 import { brideCanAccessLead } from './leads';
 import { rmAssignedToLead } from './rm';
+import { flagsFor } from './moderation';
 
 export type ThreadRow = {
   id: string;
@@ -72,8 +73,20 @@ export async function getThread(db: Db, threadId: string) {
 }
 
 export async function threadMessages(db: Db, threadId: string) {
-  return db<{ id: number; sender_profile_id: string; sender_name: string; sender_role: string; body: string; created_at: Date }[]>`
-    select m.id, m.sender_profile_id, p.full_name as sender_name, p.role as sender_role, m.body, m.created_at
+  return db<{
+    id: number;
+    sender_profile_id: string;
+    sender_name: string;
+    sender_role: string;
+    body: string;
+    attachment_url: string | null;
+    attachment_name: string | null;
+    attachment_kind: 'image' | 'pdf' | null;
+    review_status: 'none' | 'flagged' | 'cleared' | 'hidden';
+    created_at: Date;
+  }[]>`
+    select m.id, m.sender_profile_id, p.full_name as sender_name, p.role as sender_role, m.body,
+           m.attachment_url, m.attachment_name, m.attachment_kind, m.review_status, m.created_at
     from mkt.messages m join mkt.profiles p on p.id = m.sender_profile_id
     where m.thread_id = ${threadId} order by m.created_at, m.id`;
 }
@@ -83,12 +96,20 @@ export async function threadQuotes(db: Db, threadId: string) {
     select id, amount_inr, details, status, created_at from mkt.quotes where thread_id = ${threadId} order by created_at desc`;
 }
 
-export async function postMessage(db: Db, threadId: string, profile: { id: string; role: string }, body: string) {
+export type Attachment = { url: string; kind: 'image' | 'pdf'; name: string };
+
+export async function postMessage(db: Db, threadId: string, profile: { id: string; role: string }, body: string, file?: Attachment | null) {
   const access = await threadAccess(db, threadId, profile);
   if (access.side === 'staff') throw new DomainError('forbidden', 'Staff can read but not post here');
   const text = body.trim();
-  if (!text) throw new DomainError('empty', 'Write a message first');
-  await db`insert into mkt.messages (thread_id, sender_profile_id, body) values (${threadId}, ${profile.id}, ${text.slice(0, 4000)})`;
+  if (!text && !file) throw new DomainError('empty', 'Write a message or attach a file first');
+  const flags = flagsFor(text);
+  const [m] = await db<{ id: number }[]>`
+    insert into mkt.messages (thread_id, sender_profile_id, body, attachment_url, attachment_name, attachment_kind, flags, review_status)
+    values (${threadId}, ${profile.id}, ${text.slice(0, 4000)}, ${file?.url ?? null}, ${file?.name ?? null}, ${file?.kind ?? null},
+      ${flags}, ${flags.length ? 'flagged' : 'none'})
+    returning id`;
+  return m.id;
 }
 
 export async function sendQuote(sql: Sql, threadId: string, profile: { id: string; role: string }, amountInr: number, details: string) {

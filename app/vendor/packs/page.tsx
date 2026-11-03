@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireVendor } from '@/lib/vendorSession';
+import { CallbackForm } from '@/components/CallbackForm';
 import { formatInr } from '@/lib/catalog';
 import { balances } from '@/lib/leads';
 import { gatewayStates, packsFor } from '@/lib/payments';
@@ -16,7 +17,7 @@ const gatewayLabel: Record<string, string> = { razorpay: 'Razorpay (UPI, cards)'
 
 export default async function Packs({ searchParams }: P) {
   const q = await searchParams;
-  const { vendor } = await requireVendor('/vendor/packs');
+  const { profile, vendor } = await requireVendor('/vendor/packs');
   const [packs, gateways, bal, orders, subs] = await Promise.all([
     packsFor(sql, vendor.category_id),
     gatewayStates(sql),
@@ -115,6 +116,9 @@ export default async function Packs({ searchParams }: P) {
           </table>
         </Card>
       ) : null}
+      <div className="mt-6">
+        <CallbackForm phone={profile.phone ?? vendor.phone} backPath="/vendor/packs" topics={['plans', 'leads', 'profile', 'payments', 'other']} />
+      </div>
     </>
   );
 }

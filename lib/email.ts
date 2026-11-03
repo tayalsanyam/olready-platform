@@ -9,7 +9,9 @@ export type EmailTemplate =
   | 'new_message'
   | 'quote_received'
   | 'quote_accepted'
-  | 'rm_assigned';
+  | 'rm_assigned'
+  | 'review_request'
+  | 'callback_booked';
 
 const site = () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
@@ -68,6 +70,16 @@ function render(template: EmailTemplate, p: Record<string, string>) {
       return {
         subject: 'Your OLReady relationship manager',
         text: `Hi ${p.name},\n\n${p.rm} is your relationship manager and will call you within one working day. Details are here:\n\n${site()}/me/rm\n\nOLReady`,
+      };
+    case 'review_request':
+      return {
+        subject: `${p.vendor} asked for your review`,
+        text: `Hi ${p.name},\n\n${p.vendor} would love to hear how your wedding went. It takes a minute: rate the work and the service, and add a line if you like.\n\n${site()}/review/${p.token}\n\nYou sign in with a code sent to this email, so only you can use this link. If you did not book ${p.vendor}, ignore this email.\n\nOLReady`,
+      };
+    case 'callback_booked':
+      return {
+        subject: 'We will call you',
+        text: `Hi ${p.name},\n\nThanks. Someone from OLReady will call you on ${p.phone}${p.when ? ` (${p.when})` : ''} about ${p.topic}. Support hours are Monday to Saturday, 10:00 to 18:30.\n\nOLReady`,
       };
     case 'booking_confirmed':
       return {

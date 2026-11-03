@@ -15,7 +15,8 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
           { href: '/ops/needs', label: 'Capped leads' },
           { href: '/ops/vendors', label: 'Vendors' },
           { href: '/ops/payments', label: 'Payments' },
-          { href: '/ops/reviews', label: 'Review disputes' },
+          { href: '/ops/reviews', label: 'Reviews' },
+          { href: '/ops/moderation', label: 'Moderation' },
         ]
       : []),
     ...(['rm', 'ops', 'admin'].includes(p.role) ? [{ href: '/ops/rm', label: p.role === 'rm' ? 'My brides' : 'Relationship managers' }] : []),

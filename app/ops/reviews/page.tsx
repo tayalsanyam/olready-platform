@@ -3,6 +3,8 @@ import { requireRole } from '@/lib/auth';
 import { disputeQueue } from '@/lib/reviews';
 import { opsContacted, opsDecideDispute } from '@/lib/actions/ops';
 import { Badge, Card, Empty, Notice, PageTitle } from '@/components/ui';
+import { pendingReviews } from '@/lib/vendorTools';
+import { opsDecideInvitedReview } from '@/lib/actions/vendorTools';
 
 export const metadata = { title: 'Review disputes' };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
@@ -20,6 +22,8 @@ export default async function Disputes({ searchParams }: P) {
     <>
       <PageTitle title="Review disputes" sub="Contact the vendor within 48 hours. They then have 7 days to send proof; without proof the review stays." />
       <Notice error={q.error} ok={q.ok} />
+      <PendingInvited />
+      <h2 className="mb-2 mt-6 font-semibold">Disputes</h2>
       {rows.length ? (
         <ul className="space-y-3">
           {rows.map((d) => {
@@ -72,5 +76,47 @@ export default async function Disputes({ searchParams }: P) {
         <Empty title="No open disputes" />
       )}
     </>
+  );
+}
+
+/** Reviews written through a vendor's invitation link wait here until Ops publishes or removes them. */
+async function PendingInvited() {
+  const rows = await pendingReviews(sql);
+  if (!rows.length) return null;
+  return (
+    <section>
+      <h2 className="mb-2 font-semibold">Reviews from vendor invitations ({rows.length})</h2>
+      <p className="hint mb-2">Check the reviewer looks like a real client: a name and email that are not the vendor&apos;s, and a believable review.</p>
+      <ul className="space-y-3">
+        {rows.map((r) => (
+          <li key={r.id}>
+            <Card>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <b>{r.vendor_name}</b>
+                <span>
+                  from {r.author_name || 'unnamed'} ({r.author_email})
+                </span>
+                <Badge>
+                  Work {r.rating_artist}/5, service {r.rating_service}/5
+                </Badge>
+              </div>
+              {r.body ? <p className="mt-2 text-sm">{r.body}</p> : null}
+              <div className="mt-3 flex gap-2">
+                <form action={opsDecideInvitedReview}>
+                  <input type="hidden" name="review_id" value={r.id} />
+                  <input type="hidden" name="publish" value="1" />
+                  <button className="btn btn-sm">Publish</button>
+                </form>
+                <form action={opsDecideInvitedReview}>
+                  <input type="hidden" name="review_id" value={r.id} />
+                  <input type="hidden" name="publish" value="0" />
+                  <button className="btn btn-ghost btn-sm">Remove</button>
+                </form>
+              </div>
+            </Card>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

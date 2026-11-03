@@ -60,6 +60,40 @@ export async function storeImage(file: File, folder: 'vendors' | 'real-weddings'
   return `/uploads/${key}`;
 }
 
+/** A chat attachment: an image or a PDF up to 4 MB, checked by its bytes. */
+export async function storeAttachment(file: File): Promise<{ url: string; kind: 'image' | 'pdf'; name: string }> {
+  if (!file || file.size === 0) throw new DomainError('no_file', 'Choose a file');
+  if (file.size > 4 * 1024 * 1024) throw new DomainError('too_big', 'Files must be under 4 MB');
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const isPdf = buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46 && buf[4] === 0x2d; // %PDF-
+  const img = isPdf ? null : sniffImage(buf);
+  if (!isPdf && !img) throw new DomainError('bad_type', 'Send a photo (JPEG, PNG, WebP) or a PDF');
+  const ext = isPdf ? 'pdf' : img!.ext;
+  const mime = isPdf ? 'application/pdf' : img!.mime;
+  const name = (file.name || `file.${ext}`).replace(/[^\w.\- ]+/g, '').slice(0, 80) || `file.${ext}`;
+  const key = `chat/${new Date().toISOString().slice(0, 7)}/${randomUUID()}.${ext}`;
+  if (storageConfigured()) {
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL!.replace(/\/$/, '');
+    const res = await fetch(`${base}/storage/v1/object/${BUCKET}/${key}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        'Content-Type': mime,
+        'x-upsert': 'false',
+      },
+      body: buf,
+    });
+    if (!res.ok) throw new DomainError('upload_failed', 'The file could not be uploaded. Try again.');
+    return { url: `${base}/storage/v1/object/public/${BUCKET}/${key}`, kind: isPdf ? 'pdf' : 'image', name };
+  }
+  if (process.env.NODE_ENV === 'production') throw new DomainError('storage_off', 'File uploads are not set up yet');
+  const dest = path.join(process.cwd(), 'public', 'uploads', key);
+  await mkdir(path.dirname(dest), { recursive: true });
+  await writeFile(dest, buf);
+  return { url: `/uploads/${key}`, kind: isPdf ? 'pdf' : 'image', name };
+}
+
 /** Reads every non-empty file under `name` from a form, capped at `max`. */
 export function filesFrom(fd: FormData, name: string, max = 8) {
   const files = fd.getAll(name).filter((f): f is File => f instanceof File && f.size > 0);

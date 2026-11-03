@@ -1,8 +1,21 @@
 import { formatInr } from '@/lib/catalog';
 import type { ThreadRow } from '@/lib/threads';
+import { REPORT_REASONS } from '@/lib/moderation';
+import { reportMessageAction } from '@/lib/actions/threads';
 import { Badge, Card, Field } from './ui';
 
-type Msg = { id: number; sender_profile_id: string; sender_name: string; sender_role: string; body: string; created_at: Date };
+type Msg = {
+  id: number;
+  sender_profile_id: string;
+  sender_name: string;
+  sender_role: string;
+  body: string;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  attachment_kind: 'image' | 'pdf' | null;
+  review_status: 'none' | 'flagged' | 'cleared' | 'hidden';
+  created_at: Date;
+};
 type Quote = { id: string; amount_inr: number; details: string; status: string; created_at: Date };
 type Action = (fd: FormData) => Promise<void>;
 
@@ -31,13 +44,56 @@ export function ThreadView(props: {
             <ul className="space-y-3">
               {props.messages.map((m) => {
                 const mine = m.sender_profile_id === props.viewerId;
+                // Hidden messages are removed for both sides; staff still see the original.
+                const hidden = m.review_status === 'hidden' && side !== 'staff';
                 return (
                   <li key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-[var(--color-ink)] text-white' : 'bg-[var(--color-tint)]'}`}>
-                      <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                      {hidden ? (
+                        <p className="italic opacity-70">This message was removed by OLReady.</p>
+                      ) : (
+                        <>
+                          {m.body ? <p className="whitespace-pre-wrap break-words">{m.body}</p> : null}
+                          {m.attachment_url ? (
+                            m.attachment_kind === 'image' ? (
+                              <a href={m.attachment_url} target="_blank" rel="noreferrer" className="mt-1 block">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={m.attachment_url} alt={m.attachment_name ?? 'Photo'} className="max-h-60 rounded-lg" loading="lazy" />
+                              </a>
+                            ) : (
+                              <a
+                                href={m.attachment_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`mt-1 inline-flex items-center gap-2 rounded-lg px-2 py-1 underline ${mine ? 'bg-white/15' : 'bg-white'}`}
+                              >
+                                PDF: {m.attachment_name ?? 'document'}
+                              </a>
+                            )
+                          ) : null}
+                        </>
+                      )}
                       <p className={`mt-1 text-[0.7rem] ${mine ? 'text-white/60' : 'text-[var(--color-muted)]'}`}>
                         {mine ? 'You' : m.sender_name || m.sender_role} · {fmt(m.created_at)}
+                        {side === 'staff' && m.review_status !== 'none' ? ` · ${m.review_status}` : ''}
                       </p>
+                      {!mine && !hidden && side !== 'staff' ? (
+                        <details className="mt-1 text-[0.7rem]">
+                          <summary className="cursor-pointer text-[var(--color-muted)]">Report</summary>
+                          <form action={reportMessageAction} className="mt-1 flex flex-wrap items-center gap-1">
+                            <input type="hidden" name="message_id" value={m.id} />
+                            <input type="hidden" name="_back" value={props.backPath} />
+                            <select name="reason" className="input w-auto py-0.5 text-xs" aria-label="Why are you reporting this message?">
+                              {Object.entries(REPORT_REASONS).map(([k, v]) => (
+                                <option key={k} value={k}>
+                                  {v}
+                                </option>
+                              ))}
+                            </select>
+                            <button className="btn btn-ghost btn-sm py-0.5">Send report</button>
+                          </form>
+                        </details>
+                      ) : null}
                     </div>
                   </li>
                 );
@@ -48,11 +104,18 @@ export function ThreadView(props: {
           )}
         </Card>
         {props.postMessage ? (
-          <form action={props.postMessage} className="mt-3 flex gap-2">
+          <form action={props.postMessage} className="mt-3 space-y-2">
             <input type="hidden" name="thread_id" value={t.id} />
             <input type="hidden" name="_back" value={props.backPath} />
-            <textarea name="body" required rows={2} className="input" placeholder="Write a message" maxLength={4000} />
-            <button className="btn self-end">Send</button>
+            <div className="flex gap-2">
+              <textarea name="body" rows={2} className="input" placeholder="Write a message" maxLength={4000} aria-label="Message" />
+              <button className="btn self-end">Send</button>
+            </div>
+            <label className="block text-xs text-[var(--color-muted)]">
+              Attach a photo or PDF (up to 4 MB), e.g. a brochure, menu or reference look
+              <input type="file" name="attachment" accept="image/jpeg,image/png,image/webp,application/pdf" className="mt-1 block w-full text-xs" />
+            </label>
+            <p className="text-xs text-[var(--color-muted)]">Never share OTPs or card details. Pay only through OLReady or after you have met the vendor.</p>
           </form>
         ) : null}
       </div>
