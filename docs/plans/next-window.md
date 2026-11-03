@@ -90,7 +90,7 @@ For **each** category, one scripted run (automated where possible, with a manual
 | 13 | Notifications | emails, WhatsApp only with opt-in or alerts, STOP |
 | 14 | Search | site search, photo search for categories with styles, collections, ideas gallery tags |
 
-Output: a pass/fail grid of 11 categories × 14 flows, kept in the repo (`docs/test-matrix.md`) with links to failures.
+Output: a pass/fail grid of 10 categories × 14 flows, kept in the repo (`docs/test-matrix.md`) with links to failures.
 
 ### D. Bride tools
 Workspace, checklist, functions, guests and RSVP, e-invites (all 44 designs render; video export MP4/WebM; PNG), family join code, budget visibility, wall, shortlist "ask all", RM purchase and assignment.
