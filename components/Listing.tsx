@@ -12,6 +12,7 @@ import { breadcrumbLd, faqLd, indexable, itemListLd, landingFaq, landingPath, la
 import { Container, Empty, PageTitle } from './ui';
 import { publishedCollections } from '@/lib/collections';
 import { JsonLd, VendorCard } from './VendorCard';
+import { sponsored } from '@/lib/promotion';
 
 export const PAGE_SIZE = 24;
 
@@ -78,6 +79,8 @@ export async function ListingPage({
   const faq = landingFaq(category, city, vendors, filter);
   const otherCities = (await listCities(sql)).filter((c) => c.id !== city.id);
   const collections = await publishedCollections(sql, { categoryId: category.id });
+  // Sponsored cards sit above the results on the first page only; they never reorder the results.
+  const promoted = page === 1 && !filter ? await sponsored(sql, { categoryId: category.id, cityId: city.id, placement: 'search', limit: 2 }) : [];
   const crumbs = [
     { name: 'Vendors', path: '/vendors' },
     { name: city.name, path: `/vendors/${city.slug}` },
@@ -159,6 +162,13 @@ export async function ListingPage({
           })}
         </div>
       </div>
+      {promoted.length ? (
+        <div className="mb-8 grid gap-x-5 gap-y-8 rounded-[18px] bg-[var(--color-tint)] p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {promoted.map((v) => (
+            <VendorCard key={v.boost_id} v={v} fields={fields} backPath={selfPath} shortlisted={hearts.has(v.id)} sponsored={{ boostId: v.boost_id, placement: 'search' }} />
+          ))}
+        </div>
+      ) : null}
       {vendors.length ? (
         <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {vendors.map((v) => (

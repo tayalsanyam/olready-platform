@@ -12,6 +12,8 @@ export type EmailTemplate =
   | 'rm_assigned'
   | 'review_request'
   | 'callback_booked'
+  | 'banner_approved'
+  | 'banner_rejected'
   | 'newsletter_welcome';
 
 const site = () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
@@ -76,6 +78,16 @@ function render(template: EmailTemplate, p: Record<string, string>) {
       return {
         subject: `${p.vendor} asked for your review`,
         text: `Hi ${p.name},\n\n${p.vendor} would love to hear how your wedding went. It takes a minute: rate the work and the service, and add a line if you like.\n\n${site()}/review/${p.token}\n\nYou sign in with a code sent to this email, so only you can use this link. If you did not book ${p.vendor}, ignore this email.\n\nOLReady`,
+      };
+    case 'banner_approved':
+      return {
+        subject: 'Your banner is approved',
+        text: `Hi ${p.name},\n\nYour OLReady banner is approved and will show for the month you booked.\n\n${site()}/vendor/promote\n\nOLReady`,
+      };
+    case 'banner_rejected':
+      return {
+        subject: 'Your banner needs changes',
+        text: `Hi ${p.name},\n\nWe could not approve your banner: ${p.reason}\n\nThe full amount is back in your ads wallet. You can book again with a new image or headline:\n\n${site()}/vendor/promote\n\nOLReady`,
       };
     case 'callback_booked':
       return {

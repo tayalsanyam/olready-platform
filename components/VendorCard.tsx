@@ -14,11 +14,14 @@ export function VendorCard({
   fields,
   backPath,
   shortlisted = false,
+  sponsored,
 }: {
   v: VC;
   fields: CategoryField[];
   backPath?: string;
   shortlisted?: boolean;
+  /** A Boost: the card links through the visit counter and says Sponsored. */
+  sponsored?: { boostId: string; placement: 'search' | 'profiles' | 'home' };
 }) {
   const facts = fields
     .filter((f) => f.on_card)
@@ -38,7 +41,12 @@ export function VendorCard({
     .slice(0, 3) as string[];
   return (
     <article className="group relative">
-      <Link href={`/v/${v.slug}`} className="block">
+      <Link
+        href={sponsored ? `/go/boost/${sponsored.boostId}?p=${sponsored.placement}` : `/v/${v.slug}`}
+        className="block"
+        prefetch={sponsored ? false : undefined}
+        rel={sponsored ? 'sponsored nofollow' : undefined}
+      >
         <div className="relative aspect-[4/3] overflow-hidden rounded-[14px] bg-[var(--color-tint)]">
           <Cover url={v.cover_image_url} name={v.business_name} />
           {v.assured || v.verified_at ? (
@@ -50,7 +58,10 @@ export function VendorCard({
         </div>
         <div className="pt-2.5">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold leading-snug group-hover:text-[var(--color-pink-deep)]">{v.business_name}</h3>
+            <h3 className="font-semibold leading-snug group-hover:text-[var(--color-pink-deep)]">
+              {v.business_name}
+              {sponsored ? <span className="ml-1.5 align-middle text-xs font-normal text-[var(--color-muted)]">Sponsored</span> : null}
+            </h3>
             {v.review_count ? <Stars value={v.rating} /> : null}
           </div>
           <p className="mt-0.5 flex items-center gap-1 text-sm text-[var(--color-muted)]">

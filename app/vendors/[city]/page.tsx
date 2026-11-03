@@ -4,6 +4,8 @@ import { sql } from '@/lib/db';
 import { getCityBySlug, listCategories } from '@/lib/catalog';
 import { countVendors } from '@/lib/vendors';
 import { Container, PageTitle } from '@/components/ui';
+import { BannerStrip } from '@/components/BannerStrip';
+import { liveBanners } from '@/lib/promotion';
 
 export const dynamic = 'force-dynamic';
 type P = { params: Promise<{ city: string }> };
@@ -23,9 +25,13 @@ export default async function CityPage({ params }: P) {
   if (!city) notFound();
   const cats = await listCategories(sql, { activeOnly: true });
   const counts = await Promise.all(cats.map((c) => countVendors(sql, { categoryId: c.id, cityId: city.id })));
+  const banners = await liveBanners(sql, 'city', city.id);
   return (
     <Container>
       <PageTitle title={`Wedding vendors in ${city.name}`} sub="Pick a category to compare verified vendors and prices." />
+      <div className="mb-6">
+        <BannerStrip banners={banners} />
+      </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {cats.map((c, i) => (
           <Link key={c.slug} href={`/vendors/${city.slug}/${c.slug}`} className="card block p-4 hover:shadow-md">

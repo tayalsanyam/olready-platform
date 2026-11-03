@@ -9,6 +9,7 @@ const items = [
   { href: '/vendor/insights', label: 'Insights' },
   { href: '/vendor/profile', label: 'Profile' },
   { href: '/vendor/packs', label: 'Credits and plans' },
+  { href: '/vendor/promote', label: 'Promote' },
   { href: '/vendor/reviews', label: 'Reviews' },
   { href: '/vendor/weddings', label: 'Real weddings' },
 ];

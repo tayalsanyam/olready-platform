@@ -11,6 +11,8 @@ import { VendorCard } from '@/components/VendorCard';
 import { Container, Cover } from '@/components/ui';
 import { JsonLd } from '@/components/VendorCard';
 import { siteUrl } from '@/lib/seo';
+import { liveBanners, sponsored } from '@/lib/promotion';
+import { BannerStrip } from '@/components/BannerStrip';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +33,8 @@ export default async function Home() {
       vendors: await browseVendors(sql, { categoryId: c.id, cityId: home?.id, limit: 8 }),
     }))
   );
+  const [banners, promoted] = await Promise.all([liveBanners(sql, 'home'), sponsored(sql, { cityId: home?.id, placement: 'home', limit: 4 })]);
+  const promotedFields = await Promise.all(promoted.map((v) => fieldsFor(sql, v.category_id)));
   return (
     <>
       <JsonLd
@@ -123,6 +127,25 @@ export default async function Home() {
           ))}
         </ul>
       </Container>
+
+      {banners.length ? (
+        <Container className="mt-10">
+          <BannerStrip banners={banners} />
+        </Container>
+      ) : null}
+
+      {promoted.length ? (
+        <Container className="mt-12">
+          <h2 className="text-xl font-semibold">Sponsored vendors</h2>
+          <ul className="no-scrollbar -mx-4 mt-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2">
+            {promoted.map((v, i) => (
+              <li key={v.boost_id} className="w-72 shrink-0 snap-start">
+                <VendorCard v={v} fields={promotedFields[i]} backPath="/" shortlisted={hearts.has(v.id)} sponsored={{ boostId: v.boost_id, placement: 'home' }} />
+              </li>
+            ))}
+          </ul>
+        </Container>
+      ) : null}
 
       {rows.map(({ c, fields, vendors }) =>
         vendors.length ? (

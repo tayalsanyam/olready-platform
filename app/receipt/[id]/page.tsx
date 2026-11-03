@@ -16,7 +16,7 @@ export default async function Receipt({ params }: P) {
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const [o] = await sql<{ id: string; amount_inr: number; gateway: string; gateway_payment_id: string | null; paid_at: Date; buyer_gstin: string | null; product: string; billed_to: string }[]>`
     select o.id, o.amount_inr, o.gateway, o.gateway_payment_id, o.paid_at, o.buyer_gstin,
-      coalesce(p.name, s.name) as product, coalesce(v.business_name, pr.full_name) as billed_to
+      coalesce(p.name, s.name, case when o.wallet_topup_inr is not null then 'Ads wallet top-up' end) as product, coalesce(v.business_name, pr.full_name) as billed_to
     from mkt.orders o
     left join mkt.packs p on p.id = o.pack_id
     left join mkt.services s on s.code = o.service_code

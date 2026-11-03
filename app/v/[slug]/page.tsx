@@ -8,6 +8,7 @@ import { displayValue, fieldsFor, formatInr } from '@/lib/catalog';
 import { getVendorBySlug, publicVendor, recentDemand, similarVendors, vendorFaq, vendorMedia } from '@/lib/vendors';
 import { SPACE_KINDS, spacesFor } from '@/lib/venueSpaces';
 import { JsonLd, VendorCard } from '@/components/VendorCard';
+import { sponsored } from '@/lib/promotion';
 import { reviewsForVendor } from '@/lib/reviews';
 import { realWeddingsForVendor } from '@/lib/realWeddings';
 import { shortlistedIds } from '@/lib/weddings';
@@ -357,6 +358,18 @@ export default async function VendorPage({ params, searchParams }: P) {
             </section>
           </div>
 
+          {await (async () => {
+            const promoted = await sponsored(sql, { categoryId: v.category_id, cityId: v.city_id, placement: 'profiles', exclude: [v.id, ...similar.map((x) => x.id)], limit: 2 });
+            return promoted.length ? (
+              <section className="md:col-span-2" aria-label="Sponsored">
+                <div className="grid gap-5 rounded-[18px] bg-[var(--color-tint)] p-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {promoted.map((x) => (
+                    <VendorCard key={x.boost_id} v={x} fields={fields} backPath={`/v/${v.slug}`} shortlisted={hearts.has(x.id)} sponsored={{ boostId: x.boost_id, placement: 'profiles' }} />
+                  ))}
+                </div>
+              </section>
+            ) : null;
+          })()}
           {similar.length ? (
             <section className="md:col-span-2">
               <h2 className="text-xl font-semibold">Similar {v.category_name.toLowerCase()}s</h2>

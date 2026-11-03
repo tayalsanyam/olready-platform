@@ -16,6 +16,11 @@ const labels: Record<string, string> = {
   bride_perk_length_days: 'Days the bride perk lasts once started',
   review_contact_hours: 'Hours Ops has to contact a vendor about a dispute',
   review_proof_days: 'Days a vendor has to send dispute proof',
+  boost_price_per_visit: 'Boost: rupees per profile visit',
+  banner_price_home: 'Banner: home page, rupees a month',
+  banner_price_city: 'Banner: city page, rupees a month',
+  banner_slots: 'Banner slots per page per month',
+  banners_self_serve: 'Vendors can book banners themselves (1 yes, 0 no)',
 };
 
 export default async function Settings({ searchParams }: P) {

@@ -24,6 +24,7 @@ export type Order = {
   profile_id: string;
   pack_id: number | null;
   service_code: string | null;
+  wallet_topup_inr: number | null;
   amount_inr: number;
   gateway: Gateway;
   gateway_order_id: string | null;
@@ -81,6 +82,20 @@ export async function createOrder(
   return { order, pack };
 }
 
+/** Ads wallet top-up: the amount (GST included) becomes wallet credit once paid. */
+export async function createWalletOrder(db: Db, input: { profileId: string; vendorId: string; amountInr: number; gateway: Gateway; buyerGstin?: string | null }) {
+  const [gw] = await db<{ enabled: boolean }[]>`select enabled from mkt.gateway_settings where gateway = ${input.gateway}`;
+  if (!gw?.enabled || !isConfigured(input.gateway)) throw new DomainError('gateway_off', 'This payment method is temporarily unavailable');
+  if (![2000, 5000, 10000].includes(input.amountInr)) throw new DomainError('bad_amount', 'Pick a top-up amount');
+  const gstin = input.buyerGstin?.trim().toUpperCase() || null;
+  if (gstin && !GSTIN_RE.test(gstin)) throw new DomainError('bad_gstin', 'That GSTIN does not look right');
+  const [order] = await db<Order[]>`
+    insert into mkt.orders (vendor_id, profile_id, wallet_topup_inr, amount_inr, gateway, buyer_gstin)
+    values (${input.vendorId}, ${input.profileId}, ${input.amountInr}, ${input.amountInr}, ${input.gateway}, ${gstin})
+    returning *`;
+  return order;
+}
+
 /** Idempotent: a second call for the same order does nothing. */
 export async function markOrderPaid(sql: Sql, orderId: string, paymentId: string | null, actor: string | null) {
   return sql.begin(async (tx) => {
@@ -101,6 +116,11 @@ export async function markOrderPaid(sql: Sql, orderId: string, paymentId: string
           values (${order.vendor_id}, ${pack.id}, ${order.id}, 'pending_contract') returning id`;
         if (!pack.requires_contract) await activate(tx, sub.id, null, null, actor);
       }
+    }
+    if (order.wallet_topup_inr && order.vendor_id) {
+      await tx`
+        insert into mkt.ad_wallet_ledger (vendor_id, delta_inr, reason, ref_id, note, created_by)
+        values (${order.vendor_id}, ${order.wallet_topup_inr}, 'topup', ${order.id}, 'Ads wallet top-up', ${actor})`;
     }
     if (order.service_code) {
       // Bride paid first; the team approves and assigns a relationship manager next.
@@ -175,6 +195,9 @@ export async function orderProduct(db: Db, order: Order) {
   if (order.pack_id) {
     const [p] = await db<{ name: string }[]>`select name from mkt.packs where id = ${order.pack_id}`;
     return { name: p?.name ?? 'Pack', kind: 'pack' as const, done: '/vendor/packs' };
+  }
+  if (order.wallet_topup_inr) {
+    return { name: `Ads wallet top-up ₹${order.wallet_topup_inr.toLocaleString('en-IN')}`, kind: 'wallet' as const, done: '/vendor/promote' };
   }
   const [s] = await db<{ name: string }[]>`select name from mkt.services where code = ${order.service_code}`;
   return { name: s?.name ?? 'Service', kind: 'service' as const, done: '/me/rm' };
