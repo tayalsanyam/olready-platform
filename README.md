@@ -26,7 +26,7 @@ Ops console: role-based (`ops`, `content`, `rm`, `admin`). Employees see queues 
 - Leads are verified, not exclusive. A lead reaching its cap waits for Ops to decide on reopening.
 - Vendor phone, email and Instagram never reach the bride's browser. Phone sharing is not blocked once a conversation starts.
 - A booking reported by either side counts. The reward goes only to the reporter: a bonus credit for vendors, 7 days of RM help within 60 days for brides.
-- Plans (Pro, Phoenix, Privy) activate only after Ops adds the invoice and signed-contract links. Top-ups activate on payment. Pack changes apply to new purchases only.
+- Plans (Pro, Phoenix, Privy) activate once Ops adds the signed-contract link; OLReady issues the GST tax invoice itself on payment. Top-ups activate on payment. Pack changes apply to new purchases only.
 - Top-up credits unlock any budget tier; plan credits follow the plan's tiers (tiers are infrastructure, not used by the default plans).
 - Ops-built profiles stay private until the vendor claims them.
 - Unverified migrated artists stay visible without the verified tag.
@@ -65,3 +65,11 @@ node tests/e2e/walkthrough.mjs    # 28-step UI walkthrough in headless Chrome at
 - Email sends right after each action when `RESEND_API_KEY` is set, and again by the daily job; vendors and brides can switch event emails off.
 - Razorpay and PayU are implemented to their documented signatures but untested without live keys; run one test-mode payment on each before switching them on.
 - Required category fields are enforced when a vendor saves; imported artists may be missing them until they edit their profile.
+
+## Ops data, AI and billing (November 2026)
+
+- **Data** (`/ops/data`): 15 lists (vendors, leads, needs, unlocks, orders, refunds, plans, credit and ads-wallet ledgers, tax documents, reviews, conversations, callbacks, emails, audit) with search, filters, sorting and paging. Admins download any list as filtered; downloads need a passed sign-in code and are audited.
+- **Ask the data** (`/ops/assistant`): Claude (`ANTHROPIC_OPS_MODEL`) writes one SELECT over the `ops_reports` views, which hold no phone numbers, emails or brides' names. Queries are checked, then run read-only as the `ops_assistant` role (8 s, 500 rows). Daily limits are in Settings.
+- **Quote reader**: each quote is read once (`ANTHROPIC_QUOTE_MODEL`) into Included / Charged extra / Worth asking, shown on Compare quotes and in conversations.
+- **Tax invoices**: issued when an order is paid, with a credit note per refund. Numbering is gap-free per financial year, the split is CGST+SGST/UTGST or IGST by place of supply, and every document is a PDF at `/invoices/[id]`. Configure with `SELLER_*`, `INVOICE_PREFIX` and `INVOICE_SAC*`; have your accountant confirm the SAC codes.
+- **WhatsApp** (`/ops/whatsapp`): Meta Cloud API or Wati, set through `WHATSAPP_*` and `WATI_API_URL`. Nothing is sent until an approved template is mapped and switched on. Brides only receive messages for requests where they ticked the box, and vendors only if they turned alerts on. STOP replies go to the webhook at `/api/whatsapp`.
