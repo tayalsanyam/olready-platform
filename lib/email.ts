@@ -20,7 +20,8 @@ export type EmailTemplate =
   | 'checkin_7'
   | 'still_looking_15'
   | 'refund_issued'
-  | 'newsletter_welcome';
+  | 'newsletter_welcome'
+  | 'contact_received';
 
 const site = () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
@@ -124,6 +125,11 @@ function render(template: EmailTemplate, p: Record<string, string>) {
       return {
         subject: 'We will call you',
         text: `Hi ${p.name},\n\nThanks. Someone from OLReady will call you on ${p.phone}${p.when ? ` (${p.when})` : ''} about ${p.topic}. Support hours are Monday to Saturday, 10:00 to 18:30.\n\nOLReady`,
+      };
+    case 'contact_received':
+      return {
+        subject: `Contact form: ${p.topic} from ${p.name}`,
+        text: `A message came in on the OLReady contact page.\n\nFrom: ${p.name}\nEmail: ${p.email || '-'}\nPhone: ${p.phone || '-'}\nAbout: ${p.topic}\n\n${p.message}\n\nReply and mark it done in Ops: ${site()}/ops\n`,
       };
     case 'newsletter_welcome':
       return {

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AcceptTerms } from '@/components/PolicyPage';
 import { sql } from '@/lib/db';
 import { requireVendor } from '@/lib/vendorSession';
 import { CallbackForm } from '@/components/CallbackForm';
@@ -75,6 +76,7 @@ export default async function Packs({ searchParams }: P) {
                     <input name="coupon" className="input uppercase" maxLength={24} />
                   </Field>
                 </details>
+                <AcceptTerms />
                 <button className="btn btn-pink w-full">Buy {p.name}</button>
               </form>
             ) : (

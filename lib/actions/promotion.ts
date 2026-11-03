@@ -7,11 +7,13 @@ import { createWalletOrder, type Gateway } from '../payments';
 import { adjustWallet, bookBanner, cancelBanner, createBoost, decideBanner, setBoostStatus, teamBanner } from '../promotion';
 import { storeImage } from '../storage';
 import { queueEmail } from '../email';
-import { attempt, back, num, str } from './run';
+import { attempt, back, num, str, requireTerms } from './run';
+import { LEGAL_VERSION } from '../legal';
 
 export async function topUpWalletAction(fd: FormData) {
   await attempt('/vendor/promote', async () => {
     const { profile, vendor } = await requireVendor('/vendor/promote');
+    requireTerms(fd);
     const order = await createWalletOrder(sql, {
       profileId: profile.id,
       vendorId: vendor.id,
@@ -20,6 +22,7 @@ export async function topUpWalletAction(fd: FormData) {
       buyerGstin: str(fd, 'gstin') || null,
       coupon: str(fd, 'coupon') || null,
     });
+    await sql`update mkt.orders set terms_version = ${LEGAL_VERSION} where id = ${order.id}`;
     return `/pay/${order.id}`;
   });
 }

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { AcceptTerms } from '@/components/PolicyPage';
 import { sql } from '@/lib/db';
 import { requireProfile } from '@/lib/auth';
 import { fieldsFor, listCategories, listCities } from '@/lib/catalog';
@@ -78,6 +79,7 @@ export default async function Onboard({ searchParams }: P) {
             <h2 className="mb-3 font-semibold">Details brides filter by</h2>
             <AttributeInputs fields={fields} />
           </Card>
+          <AcceptTerms refunds={false} />
           <button className="btn btn-pink">Create my profile</button>
         </form>
       )}

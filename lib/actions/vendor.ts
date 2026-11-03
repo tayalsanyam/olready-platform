@@ -8,13 +8,15 @@ import { reportBooking, unlockNeed } from '../leads';
 import { createOrder, type Gateway } from '../payments';
 import { openDispute, replyToReview, submitProof } from '../reviews';
 import { confirmTag } from '../realWeddings';
-import { attempt, attrsFromForm, back, num, str } from './run';
+import { attempt, attrsFromForm, back, num, requireTerms, str } from './run';
+import { LEGAL_VERSION } from '../legal';
 import { filesFrom, storeImage } from '../storage';
 
 export async function onboardVendor(fd: FormData) {
   await attempt('/vendor/onboard', async () => {
     const profile = await requireProfile('/vendor/onboard');
     if (await vendorForOwner(sql, profile.id)) return '/vendor';
+    requireTerms(fd);
     const [{ n }] = await sql<{ n: number }[]>`
       select count(*)::int as n from mkt.wedding_members where profile_id = ${profile.id}`;
     if (profile.role !== 'vendor' && (profile.role !== 'bride' || n > 0)) {
@@ -35,7 +37,10 @@ export async function onboardVendor(fd: FormData) {
         },
         { ownerProfileId: profile.id, actor: profile.id }
       );
-      await tx`update mkt.profiles set role = 'vendor', full_name = coalesce(nullif(full_name, ''), ${str(fd, 'owner_name')}) where id = ${profile.id}`;
+      await tx`
+        update mkt.profiles set role = 'vendor', full_name = coalesce(nullif(full_name, ''), ${str(fd, 'owner_name')}),
+          terms_version = ${LEGAL_VERSION}, terms_accepted_at = now()
+        where id = ${profile.id}`;
     });
     return { to: '/vendor/profile', ok: 'Profile created. Add photos and details; our team reviews it before it goes live.' };
   });
@@ -130,6 +135,7 @@ export async function vendorReportBooking(fd: FormData) {
 export async function buyPack(fd: FormData) {
   await attempt('/vendor/packs', async () => {
     const { profile, vendor } = await requireVendor('/vendor/packs');
+    requireTerms(fd);
     const { order } = await createOrder(sql, {
       profileId: profile.id,
       vendorId: vendor.id,
@@ -138,6 +144,7 @@ export async function buyPack(fd: FormData) {
       buyerGstin: str(fd, 'gstin') || null,
       coupon: str(fd, 'coupon') || null,
     });
+    await sql`update mkt.orders set terms_version = ${LEGAL_VERSION} where id = ${order.id}`;
     return `/pay/${order.id}`;
   });
 }

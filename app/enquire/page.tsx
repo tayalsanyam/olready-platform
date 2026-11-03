@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { after } from 'next/server';
 import { bump, visitorKey } from '@/lib/analytics';
 import { sql } from '@/lib/db';
@@ -107,6 +108,17 @@ export default async function Enquire({ searchParams }: P) {
           <input type="checkbox" name="whatsapp" className="mt-0.5 h-4 w-4 accent-[var(--color-pink)]" />
           <span>Send me updates about this request on WhatsApp</span>
         </label>
+        <p className="text-xs text-[var(--color-muted)]">
+          By sending this request you agree to our{' '}
+          <Link href="/terms" className="underline underline-offset-2">
+            Terms of Use
+          </Link>{' '}
+          and{' '}
+          <Link href="/privacy" className="underline underline-offset-2">
+            Privacy Policy
+          </Link>
+          . Your details reach vendors only after our team verifies your request.
+        </p>
         <button className="btn btn-pink w-full sm:w-auto">Send my request</button>
         <p className="hint">An enquiry is a chance to connect with vendors, not a confirmed booking.</p>
       </form>

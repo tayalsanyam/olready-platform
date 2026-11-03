@@ -151,7 +151,7 @@ export async function invoicePdf(d: TaxDocument) {
   const notes = [
     credit ? 'This credit note reduces the value and the GST of the invoice above by the amounts shown.' : 'Prices include GST. Reverse charge: No.',
     'This is a computer-generated document and does not need a signature.',
-    `Questions about this ${credit ? 'credit note' : 'invoice'}: ${process.env.SELLER_EMAIL ?? 'hello@olready.in'}`,
+    `Questions about this ${credit ? 'credit note' : 'invoice'}: ${process.env.SELLER_EMAIL ?? 'care@olready.in'}`,
   ];
   for (const n of notes) {
     text(n, M, y, { size: 8.5, color: MUTED });

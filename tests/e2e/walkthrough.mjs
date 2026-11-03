@@ -291,12 +291,14 @@ await step('vendor buys a top-up and a plan', async () => {
   await shot('packs');
   const topup = page.locator('.card', { hasText: 'Top-up 10' });
   await topup.locator('select[name=gateway]').selectOption('test');
+  await topup.locator('input[name=accept_terms]').check();
   await submit(topup.getByRole('button', { name: 'Buy Top-up 10' }));
   await submit(page.getByRole('button', { name: 'Complete test payment' }));
   await see('Payment received');
   await see('19 top-up credits');
   const pro = page.locator('.card', { hasText: '60 verified enquiries' });
   await pro.locator('select[name=gateway]').selectOption('test');
+  await pro.locator('input[name=accept_terms]').check();
   await submit(pro.getByRole('button', { name: 'Buy Pro' }));
   await submit(page.getByRole('button', { name: 'Complete test payment' }));
   await see('activates once our team has your signed contract');
@@ -401,6 +403,7 @@ await step('a second bride buys the RM service, pays, and waits for approval', a
   await submit(page.getByRole('button', { name: 'Start planning' }));
   await go('/me/rm');
   await page.locator('select[name=gateway]').selectOption('test');
+  await page.locator('input[name=accept_terms]').check();
   await submit(page.getByRole('button', { name: 'Get a relationship manager' }));
   await see('Pay for Relationship manager');
   await submit(page.getByRole('button', { name: 'Complete test payment' }));
@@ -504,6 +507,7 @@ await step('vendor sees insights, tops up the ads wallet and starts a Boost', as
   await shot('vendor-insights');
   await go('/vendor/promote');
   await page.locator('select[name=gateway]').first().selectOption('test');
+  await page.locator('form', { has: page.getByRole('button', { name: 'Top up' }) }).locator('input[name=accept_terms]').check();
   await submit(page.getByRole('button', { name: 'Top up' }));
   await submit(page.getByRole('button', { name: 'Complete test payment' }));
   await go('/vendor/promote');

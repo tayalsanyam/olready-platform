@@ -140,13 +140,15 @@ export async function Footer() {
         </div>
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] pt-5 text-xs text-[var(--color-muted)]">
           <p>An enquiry is a chance to connect with a vendor, not a confirmed booking. Support Monday to Saturday, 10:00 to 18:30 IST.</p>
-          <div className="flex gap-4">
-            <Link href="/ideas">Ideas</Link>
-            <Link href="/invitations">E-invites</Link>
-            <Link href="/real-weddings">Real weddings</Link>
-            <Link href="/blog">Guides</Link>
-            <Link href="/vendors">All vendors</Link>
-          </div>
+          <nav aria-label="More" className="flex flex-wrap gap-x-4 gap-y-2">
+            <Link href="/about">About</Link>
+            <Link href="/contact">Contact</Link>
+            <Link href="/directory">All wedding vendor pages</Link>
+            <Link href="/for-vendors">For vendors</Link>
+            <Link href="/terms">Terms</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/refunds">Refunds</Link>
+          </nav>
         </div>
       </Container>
     </footer>

@@ -23,7 +23,8 @@ import {
   weddingFor,
 } from '../weddings';
 import { writeReview } from '../reviews';
-import { attempt, back, num, str } from './run';
+import { attempt, back, num, str, requireTerms } from './run';
+import { LEGAL_VERSION } from '../legal';
 
 async function requireBride(next = '/me') {
   const p = await requireProfile(next);
@@ -102,8 +103,10 @@ export async function activatePerkAction(fd: FormData) {
 export async function buyRmAction(fd: FormData) {
   await attempt('/me/rm', async () => {
     const p = await requireBride('/me/rm');
+    requireTerms(fd);
     const w = await weddingFor(sql, p.id);
     const order = await buyRm(sql, { profileId: p.id, weddingId: w?.id ?? null, gateway: str(fd, 'gateway') as Gateway, coupon: str(fd, 'coupon') || null });
+    await sql`update mkt.orders set terms_version = ${LEGAL_VERSION} where id = ${order.id}`;
     return `/pay/${order.id}`;
   });
 }

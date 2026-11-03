@@ -457,3 +457,12 @@ export async function opsClearSuppression(fd: FormData) {
     return { ok: `${email} can receive email again` };
   });
 }
+
+export async function opsCloseContact(fd: FormData) {
+  await attempt('/ops', async () => {
+    const p = await requireRole(OPS);
+    const { closeContact } = await import('../contact');
+    await closeContact(sql, str(fd, 'id'), str(fd, 'note'), p.id);
+    return { ok: 'Marked done' };
+  });
+}

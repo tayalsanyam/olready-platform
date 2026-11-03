@@ -1,5 +1,6 @@
 import type { Db } from './db';
 import { DomainError, audit } from './db';
+import { OPERATOR } from './legal';
 import { financialYear, gstinState, splitInclusive, stateCode, STATE_CODES } from './gst';
 
 // OLReady issues its own GST tax invoices when an order is paid, and a credit note for each
@@ -35,11 +36,11 @@ export type TaxDocument = {
 export const GST_RATE = 18;
 
 export function seller(): Party {
-  const gstin = process.env.SELLER_GSTIN?.trim().toUpperCase() || null;
+  const gstin = (process.env.SELLER_GSTIN ?? OPERATOR.gstin).trim().toUpperCase() || null;
   const code = gstinState(gstin) ?? stateCode(process.env.SELLER_STATE ?? 'Chandigarh') ?? '04';
   return {
     name: process.env.SELLER_NAME ?? 'Katalyst Infomedia',
-    address: process.env.SELLER_ADDRESS ?? 'Chandigarh',
+    address: process.env.SELLER_ADDRESS ?? OPERATOR.address,
     gstin,
     state: STATE_CODES[code],
     state_code: code,

@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db';
+import { AcceptTerms } from '@/components/PolicyPage';
 import { requireVendor } from '@/lib/vendorSession';
 import { gatewayStates } from '@/lib/payments';
 import { listCities } from '@/lib/catalog';
@@ -84,6 +85,7 @@ export default async function Promote({ searchParams }: P) {
               </select>
               <input name="gstin" className="input" placeholder="GSTIN (optional)" aria-label="GSTIN" />
               <input name="coupon" className="input uppercase" placeholder="Discount code (optional)" aria-label="Discount code" maxLength={24} />
+              <AcceptTerms />
               <button className="btn btn-pink btn-sm">Top up</button>
             </form>
           ) : (

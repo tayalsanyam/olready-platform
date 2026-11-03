@@ -9,6 +9,7 @@ import { toggleShortlist, weddingFor } from '../weddings';
 import { acceptClaim } from '../vendors';
 import { saveRsvp } from '../weddings';
 import { attempt, back, num, str } from './run';
+import { LEGAL_VERSION } from '../legal';
 
 export async function submitEnquiry(fd: FormData) {
   await attempt(back(fd, '/enquire'), async () => {
@@ -32,7 +33,7 @@ export async function submitEnquiry(fd: FormData) {
       : categoryIds.map((id) => ({ categoryId: id, budgetInr: num(fd, `budget_${id}`) }));
     const email = str(fd, 'email') || profile?.email || null;
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new DomainError('bad_email', 'Check your email address');
-    await createEnquiry(sql, {
+    const lead = await createEnquiry(sql, {
       brideProfileId: profile?.role === 'bride' ? profile.id : null,
       weddingId: profile?.role === 'bride' ? (wedding?.id ?? null) : null,
       name: str(fd, 'name'),
@@ -45,6 +46,8 @@ export async function submitEnquiry(fd: FormData) {
       directVendorId: alsoOthers ? null : (direct?.id ?? null),
       whatsappOptIn: fd.get('whatsapp') === 'on',
     });
+    // Sending the form, under the notice beside the button, accepts the Terms and Privacy Policy.
+    await sql`update mkt.leads set terms_version = ${LEGAL_VERSION} where id = ${lead.id}`;
     return '/enquire/thanks';
   });
 }
@@ -84,5 +87,24 @@ export async function rsvpAction(fd: FormData) {
       .map((eventId) => ({ eventId, response: str(fd, `r_${eventId}`), headcount: num(fd, `h_${eventId}`) ?? 1 }));
     await saveRsvp(sql, token, answers);
     return { ok: 'Thank you, your reply is saved. You can change it any time from this link.' };
+  });
+}
+
+export async function sendContactAction(fd: FormData) {
+  await attempt('/contact', async () => {
+    if (str(fd, 'company')) return { to: '/contact', ok: 'Thanks, we will get back to you.' };
+    const { visitorKey } = await import('../analytics');
+    const { sendContact } = await import('../contact');
+    const p = await currentProfile();
+    await sendContact(sql, {
+      name: str(fd, 'name'),
+      email: str(fd, 'email'),
+      phone: str(fd, 'phone'),
+      topic: str(fd, 'topic'),
+      message: str(fd, 'message'),
+      visitor: await visitorKey(),
+      profileId: p?.id ?? null,
+    });
+    return { to: '/contact', ok: 'Thanks. We reply within one working day, Monday to Saturday.' };
   });
 }

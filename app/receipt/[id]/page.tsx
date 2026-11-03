@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { requireProfile } from '@/lib/auth';
 import { formatInr } from '@/lib/catalog';
-import { taxDocuments } from '@/lib/invoices';
+import { seller, taxDocuments } from '@/lib/invoices';
 import { Card, Container } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +26,7 @@ export default async function Receipt({ params }: P) {
     where o.id = ${id} and o.profile_id = ${profile.id} and o.status in ('paid', 'refunded')`;
   if (!o) notFound();
   const docs = await taxDocuments(sql, o.id);
+  const s = seller();
   return (
     <Container className="max-w-xl">
       <Card className="space-y-4 p-6">
@@ -35,9 +36,9 @@ export default async function Receipt({ params }: P) {
             <p className="hint">Receipt no. {o.id.slice(0, 8).toUpperCase()}</p>
           </div>
           <div className="text-right text-sm">
-            <b>{process.env.SELLER_NAME ?? 'Katalyst Infomedia'}</b>
-            <div>{process.env.SELLER_ADDRESS ?? 'Chandigarh'}</div>
-            {process.env.SELLER_GSTIN ? <div>GSTIN {process.env.SELLER_GSTIN}</div> : null}
+            <b>{s.name}</b>
+            <div>{s.address}</div>
+            {s.gstin ? <div>GSTIN {s.gstin}</div> : null}
           </div>
         </div>
         <div className="text-sm">

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@supabase/ssr';
 import { sql } from './db';
+import { LEGAL_VERSION } from './legal';
 
 export type Role = 'bride' | 'vendor' | 'ops' | 'rm' | 'content' | 'admin';
 export type Profile = {
@@ -64,8 +65,8 @@ export async function currentProfile(): Promise<Profile | null> {
     returning *`;
   if (linked) return linked;
   const [created] = await sql<Profile[]>`
-    insert into mkt.profiles (auth_user_id, email, full_name, role)
-    values (${user.id}, ${email}, ${(user.user_metadata?.full_name as string) ?? ''}, 'bride')
+    insert into mkt.profiles (auth_user_id, email, full_name, role, terms_version, terms_accepted_at)
+    values (${user.id}, ${email}, ${(user.user_metadata?.full_name as string) ?? ''}, 'bride', ${LEGAL_VERSION}, now())
     returning *`;
   // Enquiries sent before signing up are attached by email.
   await sql`update mkt.leads set bride_profile_id = ${created.id} where bride_profile_id is null and email = ${email}`;

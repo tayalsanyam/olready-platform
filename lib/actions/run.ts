@@ -60,3 +60,8 @@ export function attrsFromForm(fd: FormData) {
   }
   return out;
 }
+
+/** Checkout and onboarding need the policies accepted with a tick, not just a link. */
+export function requireTerms(fd: FormData) {
+  if (fd.get('accept_terms') !== 'on') throw new DomainError('terms', 'Tick the box to accept the Terms of Use and the Refund and Cancellation Policy');
+}

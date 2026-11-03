@@ -79,6 +79,17 @@ export default async function Login({ searchParams }: P) {
               <input name="full_name" className="input" autoComplete="name" maxLength={80} />
             </Field>
             <button className="btn btn-pink w-full">Email me a code</button>
+            <p className="text-xs text-[var(--color-muted)]">
+              By continuing you agree to the{' '}
+              <Link href="/terms" className="underline underline-offset-2">
+                Terms of Use
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="underline underline-offset-2">
+                Privacy Policy
+              </Link>
+              .
+            </p>
           </form>
         )}
       </Card>

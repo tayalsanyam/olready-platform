@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AcceptTerms } from '@/components/PolicyPage';
 import { sql } from '@/lib/db';
 import { requireProfile } from '@/lib/auth';
 import { formatInr } from '@/lib/catalog';
@@ -82,6 +83,7 @@ export default async function RelationshipManager({ searchParams }: P) {
                 ))}
               </select>
               <input name="coupon" className="input uppercase" placeholder="Discount code (optional)" aria-label="Discount code" maxLength={24} />
+              <AcceptTerms />
               <button className="btn btn-pink w-full">Get a relationship manager</button>
             </form>
           ) : (

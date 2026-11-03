@@ -5,13 +5,15 @@ import { Notice, PageTitle, Stat } from '@/components/ui';
 import { formatInr } from '@/lib/catalog';
 import { CALLBACK_TOPICS, openCallbacks } from '@/lib/vendorTools';
 import { opsCloseCallback } from '@/lib/actions/vendorTools';
+import { opsCloseContact } from '@/lib/actions/ops';
+import { CONTACT_TOPICS, openContacts } from '@/lib/contact';
 
 export const metadata = { title: 'Today' };
 
 export default async function OpsHome({ searchParams }: { searchParams: Promise<Record<string, string | string[]>> }) {
   const q = await searchParams;
   const p = await requireStaff();
-  const calls = await openCallbacks(sql);
+  const [calls, contacts] = await Promise.all([openCallbacks(sql), openContacts(sql)]);
   const [c] = await sql<Record<string, number>[]>`
     select
       (select count(*) from mkt.leads where status in ('new','verifying'))::int as to_verify,
@@ -74,6 +76,34 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
     <>
       <PageTitle title={`Hello ${p.full_name || 'team'}`} sub="What needs a person today." />
       <Notice error={q.error} ok={q.ok} />
+      {contacts.length ? (
+        <section className="mb-6">
+          <h2 className="mb-2 font-semibold">Contact messages ({contacts.length})</h2>
+          <ul className="space-y-2">
+            {contacts.map((m) => (
+              <li key={m.id} className="card p-3 text-sm">
+                <div className="flex flex-wrap justify-between gap-2">
+                  <b>
+                    {m.name} <span className="font-normal text-[var(--color-muted)]">about {CONTACT_TOPICS[m.topic]?.toLowerCase()}</span>
+                  </b>
+                  <span className="text-xs text-[var(--color-muted)]">{m.created_at.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}</span>
+                </div>
+                <p className="mt-1 whitespace-pre-wrap">{m.message}</p>
+                <p className="mt-1 text-[var(--color-muted)]">
+                  {m.email ? <a className="underline" href={`mailto:${m.email}`}>{m.email}</a> : null}
+                  {m.email && m.phone ? ', ' : ''}
+                  {m.phone ? <a className="underline" href={`tel:${m.phone}`}>{m.phone}</a> : null}
+                </p>
+                <form action={opsCloseContact} className="mt-2 flex gap-2">
+                  <input type="hidden" name="id" value={m.id} />
+                  <input name="note" className="input py-1" placeholder="How you replied" aria-label="Reply note" />
+                  <button className="btn btn-ghost btn-sm">Done</button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {calls.length ? (
         <section className="mb-6">
           <h2 className="mb-2 font-semibold">Call back ({calls.length})</h2>
