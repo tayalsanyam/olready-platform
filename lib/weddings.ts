@@ -1,6 +1,5 @@
 import type { Db, Sql } from './db';
 import { DomainError, audit } from './db';
-import { slugify } from './catalog';
 import { createEnquiry } from './leads';
 
 export type Wedding = {
@@ -196,45 +195,7 @@ export async function rsvpSummary(db: Db, weddingId: string) {
 }
 
 // ---------------------------------------------------------------- e-invites
-export async function invites(db: Db, weddingId: string) {
-  return db<{ id: string; slug: string; headline: string; published: boolean; template_code: string }[]>`
-    select i.id, i.slug, i.headline, i.published, t.code as template_code
-    from mkt.invites i join mkt.invite_templates t on t.id = i.template_id where i.wedding_id = ${weddingId}
-    order by i.created_at`;
-}
-
-export async function saveInvite(
-  db: Db,
-  weddingId: string,
-  profileId: string,
-  input: { templateId: number; headline: string; message: string; publish: boolean }
-) {
-  await assertMember(db, weddingId, profileId);
-  if (!input.headline.trim()) throw new DomainError('empty', 'Add a headline');
-  const [existing] = await db<{ id: string }[]>`select id from mkt.invites where wedding_id = ${weddingId} limit 1`;
-  if (existing) {
-    await db`
-      update mkt.invites set template_id = ${input.templateId}, headline = ${input.headline.trim()},
-        message = ${input.message.trim()}, published = ${input.publish}
-      where id = ${existing.id}`;
-    return existing.id;
-  }
-  const slug = `${slugify(input.headline).slice(0, 40)}-${weddingId.slice(0, 6)}`;
-  const [i] = await db<{ id: string }[]>`
-    insert into mkt.invites (wedding_id, template_id, slug, headline, message, published)
-    values (${weddingId}, ${input.templateId}, ${slug}, ${input.headline.trim()}, ${input.message.trim()}, ${input.publish})
-    returning id`;
-  return i.id;
-}
-
-export async function inviteBySlug(db: Db, slug: string) {
-  const [i] = await db<{ wedding_id: string; headline: string; message: string; theme: Record<string, string>; title: string; wedding_date: string | null }[]>`
-    select i.wedding_id, i.headline, i.message, t.theme, w.title, to_char(w.wedding_date, 'YYYY-MM-DD') as wedding_date
-    from mkt.invites i join mkt.invite_templates t on t.id = i.template_id join mkt.weddings w on w.id = i.wedding_id
-    where i.slug = ${slug} and i.published`;
-  if (!i) return null;
-  return { invite: i, events: await events(db, i.wedding_id) };
-}
+// E-invites live in lib/invites.ts.
 
 // ---------------------------------------------------------------- shortlist
 export async function shortlist(db: Db, weddingId: string) {

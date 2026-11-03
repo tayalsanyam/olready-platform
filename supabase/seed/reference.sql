@@ -184,3 +184,54 @@ from (values
 ) as t(topic, slug, label, sort)
 join mkt.idea_topics tp on tp.slug = t.topic
 on conflict (topic_id, slug) do nothing;
+
+-- ---------------------------------------------------------------- e-invite designs (original; layout x palette)
+insert into mkt.invite_templates (code, name, theme, price_inr, kind, layout, culture, themes, sort) values
+  ('classic-ivory-gold', 'Classic, ivory and gold', '{"bg":"#FBF7EF","ink":"#2A1D12","accent":"#B8860B","font":"serif"}', 0, 'card', 'classic', 'generic', '{traditional,elegant}', 10),
+  ('classic-maroon-gold', 'Classic, maroon and gold', '{"bg":"#5B0F1B","ink":"#FBEBD0","accent":"#E5B567","font":"serif"}', 0, 'card', 'classic', 'hindu', '{traditional,elegant}', 11),
+  ('classic-silver', 'Classic, white and silver', '{"bg":"#FFFFFF","ink":"#222222","accent":"#8A94A0","font":"serif"}', 0, 'card', 'classic', 'christian', '{traditional,elegant}', 12),
+  ('classic-rose', 'Classic, rose', '{"bg":"#FDEFF2","ink":"#4A1F2B","accent":"#C2185B","font":"serif"}', 0, 'card', 'classic', 'generic', '{traditional,elegant}', 13),
+  ('classic-midnight', 'Classic, midnight', '{"bg":"#13132B","ink":"#F2EBDD","accent":"#C9A45C","font":"serif"}', 0, 'card', 'classic', 'muslim', '{traditional,elegant}', 14),
+  ('classic-saffron', 'Classic, saffron', '{"bg":"#FFF3E0","ink":"#3E2106","accent":"#E65100","font":"serif"}', 0, 'card', 'classic', 'hindu', '{traditional,elegant}', 15),
+  ('arch-maroon-gold', 'Arch, maroon and gold', '{"bg":"#5B0F1B","ink":"#FBEBD0","accent":"#E5B567","font":"serif"}', 0, 'card', 'arch', 'hindu', '{royal,traditional}', 16),
+  ('arch-emerald', 'Arch, emerald', '{"bg":"#0F3D2E","ink":"#F3EBD3","accent":"#D4AF37","font":"serif"}', 0, 'card', 'arch', 'muslim', '{royal,traditional}', 17),
+  ('arch-peacock', 'Arch, peacock', '{"bg":"#0E4A52","ink":"#F5EFE2","accent":"#E0B04A","font":"serif"}', 0, 'card', 'arch', 'muslim', '{royal,traditional}', 18),
+  ('arch-ivory-gold', 'Arch, ivory and gold', '{"bg":"#FBF7EF","ink":"#2A1D12","accent":"#B8860B","font":"serif"}', 0, 'card', 'arch', 'sikh', '{royal,traditional}', 19),
+  ('arch-midnight', 'Arch, midnight', '{"bg":"#13132B","ink":"#F2EBDD","accent":"#C9A45C","font":"serif"}', 0, 'card', 'arch', 'generic', '{royal,traditional}', 20),
+  ('arch-mustard', 'Arch, mustard', '{"bg":"#FFF8DC","ink":"#3B2F0B","accent":"#C49102","font":"serif"}', 0, 'card', 'arch', 'hindu', '{royal,traditional}', 21),
+  ('floral-rose', 'Floral, rose', '{"bg":"#FDEFF2","ink":"#4A1F2B","accent":"#C2185B","font":"serif"}', 0, 'card', 'floral', 'generic', '{floral,elegant}', 22),
+  ('floral-sage', 'Floral, blush and sage', '{"bg":"#F5F1EB","ink":"#2F3A2F","accent":"#7C9A7A","font":"serif"}', 0, 'card', 'floral', 'christian', '{floral,elegant}', 23),
+  ('floral-lavender', 'Floral, lavender', '{"bg":"#F3EEFA","ink":"#2E2340","accent":"#7E57C2","font":"serif"}', 0, 'card', 'floral', 'generic', '{floral,elegant}', 24),
+  ('floral-ivory-gold', 'Floral, ivory and gold', '{"bg":"#FBF7EF","ink":"#2A1D12","accent":"#B8860B","font":"serif"}', 0, 'card', 'floral', 'punjabi', '{floral,elegant}', 25),
+  ('floral-mustard', 'Floral, mustard', '{"bg":"#FFF8DC","ink":"#3B2F0B","accent":"#C49102","font":"serif"}', 0, 'card', 'floral', 'south-indian', '{floral,elegant}', 26),
+  ('floral-rosegold', 'Floral, black and rose gold', '{"bg":"#161214","ink":"#F7E7E1","accent":"#D4A59A","font":"serif"}', 0, 'card', 'floral', 'generic', '{floral,elegant}', 27),
+  ('mandala-saffron', 'Mandala, saffron', '{"bg":"#FFF3E0","ink":"#3E2106","accent":"#E65100","font":"serif"}', 0, 'card', 'mandala', 'hindu', '{traditional,royal}', 28),
+  ('mandala-maroon-gold', 'Mandala, maroon and gold', '{"bg":"#5B0F1B","ink":"#FBEBD0","accent":"#E5B567","font":"serif"}', 0, 'card', 'mandala', 'hindu', '{traditional,royal}', 29),
+  ('mandala-peacock', 'Mandala, peacock', '{"bg":"#0E4A52","ink":"#F5EFE2","accent":"#E0B04A","font":"serif"}', 0, 'card', 'mandala', 'south-indian', '{traditional,royal}', 30),
+  ('mandala-mustard', 'Mandala, mustard', '{"bg":"#FFF8DC","ink":"#3B2F0B","accent":"#C49102","font":"serif"}', 0, 'card', 'mandala', 'marathi', '{traditional,royal}', 31),
+  ('mandala-emerald', 'Mandala, emerald', '{"bg":"#0F3D2E","ink":"#F3EBD3","accent":"#D4AF37","font":"serif"}', 0, 'card', 'mandala', 'bengali', '{traditional,royal}', 32),
+  ('mandala-ivory-gold', 'Mandala, ivory and gold', '{"bg":"#FBF7EF","ink":"#2A1D12","accent":"#B8860B","font":"serif"}', 0, 'card', 'mandala', 'sikh', '{traditional,royal}', 33),
+  ('modern-silver', 'Modern, white and silver', '{"bg":"#FFFFFF","ink":"#222222","accent":"#8A94A0","font":"sans"}', 0, 'card', 'modern', 'generic', '{minimal,modern}', 34),
+  ('modern-rosegold', 'Modern, black and rose gold', '{"bg":"#161214","ink":"#F7E7E1","accent":"#D4A59A","font":"sans"}', 0, 'card', 'modern', 'generic', '{minimal,modern}', 35),
+  ('modern-sage', 'Modern, blush and sage', '{"bg":"#F5F1EB","ink":"#2F3A2F","accent":"#7C9A7A","font":"sans"}', 0, 'card', 'modern', 'christian', '{minimal,modern}', 36),
+  ('modern-midnight', 'Modern, midnight', '{"bg":"#13132B","ink":"#F2EBDD","accent":"#C9A45C","font":"sans"}', 0, 'card', 'modern', 'generic', '{minimal,modern}', 37),
+  ('modern-lavender', 'Modern, lavender', '{"bg":"#F3EEFA","ink":"#2E2340","accent":"#7E57C2","font":"sans"}', 0, 'card', 'modern', 'generic', '{minimal,modern}', 38),
+  ('modern-rose', 'Modern, rose', '{"bg":"#FDEFF2","ink":"#4A1F2B","accent":"#C2185B","font":"sans"}', 0, 'card', 'modern', 'punjabi', '{minimal,modern}', 39),
+  ('royal-maroon-gold', 'Royal, maroon and gold', '{"bg":"#5B0F1B","ink":"#FBEBD0","accent":"#E5B567","font":"serif"}', 0, 'card', 'royal', 'punjabi', '{royal,luxury}', 40),
+  ('royal-emerald', 'Royal, emerald', '{"bg":"#0F3D2E","ink":"#F3EBD3","accent":"#D4AF37","font":"serif"}', 0, 'card', 'royal', 'sikh', '{royal,luxury}', 41),
+  ('royal-midnight', 'Royal, midnight', '{"bg":"#13132B","ink":"#F2EBDD","accent":"#C9A45C","font":"serif"}', 0, 'card', 'royal', 'muslim', '{royal,luxury}', 42),
+  ('royal-peacock', 'Royal, peacock', '{"bg":"#0E4A52","ink":"#F5EFE2","accent":"#E0B04A","font":"serif"}', 0, 'card', 'royal', 'hindu', '{royal,luxury}', 43),
+  ('royal-rosegold', 'Royal, black and rose gold', '{"bg":"#161214","ink":"#F7E7E1","accent":"#D4A59A","font":"serif"}', 0, 'card', 'royal', 'generic', '{royal,luxury}', 44),
+  ('royal-ivory-gold', 'Royal, ivory and gold', '{"bg":"#FBF7EF","ink":"#2A1D12","accent":"#B8860B","font":"serif"}', 0, 'card', 'royal', 'bengali', '{royal,luxury}', 45),
+  ('std-modern-silver', 'Save the date, white and silver', '{"bg":"#FFFFFF","ink":"#222222","accent":"#8A94A0","font":"sans"}', 0, 'save_the_date', 'modern', 'generic', '{save-the-date,modern}', 46),
+  ('std-modern-rosegold', 'Save the date, black and rose gold', '{"bg":"#161214","ink":"#F7E7E1","accent":"#D4A59A","font":"sans"}', 0, 'save_the_date', 'modern', 'generic', '{save-the-date,modern}', 47),
+  ('std-modern-sage', 'Save the date, blush and sage', '{"bg":"#F5F1EB","ink":"#2F3A2F","accent":"#7C9A7A","font":"sans"}', 0, 'save_the_date', 'modern', 'generic', '{save-the-date,modern}', 48),
+  ('std-floral-rose', 'Save the date, rose', '{"bg":"#FDEFF2","ink":"#4A1F2B","accent":"#C2185B","font":"serif"}', 0, 'save_the_date', 'floral', 'generic', '{save-the-date,modern}', 49),
+  ('std-floral-lavender', 'Save the date, lavender', '{"bg":"#F3EEFA","ink":"#2E2340","accent":"#7E57C2","font":"serif"}', 0, 'save_the_date', 'floral', 'generic', '{save-the-date,modern}', 50),
+  ('std-classic-ivory-gold', 'Save the date, ivory and gold', '{"bg":"#FBF7EF","ink":"#2A1D12","accent":"#B8860B","font":"serif"}', 0, 'save_the_date', 'classic', 'generic', '{save-the-date,modern}', 51),
+  ('std-modern-midnight', 'Save the date, midnight', '{"bg":"#13132B","ink":"#F2EBDD","accent":"#C9A45C","font":"sans"}', 0, 'save_the_date', 'modern', 'generic', '{save-the-date,modern}', 52),
+  ('std-floral-mustard', 'Save the date, mustard', '{"bg":"#FFF8DC","ink":"#3B2F0B","accent":"#C49102","font":"serif"}', 0, 'save_the_date', 'floral', 'generic', '{save-the-date,modern}', 53)
+on conflict (code) do update set name = excluded.name, theme = excluded.theme, kind = excluded.kind, layout = excluded.layout,
+  culture = excluded.culture, themes = excluded.themes, sort = excluded.sort;
+-- The three first designs stay as classic layouts.
+update mkt.invite_templates set layout = 'classic', culture = 'generic', themes = '{traditional,elegant}', sort = 1 where code in ('ivory-gold','midnight','marigold');

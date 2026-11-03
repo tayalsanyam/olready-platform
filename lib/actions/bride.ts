@@ -1,5 +1,8 @@
 'use server';
 
+import { saveWeddingInvite } from '../invites';
+import { storeImage } from '../storage';
+
 import { redirect } from 'next/navigation';
 import { sql, DomainError, getSetting } from '../db';
 import { buyRm, engagementFromPerk } from '../rm';
@@ -14,7 +17,6 @@ import {
   askShortlisted,
   createWedding,
   joinWedding,
-  saveInvite,
   toggleChecklist,
   toggleShortlist,
   updateWedding,
@@ -133,15 +135,24 @@ export async function addGuestsAction(fd: FormData) {
 }
 
 export async function saveInviteAction(fd: FormData) {
-  await attempt('/me/invite', async () => {
+  const kind = str(fd, 'kind') === 'save_the_date' ? 'save_the_date' : 'card';
+  const back = `/me/invite${kind === 'save_the_date' ? '?kind=save_the_date' : ''}`;
+  await attempt(back, async () => {
     const { p, w } = await requireWedding('/me/invite');
-    await saveInvite(sql, w.id, p.id, {
-      templateId: num(fd, 'template_id') ?? 0,
-      headline: str(fd, 'headline'),
+    const f = fd.get('photo');
+    const photoUrl = f instanceof File && f.size > 0 ? await storeImage(f, 'invites') : null;
+    await saveWeddingInvite(sql, w.id, p.id, {
+      kind,
+      templateCode: str(fd, 'design'),
+      opening: str(fd, 'opening'),
+      bride: str(fd, 'bride'),
+      groom: str(fd, 'groom'),
+      family: str(fd, 'family'),
       message: str(fd, 'message'),
+      photoUrl,
       publish: fd.get('publish') === 'on',
     });
-    return { ok: 'Invite saved' };
+    return { ok: fd.get('publish') === 'on' ? 'Invite saved and published' : 'Invite saved (not published yet)' };
   });
 }
 

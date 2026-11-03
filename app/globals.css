@@ -21,6 +21,7 @@
   --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --font-figure: "Barlow Condensed", "Arial Narrow", ui-sans-serif, sans-serif;
   --font-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-script: "Great Vibes", "Cormorant Garamond", cursive;
 }
 
 html { -webkit-text-size-adjust: 100%; }
@@ -89,3 +90,8 @@ table.data td { padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--color-li
 @media (max-width: 767px) {
   body:has([data-cta-bar]) { padding-bottom: 76px; }
 }
+
+/* E-invite: lines fade up one after another when the invite is played. */
+@keyframes invite-reveal { from { opacity: 0; transform: translateY(0.6em); } to { opacity: 1; transform: none; } }
+.invite-reveal { opacity: 0; animation: invite-reveal 0.9s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) { .invite-reveal { opacity: 1; animation: none; } }

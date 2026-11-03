@@ -50,6 +50,9 @@ export async function Header() {
           <Link href="/ideas" className="hover:text-[var(--color-pink)]">
             Ideas
           </Link>
+          <Link href="/invitations" className="hover:text-[var(--color-pink)]">
+            E-invites
+          </Link>
           <Link href="/real-weddings" className="hover:text-[var(--color-pink)]">
             Real weddings
           </Link>
@@ -80,6 +83,9 @@ export async function Header() {
         ))}
         <Link href="/ideas" className="chip">
           Ideas
+        </Link>
+        <Link href="/invitations" className="chip">
+          E-invites
         </Link>
         <Link href="/real-weddings" className="chip">
           Real weddings
@@ -128,6 +134,7 @@ export async function Footer() {
           <p>An enquiry is a chance to connect with a vendor, not a confirmed booking. Support Monday to Saturday, 10:00 to 18:30 IST.</p>
           <div className="flex gap-4">
             <Link href="/ideas">Ideas</Link>
+            <Link href="/invitations">E-invites</Link>
             <Link href="/real-weddings">Real weddings</Link>
             <Link href="/vendors">All vendors</Link>
           </div>
