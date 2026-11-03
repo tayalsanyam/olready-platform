@@ -94,7 +94,7 @@ await step('home search lands on a city × category page', async () => {
 await step('filter page shows only airbrush artists', async () => {
   await page.getByRole('link', { name: 'Airbrush makeup', exact: true }).click();
   await page.waitForURL('**/bridal-makeup/airbrush');
-  await see('Airbrush makeup bridal makeup artists in Chandigarh');
+  await see('Airbrush makeup artists in Chandigarh');
   if (await page.getByText('Makeup by Ishita').count()) throw new Error('non-airbrush vendor shown');
 });
 
@@ -569,6 +569,104 @@ await step('admin turns on a sign-in code and needs it to get back into Ops', as
   await page.getByLabel('6-digit code').fill(totp(key));
   await submit(page.getByRole('button', { name: 'Continue' }));
   await page.waitForURL((u) => u.pathname.startsWith('/ops'));
+});
+
+// ------------------------------------------------------------------ policies, price guides, big days
+await step('visitor reads the policies, a price guide and the directory, and writes in', async () => {
+  const signOut = async () => {
+    await go('/dev-login');
+    const b = page.getByRole('button', { name: /^Sign out/ });
+    if (await b.count()) await submit(b);
+  };
+  await signOut();
+  for (const [path, text] of [['/terms', 'Terms of use'], ['/privacy', 'Privacy policy'], ['/refunds', 'Refunds'], ['/about', 'OLReady']]) {
+    await go(path);
+    await see(text);
+  }
+  await go('/cost/venues/chandigarh');
+  await see('Wedding venue cost in Chandigarh');
+  await see('Lowest starting prices');
+  await shot('price-guide');
+  const ld = await page.locator('script[type="application/ld+json"]').allInnerTexts();
+  if (!ld.some((s) => s.includes('FAQPage'))) throw new Error('price guide has no FAQ markup');
+  await go('/directory');
+  await see('Airbrush makeup artists in Chandigarh');
+  const sm = await (await page.request.get(BASE + '/sitemap.xml')).text();
+  if (!sm.includes('/cost/venues/chandigarh') || !sm.includes('/directory') || !sm.includes('<image:loc>')) throw new Error('sitemap is missing price guides, the directory or images');
+  const og = await page.request.get(BASE + '/cost/venues/chandigarh/opengraph-image');
+  if (og.headers()['content-type'] !== 'image/png') throw new Error('price guide share image missing');
+  await go('/contact');
+  await page.getByLabel('Your name').fill('Kavya Visitor');
+  await page.getByLabel('Email').fill('kavya@demo.in');
+  await page.getByLabel('Message').fill('Do you list venues in Zirakpur as well? We are looking for February.');
+  await submit(page.getByRole('button', { name: 'Send message' }));
+  await ok();
+  await see('Thanks');
+});
+
+await step('a bride asks for three functions and says which ones the photographer covers', async () => {
+  await go('/enquire');
+  await page.getByLabel('Your name *').fill('Neha Functions');
+  await page.getByLabel('Mobile number *').fill('98222 33344');
+  await page.getByRole('button', { name: '+ Mehendi' }).click();
+  await page.getByRole('button', { name: '+ Reception' }).click();
+  await page.getByLabel('Date of Wedding').fill('2027-02-14');
+  await page.getByLabel('Date of Mehendi').fill('2027-02-12');
+  await page.getByLabel('Date of Reception').fill('2027-02-15');
+  await page.getByLabel('Guests at Wedding').fill('300');
+  await page.getByLabel('Guests at Reception').fill('450');
+  await page.getByRole('checkbox', { name: 'Wedding photographers' }).check();
+  await page.getByRole('group', { name: 'Functions for Wedding photographers' }).getByRole('button', { name: 'Mehendi' }).click();
+  await shot('enquiry-functions');
+  await page.getByRole('button', { name: 'Send my request' }).click();
+  await page.waitForURL('**/enquire/thanks');
+  await see('Request received');
+});
+
+await step('ops sees the functions and the contact message, and verifies the request', async () => {
+  await signInAs('Rohit (ops)');
+  await go('/ops');
+  await see('Contact messages');
+  await see('Kavya Visitor');
+  await go('/ops/leads');
+  await page.getByRole('link', { name: 'Neha Functions' }).click();
+  await page.waitForLoadState('networkidle');
+  await see('Mehendi');
+  await see('450 guests');
+  await shot('ops-functions');
+  for (let i = 0; i < 6 && (await page.getByRole('button', { name: 'Done', exact: true }).count()); i++) {
+    await submit(page.getByRole('button', { name: 'Done', exact: true }).first());
+    await ok();
+  }
+  await submit(page.getByRole('button', { name: 'Mark verified', exact: true }));
+  await ok();
+  await see('Vendors can now see this lead');
+});
+
+await step('photographer quotes the wedding and reception separately', async () => {
+  await signInAs('Frames & Phere owner');
+  const card = page.locator('li.card', { hasText: 'Neha' });
+  await card.waitFor({ timeout: 8000 });
+  if (!(await card.innerText()).includes('Reception')) throw new Error('lead card does not list the functions');
+  if ((await card.innerText()).includes('Mehendi')) throw new Error('photographer shown a function they are not needed for');
+  await go('/vendor/packs');
+  const topup = page.locator('.card', { hasText: 'Top-up 10' });
+  await topup.locator('select[name=gateway]').selectOption('test');
+  await topup.locator('input[name=accept_terms]').check();
+  await submit(topup.getByRole('button', { name: 'Buy Top-up 10' }));
+  await submit(page.getByRole('button', { name: 'Complete test payment' }));
+  await see('Payment received');
+  await go('/vendor');
+  await card.waitFor({ timeout: 8000 });
+  await submit(card.getByRole('button', { name: /Unlock for/ }));
+  await see('Unlocked for');
+  await page.getByLabel('Price for Wedding').fill('60000');
+  await page.getByLabel('Price for Reception').fill('40000');
+  await page.getByPlaceholder('What is included').fill('Candid and traditional, two shooters each day, edited album');
+  await submit(page.getByRole('button', { name: 'Send quote' }));
+  await see('Quote sent');
+  await see('1,00,000');
+  await shot('quote-per-function');
 });
 
 await step('cron endpoint needs its secret', async () => {

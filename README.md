@@ -40,8 +40,9 @@ npm install
 cp .env.example .env.local        # set DATABASE_URL to a local Postgres; DEV_AUTH=1
 npm run db:reset                  # schema + reference data + fictional demo data
 npm run dev                       # http://localhost:3000/dev-login to sign in as any demo person
-npm test                          # 31 integration tests against the database
-node tests/e2e/walkthrough.mjs    # 28-step UI walkthrough in headless Chrome at phone width
+npm test                          # 98 integration tests against the database
+node tests/e2e/walkthrough.mjs    # 41-step UI walkthrough in headless Chrome at phone width (fresh demo data)
+node tests/e2e/sweep.mjs          # every sitemap page, contact-leak scan, 7-role access matrix (fresh demo data)
 ```
 
 `DEV_AUTH` and the test payment gateway are refused when `NODE_ENV=production`.
@@ -80,3 +81,11 @@ node tests/e2e/walkthrough.mjs    # 28-step UI walkthrough in headless Chrome at
 - **Signing up is signing in.** `/login` has two doors, "Planning a wedding" and "Wedding business". There is no password: a new email gets a code and creates the account, with the name typed on the first step. Brides land in My wedding, where any request sent earlier with the same email is waiting. Vendors land in their dashboard, or in onboarding if they have no business yet. Staff land in Ops. Sending a request at `/enquire` needs no account at all.
 - **For vendors** (`/for-vendors`): the landing page for businesses. It covers what a verified lead looks like, how it works, the categories, live prices from the price list, FAQs and sign-in. The header, footer and home page link here.
 - **Admin:** the Ops home shows admins this month's billing after refunds, GST to pay, new plans and unspent ads-wallet balances, all from tax documents. Its queues now include banners to approve, failed WhatsApp messages and Ask OLReady answers to check. Categories → *Cities and towns* adds, renames, reorders or switches off towns (the state sets the invoice place of supply).
+
+## Big days, policies and search (November 2026)
+
+- **Big days.** A request lists up to 8 functions (Roka, Mehendi, Sangeet, Wedding, Reception and so on), each with its own date and guest count, and says which functions each category is for. Nothing ticked means all of them. Vendors see only the functions they are needed for, on the lead card and in the conversation, and can price each one; the quote total is the sum. Ops can add, correct or remove functions on the verification call, and the request's headline date and guests follow. Functions also fill the bride's wedding plan without overwriting dates she set. A request drops off vendors' lists once its last function has passed.
+- **Policies.** `/terms`, `/privacy`, `/refunds`, `/contact` and `/about`, adapted from the sales-site v3.1 texts and versioned in `lib/legal.ts` (`LEGAL_VERSION`, `LEGAL_EFFECTIVE`). Buying, topping up, the RM service and vendor onboarding need the terms box ticked, and the version accepted is stored on the order, lead or profile. Contact messages arrive in the Ops home queue. Have counsel review the texts before launch.
+- **Price guides** (`/cost/<category>` and `/cost/<category>/<town>`): what vendors cost, from live starting prices and, once there are 5 or more, the middle of real quotes from the last year. Each guide shows the range, a breakdown by type, the lowest-priced and best-reviewed vendors, and FAQs. A guide stays `noindex` until `min_vendors_to_index` vendors list a price.
+- **Directory** (`/directory`): every town, category, filter page, price guide, idea topic and guide in one place, linked from the footer.
+- **Search engines.** The sitemap lists landing and filter pages, vendors with their photos, price guides, idea photos, guides and collections. `llms.txt` lists the same for answer engines. Vendor pages carry LocalBusiness JSON-LD with the areas served, images and reviews. Price guides carry FAQPage and BreadcrumbList. Each key page has its own 1200×630 share image (`lib/og.tsx`). Filter pages are titled the way people search ("Airbrush makeup artists in Mohali"). `robots.txt` hides private areas and is covered by a test.
