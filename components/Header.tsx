@@ -4,6 +4,7 @@ import { currentProfile, STAFF_ROLES } from '@/lib/auth';
 import { sql } from '@/lib/db';
 import { listCategories, listCities } from '@/lib/catalog';
 import { Container } from './ui';
+import { HeaderSearch } from './HeaderSearch';
 
 export function Wordmark({ className = '', height = 22 }: { className?: string; height?: number }) {
   return (
@@ -19,7 +20,7 @@ export function Wordmark({ className = '', height = 22 }: { className?: string; 
 }
 
 export async function Header() {
-  const [p, cats] = await Promise.all([currentProfile(), listCategories(sql, { activeOnly: true })]);
+  const [p, cats, cities] = await Promise.all([currentProfile(), listCategories(sql, { activeOnly: true }), listCities(sql)]);
   const home = !p
     ? null
     : STAFF_ROLES.includes(p.role)
@@ -63,7 +64,8 @@ export async function Header() {
             For vendors
           </Link>
         </nav>
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-2 text-sm sm:gap-3">
+          <HeaderSearch cities={cities.map((c) => ({ slug: c.slug, name: c.name }))} />
           {home ? (
             <Link href={home.href} className="font-semibold">
               {home.label}

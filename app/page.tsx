@@ -9,6 +9,8 @@ import { shortlistedIds } from '@/lib/weddings';
 import { CategoryIcon, IconChat, IconPhoneOff, IconSearch, IconShield } from '@/components/icons';
 import { VendorCard } from '@/components/VendorCard';
 import { Container, Cover } from '@/components/ui';
+import { JsonLd } from '@/components/VendorCard';
+import { siteUrl } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +33,18 @@ export default async function Home() {
   );
   return (
     <>
+      <JsonLd
+        data={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'OLReady',
+            url: siteUrl(),
+            potentialAction: { '@type': 'SearchAction', target: `${siteUrl()}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
+          },
+          { '@context': 'https://schema.org', '@type': 'Organization', name: 'OLReady', url: siteUrl(), logo: `${siteUrl()}/icon.png` },
+        ]}
+      />
       <section className="-mt-6 bg-[var(--color-tint)]">
         <Container className="grid items-center gap-8 py-8 md:grid-cols-[1.1fr_1fr] md:py-12">
           <div>

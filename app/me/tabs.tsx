@@ -6,6 +6,7 @@ import { Tabs } from '@/components/ui';
 const items = [
   { href: '/me', label: 'My wedding' },
   { href: '/me/shortlist', label: 'Shortlist' },
+  { href: '/me/wall', label: 'Wedding wall' },
   { href: '/me/checklist', label: 'Checklist' },
   { href: '/me/guests', label: 'Guests and RSVP' },
   { href: '/me/invite', label: 'E-invite' },

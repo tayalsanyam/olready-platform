@@ -3,7 +3,7 @@
 import { DomainError, sql } from '../db';
 import { currentProfile, requireRole } from '../auth';
 import { weddingFor } from '../weddings';
-import { setIdeaHidden, setMediaTags, toggleSaved } from '../ideas';
+import { removeWallItem, setIdeaHidden, setMediaTags, setWallNote, toggleSaved } from '../ideas';
 import { requireVendor } from '../vendorSession';
 import { attempt, back, str } from './run';
 
@@ -40,5 +40,20 @@ export async function opsHideIdea(fd: FormData) {
     const hide = str(fd, 'hide') === '1';
     await setIdeaHidden(sql, ref, hide, p.id);
     return { ok: hide ? 'Hidden from the gallery' : 'Back in the gallery' };
+  });
+}
+
+export async function wallNoteAction(fd: FormData) {
+  await attempt('/me/wall', async () => {
+    const p = await currentProfile();
+    if (!p) return '/login?next=/me/wall';
+    const w = await weddingFor(sql, p.id);
+    if (!w) return '/me';
+    if (str(fd, 'remove') === '1') {
+      await removeWallItem(sql, w.id, str(fd, 'id'));
+      return { ok: 'Removed from your wall' };
+    }
+    await setWallNote(sql, w.id, str(fd, 'id'), str(fd, 'note'));
+    return { ok: 'Note saved' };
   });
 }

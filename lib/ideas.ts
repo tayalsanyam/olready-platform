@@ -130,3 +130,44 @@ export async function setIdeaHidden(db: Db, ref: string, hidden: boolean, actor:
   else throw new DomainError('not_found', 'Photo not found');
   await audit(db, actor, hidden ? 'idea.hide' : 'idea.show', 'photo', ref);
 }
+
+// ---------------------------------------------------------------- wedding wall
+export type WallItem = {
+  id: string;
+  kind: 'photo' | 'article';
+  ref: string;
+  note: string;
+  saved_by_name: string;
+  created_at: Date;
+  photo: IdeaPhoto | null;
+  article: { slug: string; title: string; excerpt: string; cover_url: string | null } | null;
+};
+
+/** Everything the family saved, newest first, with the photo or article it points to. */
+export async function wallItems(db: Db, weddingId: string): Promise<WallItem[]> {
+  const rows = await db<{ id: string; kind: 'photo' | 'article'; ref: string; note: string; saved_by_name: string; created_at: Date }[]>`
+    select s.id, s.kind, s.ref, s.note, p.full_name as saved_by_name, s.created_at
+    from mkt.saved_items s join mkt.profiles p on p.id = s.saved_by
+    where s.wedding_id = ${weddingId} order by s.created_at desc`;
+  const out: WallItem[] = [];
+  for (const r of rows) {
+    if (r.kind === 'photo') {
+      const photo = await ideaPhoto(db, r.ref);
+      if (photo) out.push({ ...r, photo, article: null });
+    } else {
+      const [a] = await db<{ slug: string; title: string; excerpt: string; cover_url: string | null }[]>`
+        select slug, title, excerpt, cover_url from mkt.articles where id = ${r.ref} and status = 'published'`;
+      if (a) out.push({ ...r, photo: null, article: a });
+    }
+  }
+  return out;
+}
+
+export async function setWallNote(db: Db, weddingId: string, itemId: string, note: string) {
+  const [r] = await db`update mkt.saved_items set note = ${note.trim().slice(0, 500)} where id = ${itemId} and wedding_id = ${weddingId} returning id`;
+  if (!r) throw new DomainError('not_found', 'Saved item not found');
+}
+
+export async function removeWallItem(db: Db, weddingId: string, itemId: string) {
+  await db`delete from mkt.saved_items where id = ${itemId} and wedding_id = ${weddingId}`;
+}
