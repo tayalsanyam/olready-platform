@@ -1,5 +1,7 @@
 # Next window: bride AI helper, then full testing
 
+**Status (3 Nov 2026): done.** Ask OLReady is built (defaults taken: name "Ask OLReady", signed-in only, sponsored vendors never influence answers, family members included). Testing results: `docs/test-matrix.md` (10 categories × 14 flows, all pass), `docs/load-test.md` (every query under 300 ms), `tests/e2e/sweep.mjs` (all public pages, no contact leaks, 7-role access matrix), `tests/e2e/walkthrough.mjs` (37/37). Still open: the live 50-question evaluation and real payments, both needing production keys, and the real-vendor pilot (H).
+
 Order of work: **1. validation pass on what exists** (so we build on solid ground), **2. bride AI helper**, **3. full test matrix including every vendor category**, **4. real-vendor pilot**. Mobile apps come after the web is complete.
 
 ---
