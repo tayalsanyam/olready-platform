@@ -24,7 +24,15 @@ export default async function Ideas({ searchParams }: P) {
   const shown = topics.filter((t) => t.photo_count > 0);
   return (
     <Container>
-      <PageTitle title="Wedding ideas" sub="Real work from Tricity vendors and real weddings. Tap the heart to save an idea to your wedding wall." />
+      <PageTitle
+        title="Wedding ideas"
+        sub="Real work from Tricity vendors and real weddings. Tap the heart to save an idea to your wedding wall."
+        action={
+          <Link href="/look" className="btn btn-ghost">
+            Search by photo
+          </Link>
+        }
+      />
       <Notice error={sp(q.error)} ok={sp(q.ok)} />
       {shown.length ? (
         <ul className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0 lg:grid-cols-5">

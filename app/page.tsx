@@ -89,6 +89,10 @@ export default async function Home() {
               <Link href="/enquire" className="font-semibold text-[var(--color-pink-deep)] underline underline-offset-4">
                 Send one request for all of them
               </Link>
+              <span className="mx-2 text-[var(--color-muted)]">or</span>
+              <Link href="/look" className="font-semibold text-[var(--color-pink-deep)] underline underline-offset-4">
+                search with a photo of a look you love
+              </Link>
             </p>
           </div>
           <div className="relative hidden md:block">

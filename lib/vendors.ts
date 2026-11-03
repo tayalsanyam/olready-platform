@@ -35,6 +35,7 @@ export type Vendor = {
   claim_status: 'claimed' | 'invited' | 'unclaimed';
   verified_at: Date | null;
   assured: boolean;
+  known_for?: string[];
   created_at: Date;
 };
 

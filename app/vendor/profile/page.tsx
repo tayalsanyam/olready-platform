@@ -5,6 +5,7 @@ import { fieldsFor } from '@/lib/catalog';
 import { vendorMedia } from '@/lib/vendors';
 import { addMedia, removeMedia, saveVendorProfile, setCoverAction } from '@/lib/actions/vendor';
 import { vendorTagPhoto } from '@/lib/actions/ideas';
+import { vendorKnownForAction } from '@/lib/actions/look';
 import { topicTags } from '@/lib/ideas';
 import { SPACE_KINDS, spacesFor } from '@/lib/venueSpaces';
 import { vendorAddSpace, vendorRemoveSpace } from '@/lib/actions/vendorTools';
@@ -184,6 +185,24 @@ export default async function ProfilePage({ searchParams }: P) {
               <input name="floating" type="number" min={1} max={20000} className="input" />
             </Field>
             <button className="btn btn-sm">Add</button>
+          </form>
+        </Card>
+      ) : null}
+
+      {topic && tags.length ? (
+        <Card className="mt-6">
+          <h2 className="font-semibold">What you are known for</h2>
+          <p className="hint">Pick up to 6 styles. Brides who search by photo or style see you first for these.</p>
+          <form action={vendorKnownForAction} className="mt-3">
+            <fieldset className="flex flex-wrap gap-1.5" aria-label="Styles you are known for">
+              {tags.map((t) => (
+                <label key={t.slug} className="chip cursor-pointer has-[:checked]:border-[var(--color-pink)] has-[:checked]:bg-[var(--color-pink-soft)]">
+                  <input type="checkbox" name="known_for" value={t.slug} defaultChecked={(vendor.known_for ?? []).includes(t.slug)} className="sr-only" />
+                  {t.label}
+                </label>
+              ))}
+            </fieldset>
+            <button className="btn btn-ghost btn-sm mt-3">Save</button>
           </form>
         </Card>
       ) : null}

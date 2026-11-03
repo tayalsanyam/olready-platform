@@ -6,7 +6,7 @@ import { useRef, useState } from 'react';
  * File input that shrinks photos in the browser (long side 2000 px, JPEG) before the form
  * is sent, so phone photos fit the upload limit and pages load fast.
  */
-export function PhotoInput({ name, multiple = false, label }: { name: string; multiple?: boolean; label: string }) {
+export function PhotoInput({ name, multiple = false, label, maxSide = 2000 }: { name: string; multiple?: boolean; label: string; maxSide?: number }) {
   const input = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState('');
 
@@ -19,7 +19,7 @@ export function PhotoInput({ name, multiple = false, label }: { name: string; mu
       // Not a readable image: send it as is and let the server explain.
       return file;
     }
-    const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
     if (scale === 1 && file.size < 900_000) return file;
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(bitmap.width * scale);
