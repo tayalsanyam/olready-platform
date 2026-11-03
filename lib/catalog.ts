@@ -56,9 +56,18 @@ export async function getCategoryBySlug(db: Db, slug: string) {
   return c ?? null;
 }
 
-/** The launched towns: menus, the home page, footers and quick picks. Any active town works everywhere else. */
-export async function listCities(db: Db) {
-  return db<City[]>`select * from mkt.cities where active and launched order by sort`;
+/**
+ * The towns to show in menus, quick picks, footers and prompts: launched towns ranked the Tricity
+ * first, then the big wedding cities, then towns with the most live vendors. Capped, because every
+ * town in India is launched; any active town still works in forms, search and listings.
+ */
+export async function listCities(db: Db, limit = 24) {
+  return db<City[]>`
+    select c.* from mkt.cities c
+    left join lateral (select count(*) as n from mkt.vendors v where v.status = 'live' and (v.city_id = c.id or c.id = any(v.service_city_ids))) v on true
+    where c.active and c.launched
+    order by (c.sort < 1000) desc, case when c.sort < 1000 then c.sort end, v.n desc, c.sort, c.name
+    limit ${limit}`;
 }
 
 export async function getCity(db: Db, id: number | null | undefined) {
@@ -72,10 +81,10 @@ export async function citiesByIds(db: Db, ids: number[]) {
   return db<City[]>`select * from mkt.cities where id = any(${ids}::int[]) order by launched desc, sort`;
 }
 
-/** Towns that have something in them (live vendors or requests), for Ops filters. */
+/** Towns that have something in them (vendors or requests), plus the featured ones, for Ops filters. */
 export async function citiesInUse(db: Db) {
   return db<City[]>`
-    select * from mkt.cities c where c.active and (c.launched
+    select * from mkt.cities c where c.active and (c.sort < 1000
       or exists (select 1 from mkt.vendors v where v.city_id = c.id)
       or exists (select 1 from mkt.leads l where l.city_id = c.id))
     order by c.launched desc, c.sort, c.name`;

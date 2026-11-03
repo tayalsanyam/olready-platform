@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
-import { fieldsFor, listCategories, listCities } from '@/lib/catalog';
+import { fieldsFor, listCategories, citiesInUse } from '@/lib/catalog';
 import { opsCreateVendor, opsDecideClaim } from '@/lib/actions/ops';
 import { AttributeInputs } from '@/components/AttributeInputs';
 import { Badge, Card, Notice, PageTitle, sp } from '@/components/ui';
@@ -15,7 +15,7 @@ export default async function OpsVendors({ searchParams }: P) {
   const q = await searchParams;
   await requireRole(['ops', 'admin']);
   const status = STATUSES.includes(sp(q.status) ?? '') ? sp(q.status)! : null;
-  const [cats, cities] = await Promise.all([listCategories(sql), listCities(sql)]);
+  const [cats, cities] = await Promise.all([listCategories(sql), citiesInUse(sql)]);
   const cat = cats.find((c) => c.slug === sp(q.category)) ?? null;
   const vendors = await sql<{ id: string; slug: string; business_name: string; category: string; city: string; status: string; claim_status: string; verified: boolean; assured: boolean; created_at: Date }[]>`
     select v.id, v.slug, v.business_name, c.name as category, ci.name as city, v.status, v.claim_status,

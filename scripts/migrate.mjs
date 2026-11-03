@@ -87,6 +87,13 @@ async function loadPlaces() {
     });
     console.log(`Towns loaded: ${list.length}`);
   }
+  // The big wedding cities come right after the Tricity in menus (only towns still at the default position move).
+  await sql`
+    update mkt.cities c set sort = v.sort
+    from (values ('gurugram', 10), ('noida', 11), ('mumbai', 12), ('bengaluru', 13), ('hyderabad', 14), ('pune', 15), ('jaipur', 16),
+      ('kolkata', 17), ('chennai', 18), ('ahmedabad', 19), ('lucknow', 20), ('goa', 21), ('udaipur', 22), ('amritsar', 23),
+      ('jalandhar', 24), ('dehradun', 25), ('shimla', 26), ('indore', 27), ('kochi', 28)) as v(slug, sort)
+    where c.slug = v.slug and c.sort >= 1000`;
 
   const raw = await readFile(path.join(root, 'data', 'pincodes.csv.gz'));
   const ph = await changed(`pincodes${process.env.MKT_PLACE_STATES ? `:${process.env.MKT_PLACE_STATES}` : ''}`, raw);

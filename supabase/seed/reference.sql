@@ -543,3 +543,4 @@ from (values
 ) as v(city, slug, name, kind, pincode, sort, aliases)
 join mkt.cities c on c.slug = v.city
 on conflict (city_id, slug) do nothing;
+

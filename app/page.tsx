@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { fieldsFor, listCategories, listCities } from '@/lib/catalog';
+import { rememberedTown } from '@/lib/town';
 import { browseVendors } from '@/lib/vendors';
 import { publishedRealWeddings } from '@/lib/realWeddings';
 import { currentProfile } from '@/lib/auth';
@@ -28,7 +29,10 @@ export default async function Home() {
     publishedRealWeddings(sql, 3),
     currentProfile(),
   ]);
-  const home = cities[0];
+  // The remembered town leads the town picker, even when it is not in the short list.
+  const remembered = await rememberedTown(sql);
+  if (remembered && !cities.some((c) => c.id === remembered.id)) cities.unshift(remembered);
+  const home = remembered ?? cities[0];
   const hearts = await shortlistedIds(sql, viewer?.role === 'bride' ? viewer.id : null);
   // One row of vendors per category, for the city most brides plan in.
   const rows = await Promise.all(

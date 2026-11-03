@@ -16,7 +16,7 @@ export default async function Places({ searchParams }: P) {
   const me = await requireRole(['ops', 'admin']);
   const admin = me.role === 'admin';
   const text = (sp(q.q) ?? '').trim().slice(0, 60);
-  const show = sp(q.show) === 'all' ? 'all' : sp(q.show) === 'used' ? 'used' : 'launched';
+  const show = sp(q.show) === 'all' ? 'all' : sp(q.show) === 'launched' ? 'launched' : 'used';
   const page = Math.max(1, Number(sp(q.page)) || 1);
   const like = `%${text.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
   const rows = await sql<{ id: number; slug: string; name: string; state_code: string; state: string; active: boolean; launched: boolean; live: number; leads: number; areas: number; pins: number; total: number }[]>`
@@ -40,7 +40,7 @@ export default async function Places({ searchParams }: P) {
     const u = new URLSearchParams();
     const m = { q: text, show, page: 1, ...o };
     if (m.q) u.set('q', String(m.q));
-    if (m.show !== 'launched') u.set('show', String(m.show));
+    if (m.show !== 'used') u.set('show', String(m.show));
     if (Number(m.page) > 1) u.set('page', String(m.page));
     return `/ops/places${u.toString() ? `?${u}` : ''}`;
   };
@@ -59,8 +59,8 @@ export default async function Places({ searchParams }: P) {
             <input name="q" defaultValue={text} className="input" placeholder="Town, old name or state" />
           </label>
           <select name="show" defaultValue={show} className="input w-auto" aria-label="Show">
-            <option value="launched">Launched</option>
             <option value="used">With vendors or requests</option>
+            <option value="launched">Launched</option>
             <option value="all">All towns</option>
           </select>
           <button className="btn btn-sm">Search</button>

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { allCollections, collectionById } from '@/lib/collections';
-import { listCategories, listCities } from '@/lib/catalog';
+import { listCategories, citiesInUse } from '@/lib/catalog';
 import { browseVendors } from '@/lib/vendors';
 import { opsSaveCollection } from '@/lib/actions/content2';
 import { Badge, Card, Field, Notice, PageTitle, sp } from '@/components/ui';
@@ -15,7 +15,7 @@ export default async function Collections({ searchParams }: P) {
   await requireRole(['content', 'ops', 'admin']);
   const id = sp(q.id);
   const editing = id && /^[0-9a-f-]{36}$/.test(id) ? await collectionById(sql, id) : null;
-  const [list, cats, cities] = await Promise.all([allCollections(sql), listCategories(sql, { activeOnly: true }), listCities(sql)]);
+  const [list, cats, cities] = await Promise.all([allCollections(sql), listCategories(sql, { activeOnly: true }), citiesInUse(sql)]);
   const categoryId = Number(sp(q.category)) || editing?.category_id || cats[0]?.id;
   const cityId = Number(sp(q.city)) || editing?.city_id || cities[0]?.id;
   const vendors = categoryId ? await browseVendors(sql, { categoryId, cityId, sort: 'rating', limit: 100 }) : [];

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
-import { listCities } from '@/lib/catalog';
+import { citiesInUse } from '@/lib/catalog';
 import { PLACEMENTS, allBoosts, bannerQueue, bookableMonths, monthLabel } from '@/lib/promotion';
 import { opsAdjustWallet, opsBoostStatus, opsDecideBanner, opsTeamBanner } from '@/lib/actions/promotion';
 import { Badge, Card, Empty, Field, Notice, PageTitle, sp } from '@/components/ui';
@@ -16,7 +16,7 @@ export default async function Promotions({ searchParams }: P) {
   const [banners, boosts, cities, [spend]] = await Promise.all([
     bannerQueue(sql),
     allBoosts(sql),
-    listCities(sql),
+    citiesInUse(sql),
     sql<{ wallet_in: number; boost_7d: number; banners_month: number }[]>`
       select
         (select coalesce(sum(delta_inr), 0) from mkt.ad_wallet_ledger where reason = 'topup' and created_at > now() - interval '30 days')::int as wallet_in,

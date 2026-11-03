@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { currentProfile } from '@/lib/auth';
-import { formatInr, listCategories, listCities } from '@/lib/catalog';
+import { formatInr, listCategories } from '@/lib/catalog';
+import { townsWithVendors } from '@/lib/locations';
 import { vendorForOwner } from '@/lib/vendors';
 import { Container } from '@/components/ui';
 import { Toran } from '@/components/Toran';
@@ -49,7 +50,7 @@ export default async function ForVendors() {
   const mine = p ? await vendorForOwner(sql, p.id) : null;
   const [cats, cities, packs, [reach], demand] = await Promise.all([
     listCategories(sql, { activeOnly: true }),
-    listCities(sql),
+    townsWithVendors(sql),
     sql<{ id: number; name: string; kind: 'plan' | 'topup'; credits: number; price_inr: number; validity_days: number | null; description: string }[]>`
       select id, name, kind, credits, price_inr, validity_days, description from mkt.packs where active order by sort`,
     sql<{ vendors: number; verified_90: number }[]>`
@@ -241,7 +242,7 @@ export default async function ForVendors() {
           <div>
             <h2 className="text-xl font-semibold">{mine ? 'Your business is on OLReady' : 'Ready when you are'}</h2>
             <p className="mt-1 text-sm text-[var(--color-muted)]">
-              {mine ? 'See your leads, conversations and insights.' : `${cats.length} categories, ${cities.length} towns, one dashboard.`}
+              {mine ? 'See your leads, conversations and insights.' : `${cats.length} categories, every town in India, one dashboard.`}
             </p>
           </div>
           <Link href={start} className="btn btn-pink">

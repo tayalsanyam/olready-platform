@@ -11,14 +11,17 @@ afterAll(() => sql.end());
 beforeAll(() => resetDb());
 
 describe('towns and pincodes across India', () => {
-  it('every district is a town; only launched towns show in menus', async () => {
+  it('every district is a town and every town is launched; menus show a short ranked list', async () => {
     const [{ towns, states }] = await sql<{ towns: number; states: number }[]>`
       select count(*)::int as towns, count(distinct state_code)::int as states from mkt.cities where active`;
     expect(towns).toBeGreaterThan(600);
     expect(states).toBeGreaterThan(30);
-    const launched = await listCities(sql);
-    expect(launched.map((c) => c.slug)).toEqual(expect.arrayContaining(['chandigarh', 'mohali', 'panchkula', 'zirakpur']));
-    expect(launched.length).toBeLessThan(20);
+    const [{ off }] = await sql<{ off: number }[]>`select count(*)::int as off from mkt.cities where not launched`;
+    expect(off).toBe(0);
+    const menu = await listCities(sql);
+    expect(menu.slice(0, 3).map((c) => c.slug)).toEqual(['chandigarh', 'mohali', 'panchkula']);
+    expect(menu.map((c) => c.slug)).toEqual(expect.arrayContaining(['delhi', 'gurugram']));
+    expect(menu.length).toBe(24);
   });
 
   it('maps pincodes to the right town, including Mohali offices filed under Rupnagar', async () => {

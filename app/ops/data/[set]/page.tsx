@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
-import { formatInr, listCategories, listCities } from '@/lib/catalog';
+import { formatInr, listCategories, citiesInUse } from '@/lib/catalog';
 import { dataset, runDataset, type Column, type Filters } from '@/lib/opsData';
 import { Empty, PageTitle, sp } from '@/components/ui';
 
@@ -47,7 +47,7 @@ export default async function OpsDataSet({ params, searchParams }: P) {
   const page = Math.max(1, Number(sp(q.page)) || 1);
   const [{ rows, total }, cities, cats] = await Promise.all([
     runDataset(sql, d, f, page, SIZE),
-    d.cityCol ? listCities(sql) : Promise.resolve([]),
+    d.cityCol ? citiesInUse(sql) : Promise.resolve([]),
     d.categoryCol ? listCategories(sql) : Promise.resolve([]),
   ]);
   const base = Object.fromEntries(Object.entries(f).filter(([, v]) => v)) as Record<string, string>;

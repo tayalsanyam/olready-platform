@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
-import { listCategories, listCities } from '@/lib/catalog';
+import { listCategories, citiesInUse } from '@/lib/catalog';
 import { opsCreateLead } from '@/lib/actions/ops';
 import { Badge, Card, Notice, PageTitle, sp } from '@/components/ui';
 
@@ -22,7 +22,7 @@ export default async function OpsLeads({ searchParams }: P) {
     from mkt.leads l join mkt.cities ci on ci.id = l.city_id
     where ${status ? sql`l.status = ${status}` : sql`l.status in ('new','verifying')`}
     order by l.created_at ${status ? sql`desc` : sql`asc`} limit 200`;
-  const [cats, cities] = await Promise.all([listCategories(sql, { activeOnly: true }), listCities(sql)]);
+  const [cats, cities] = await Promise.all([listCategories(sql, { activeOnly: true }), citiesInUse(sql)]);
   return (
     <>
       <PageTitle title="Leads" sub={status ? `Status: ${status}` : 'Waiting for verification, oldest first'} />

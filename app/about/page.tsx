@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { sql } from '@/lib/db';
-import { listCategories, listCities } from '@/lib/catalog';
+import { listCategories } from '@/lib/catalog';
+import { townsWithVendors } from '@/lib/locations';
 import { Container } from '@/components/ui';
 import { Toran } from '@/components/Toran';
 
@@ -14,7 +15,7 @@ export const metadata = {
 export default async function About() {
   const [cats, cities, [n]] = await Promise.all([
     listCategories(sql, { activeOnly: true }),
-    listCities(sql),
+    townsWithVendors(sql),
     sql<{ vendors: number; weddings: number }[]>`
       select (select count(*)::int from mkt.vendors where status = 'live') as vendors,
              (select count(*)::int from mkt.real_weddings where status = 'published') as weddings`,
@@ -53,7 +54,7 @@ export default async function About() {
           </p>
         </div>
         <p className="mt-8 text-sm text-[var(--color-muted)]">
-          Today: {n.vendors} checked businesses in {cats.length} categories across {cities.map((c) => c.name).join(', ')}
+          Today: {n.vendors} checked businesses in {cats.length} categories in {cities.length} {cities.length === 1 ? 'town' : 'towns'}, led by {cities.slice(0, 6).map((c) => c.name).join(', ')}
           {n.weddings ? `, and ${n.weddings} real weddings shared by couples` : ''}.
         </p>
         <h2 className="mt-12 text-2xl font-semibold">Who runs OLReady</h2>

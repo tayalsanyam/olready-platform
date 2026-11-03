@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { SECTIONS, articleById } from '@/lib/articles';
-import { listCategories, listCities } from '@/lib/catalog';
+import { listCategories, citiesInUse } from '@/lib/catalog';
 import { opsArticleStatus, opsSaveArticle } from '@/lib/actions/content2';
 import { Badge, Card, Field, Notice, PageTitle } from '@/components/ui';
 import { ArticleBody } from '@/components/ArticleEditor';
@@ -18,7 +18,7 @@ export default async function EditArticle({ params, searchParams }: P) {
   const isNew = id === 'new';
   const a = isNew ? null : /^[0-9a-f-]{36}$/.test(id) ? await articleById(sql, id) : null;
   if (!isNew && !a) notFound();
-  const [cats, cities] = await Promise.all([listCategories(sql, { activeOnly: true }), listCities(sql)]);
+  const [cats, cities] = await Promise.all([listCategories(sql, { activeOnly: true }), citiesInUse(sql)]);
   return (
     <>
       <PageTitle
