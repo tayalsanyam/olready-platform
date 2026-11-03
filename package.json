@@ -11,7 +11,8 @@
     "db:migrate": "node scripts/migrate.mjs",
     "db:seed": "node scripts/seed.mjs",
     "db:reset": "node scripts/migrate.mjs --reset && node scripts/seed.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eval:assistant": "RUN_EVAL=1 vitest run tests/eval"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

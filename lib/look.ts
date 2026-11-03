@@ -25,7 +25,7 @@ export async function readLook(image: Uint8Array, mime: string, topicName: strin
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new DomainError('off', 'Photo search is not switched on yet. Pick the styles instead.');
   const list = tags.map((t) => `${t.slug} (${t.label})`).join(', ');
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch(`${process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com'}/v1/messages`, {
     method: 'POST',
     headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     signal: AbortSignal.timeout(20000),

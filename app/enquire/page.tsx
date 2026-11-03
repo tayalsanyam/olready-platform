@@ -19,7 +19,9 @@ export default async function Enquire({ searchParams }: P) {
   const vendor = sp(q.vendor) ? await getVendorBySlug(sql, sp(q.vendor)!) : null;
   if (vendor?.status === 'live' && (await visitorKey())) after(() => bump(sql, [vendor.id], 'quote_starts').catch(() => undefined));
   const wedding = profile ? await weddingFor(sql, profile.id) : null;
-  const preCat = sp(q.category);
+  // One category or several (from Ask OLReady: ?category=venues,caterers&guests=400).
+  const preCats = new Set((sp(q.category) ?? '').split(',').filter(Boolean));
+  const preGuests = Number(sp(q.guests)) > 0 ? Math.min(20000, Math.round(Number(sp(q.guests)))) : undefined;
   const preCity = cities.find((c) => c.slug === sp(q.city))?.id ?? vendor?.city_id ?? wedding?.city_id ?? cities[0]?.id;
   const self = `/enquire?${new URLSearchParams(Object.entries(q).map(([k, v]) => [k, String(Array.isArray(v) ? v[0] : v)]).filter(([k]) => k !== 'error'))}`;
   return (
@@ -56,7 +58,7 @@ export default async function Enquire({ searchParams }: P) {
             <input name="event_date" type="date" className="input" defaultValue={wedding?.wedding_date ?? ''} />
           </Field>
           <Field label="Guests (approx.)" hint="Venues and caterers price per plate, so this helps them quote.">
-            <input name="guest_count" type="number" min={1} max={20000} inputMode="numeric" className="input" />
+            <input name="guest_count" type="number" min={1} max={20000} inputMode="numeric" className="input" defaultValue={preGuests} />
           </Field>
           <Field label="City *">
             <select name="city_id" className="input" defaultValue={preCity} required>
@@ -92,7 +94,7 @@ export default async function Enquire({ searchParams }: P) {
               {cats.map((c) => (
                 <li key={c.id} className="grid items-center gap-2 py-3 sm:grid-cols-[1fr_200px]">
                   <label className="flex items-center gap-2">
-                    <input type="checkbox" name="category_id" value={c.id} defaultChecked={preCat === c.slug} className="h-4 w-4 accent-[var(--color-pink)]" />
+                    <input type="checkbox" name="category_id" value={c.id} defaultChecked={preCats.has(c.slug)} className="h-4 w-4 accent-[var(--color-pink)]" />
                     <span>{c.plural_name}</span>
                   </label>
                   <input name={`budget_${c.id}`} className="input" inputMode="numeric" placeholder={`Budget ₹ (${c.price_unit})`} aria-label={`Budget for ${c.plural_name}`} />

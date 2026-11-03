@@ -10,7 +10,7 @@ export async function askClaude(o: { model: string; system?: string; messages: {
   if (!key) throw new DomainError('off', o.offMessage);
   let res: Response;
   try {
-    res = await fetch('https://api.anthropic.com/v1/messages', {
+    res = await fetch(`${process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com'}/v1/messages`, {
       method: 'POST',
       headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       signal: AbortSignal.timeout(o.timeoutMs ?? 30000),

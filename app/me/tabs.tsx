@@ -5,6 +5,7 @@ import { Tabs } from '@/components/ui';
 
 const items = [
   { href: '/me', label: 'My wedding' },
+  { href: '/me/assistant', label: 'Ask OLReady' },
   { href: '/me/shortlist', label: 'Shortlist' },
   { href: '/me/compare', label: 'Compare quotes' },
   { href: '/me/budget', label: 'Budget' },

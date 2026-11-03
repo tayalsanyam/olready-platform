@@ -70,6 +70,17 @@ export default async function MyWedding({ searchParams }: P) {
       />
       <Notice error={q.error} ok={q.ok} />
 
+      <Link
+        href="/me/assistant"
+        className="mb-6 flex items-center justify-between gap-3 rounded-2xl bg-[var(--color-pink-soft)] px-4 py-3 hover:bg-[var(--color-tint)]"
+      >
+        <span>
+          <span className="block font-semibold">Ask OLReady</span>
+          <span className="block text-sm text-[var(--color-muted)]">Find vendors, plan your budget, compare quotes: ask in your own words.</span>
+        </span>
+        <span aria-hidden className="text-xl text-[var(--color-pink-deep)]">›</span>
+      </Link>
+
       <details className="card mb-6 p-4" open={!wedding}>
         <summary className="cursor-pointer font-semibold">{wedding ? 'Wedding details' : 'Set up your wedding'}</summary>
         <form action={saveWeddingAction} className="mt-3 grid gap-3 sm:grid-cols-2">

@@ -24,6 +24,13 @@ const labels: Record<string, string> = {
   staff_mfa_required: 'Staff must use an authenticator app (1 yes, 0 no)',
   look_per_visitor_day: 'Photo searches per visitor a day',
   look_site_day: 'Photo searches for the whole site a day',
+  ops_assistant_per_person_day: 'Ask the data: questions per staff member a day',
+  ops_assistant_team_day: 'Ask the data: questions for the whole team a day',
+  quote_reader_site_day: 'Quote reader: quotes read a day',
+  bride_assistant_on: 'Ask OLReady for brides is on (1 yes, 0 no)',
+  bride_assistant_per_day: 'Ask OLReady: questions per bride a day',
+  bride_assistant_site_day: 'Ask OLReady: questions for the whole site a day',
+  bride_assistant_keep_days: 'Ask OLReady: delete chats unused for this many days',
 };
 
 export default async function Settings({ searchParams }: P) {

@@ -390,6 +390,9 @@ export default async function VendorPage({ params, searchParams }: P) {
               <div className="mt-2 flex">
                 <ShortlistButton slug={v.slug} on={on} />
               </div>
+              <Link href={`/me/assistant?vendor=${v.slug}`} className="mt-3 block text-center text-sm font-semibold text-[var(--color-pink-deep)] underline-offset-4 hover:underline">
+                Ask OLReady about {v.business_name}
+              </Link>
               <p className="mt-4 flex gap-2 text-sm text-[var(--color-muted)]">
                 <IconPhoneOff size={18} className="mt-0.5 shrink-0" />
                 Your number stays private. {v.business_name} replies through OLReady after our team verifies your request.

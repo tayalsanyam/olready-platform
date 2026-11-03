@@ -107,9 +107,14 @@ export async function ListingPage({
           </>
         }
         action={
-          <Link href={`/enquire?category=${category.slug}&city=${city.slug}`} className="btn btn-pink">
-            Get verified quotes
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/me/assistant?category=${category.slug}&city=${city.slug}`} className="btn btn-ghost">
+              Help me choose
+            </Link>
+            <Link href={`/enquire?category=${category.slug}&city=${city.slug}`} className="btn btn-pink">
+              Get verified quotes
+            </Link>
+          </div>
         }
       />
       <div className="sticky top-[6.5rem] z-10 -mx-4 mb-5 border-y border-[var(--color-line)] bg-white/95 px-4 py-2.5 backdrop-blur md:top-16">
