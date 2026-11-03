@@ -11,6 +11,8 @@ import { shortlistedIds } from '@/lib/weddings';
 import { breadcrumbLd, faqLd, indexable, itemListLd, landingFaq, landingPath, landingTitle } from '@/lib/seo';
 import { Container, Empty, PageTitle } from './ui';
 import { publishedCollections } from '@/lib/collections';
+import { costGuide, costPath } from '@/lib/costGuide';
+import { formatInr } from '@/lib/catalog';
 import { JsonLd, VendorCard } from './VendorCard';
 import { sponsored } from '@/lib/promotion';
 
@@ -78,7 +80,7 @@ export async function ListingPage({
   const title = landingTitle(category, city, filter);
   const faq = landingFaq(category, city, vendors, filter);
   const otherCities = (await listCities(sql)).filter((c) => c.id !== city.id);
-  const collections = await publishedCollections(sql, { categoryId: category.id });
+  const [collections, guide] = await Promise.all([publishedCollections(sql, { categoryId: category.id }), costGuide(sql, category.slug, city.slug)]);
   // Sponsored cards sit above the results on the first page only; they never reorder the results.
   const promoted = page === 1 && !filter ? await sponsored(sql, { categoryId: category.id, cityId: city.id, placement: 'search', limit: 2 }) : [];
   const crumbs = [
@@ -218,6 +220,17 @@ export async function ListingPage({
           </dl>
         </div>
         <div>
+          {guide?.indexable ? (
+            <Link href={costPath(category.slug, city.slug)} className="mb-6 block rounded-2xl bg-[var(--color-pink-soft)] p-4 hover:bg-[var(--color-tint)]">
+              <span className="block text-sm text-[var(--color-muted)]">Price guide</span>
+              <span className="font-semibold">
+                What {category.plural_name.toLowerCase()} cost in {city.name}
+              </span>
+              <span className="mt-1 block text-sm">
+                Most start between {formatInr(guide.low)} and {formatInr(guide.high)} {category.price_unit}.
+              </span>
+            </Link>
+          ) : null}
           {collections.length ? (
             <>
               <h2 className="font-semibold text-xl">Hand-picked lists</h2>

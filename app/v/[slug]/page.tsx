@@ -4,7 +4,8 @@ import { recordView, visitorKey } from '@/lib/analytics';
 import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { currentProfile, STAFF_ROLES } from '@/lib/auth';
-import { displayValue, fieldsFor, formatInr } from '@/lib/catalog';
+import { displayValue, fieldsFor, formatInr, listCities } from '@/lib/catalog';
+import { costGuide, costPath } from '@/lib/costGuide';
 import { getVendorBySlug, publicVendor, recentDemand, similarVendors, vendorFaq, vendorMedia } from '@/lib/vendors';
 import { SPACE_KINDS, spacesFor } from '@/lib/venueSpaces';
 import { JsonLd, VendorCard } from '@/components/VendorCard';
@@ -75,6 +76,7 @@ export default async function VendorPage({ params, searchParams }: P) {
     similarVendors(sql, v),
     recentDemand(sql, v.id),
   ]);
+  const cityNames = await listCities(sql);
   // Review filters: all, with photos, positive (4 and above), critical (2 and below).
   const overall = (r: { rating_artist: number; rating_service: number }) => (r.rating_artist + r.rating_service) / 2;
   const rf = ['photos', 'positive', 'critical'].includes(String(q.reviews)) ? String(q.reviews) : 'all';
@@ -109,7 +111,12 @@ export default async function VendorPage({ params, searchParams }: P) {
       <Container>
         <JsonLd
           data={[
-            vendorLd(raw),
+            vendorLd(raw, {
+              reviews: allReviews,
+              images: media.map((m) => m.url),
+              areaServed: cityNames.filter((c) => c.id === raw.city_id || raw.service_city_ids.includes(c.id)).map((c) => c.name),
+              state: cityNames.find((c) => c.id === raw.city_id)?.state,
+            }),
             faqLd(faq),
             breadcrumbLd([
               { name: v.city_name, path: `/vendors/${v.city_slug}` },
@@ -370,6 +377,37 @@ export default async function VendorPage({ params, searchParams }: P) {
               </section>
             ) : null;
           })()}
+          {await (async () => {
+            // Links that help brides (and crawlers) move on: prices here, and other vendors in this town.
+            const nearby = await sql<{ slug: string; name: string }[]>`
+              select c.slug, c.plural_name as name from mkt.categories c
+              where c.active and c.id <> ${v.category_id}
+                and (select count(*) from mkt.vendors x where x.status = 'live' and x.category_id = c.id and (x.city_id = ${v.city_id} or ${v.city_id} = any(x.service_city_ids))) > 0
+              order by c.sort`;
+            const guide = await costGuide(sql, v.category_slug, v.city_slug);
+            return (
+              <nav aria-label={`Planning in ${v.city_name}`} className="md:col-span-2">
+                <h2 className="text-xl font-semibold">Planning in {v.city_name}</h2>
+                <ul className="mt-3 flex flex-wrap gap-2 text-sm">
+                  {guide?.indexable ? (
+                    <li>
+                      <Link href={costPath(v.category_slug, v.city_slug)} className="chip border-[var(--color-pink)]">
+                        What {v.category_name.toLowerCase()}s cost in {v.city_name}
+                      </Link>
+                    </li>
+                  ) : null}
+                  {nearby.map((c) => (
+                    <li key={c.slug}>
+                      <Link href={`/vendors/${v.city_slug}/${c.slug}`} className="chip">
+                        {c.name} in {v.city_name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            );
+          })()}
+
           {similar.length ? (
             <section className="md:col-span-2">
               <h2 className="text-xl font-semibold">Similar {v.category_name.toLowerCase()}s</h2>

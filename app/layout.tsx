@@ -7,9 +7,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: { default: 'OLReady: verified wedding vendors', template: '%s | OLReady' },
   description:
-    'Find verified bridal makeup artists, photographers, decorators, mehendi artists and DJs in Chandigarh, Mohali and Panchkula. Compare quotes in one place.',
+    'Find verified wedding venues, caterers, makeup artists, photographers, decorators, mehendi artists and more in Chandigarh, Mohali, Panchkula and nearby towns. Compare quotes in one place.',
   applicationName: 'OLReady',
   openGraph: { siteName: 'OLReady', type: 'website', locale: 'en_IN' },
+  twitter: { card: 'summary_large_image' },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = { themeColor: '#ffffff', width: 'device-width', initialScale: 1 };

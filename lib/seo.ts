@@ -64,15 +64,34 @@ export function faqLd(faq: { q: string; a: string }[]) {
   };
 }
 
-export function vendorLd(v: VendorCard) {
+const abs = (u: string) => (u.startsWith('http') ? u : `${siteUrl()}${u}`);
+
+export function vendorLd(
+  v: VendorCard,
+  extra: { reviews?: { author_name?: string | null; rating_artist: number; rating_service: number; body: string; created_at: Date }[]; images?: string[]; areaServed?: string[]; state?: string } = {}
+) {
+  const images = [...new Set([v.cover_image_url, ...(extra.images ?? [])].filter((x): x is string => Boolean(x)))].slice(0, 6).map(abs);
   return {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
+    '@id': `${siteUrl()}/v/${v.slug}#business`,
     name: v.business_name,
     url: `${siteUrl()}/v/${v.slug}`,
     description: v.tagline || v.about.slice(0, 200),
-    address: { '@type': 'PostalAddress', addressLocality: v.city_name, addressCountry: 'IN' },
-    ...(v.cover_image_url ? { image: v.cover_image_url } : {}),
+    address: { '@type': 'PostalAddress', addressLocality: v.city_name, ...(extra.state ? { addressRegion: extra.state } : {}), addressCountry: 'IN' },
+    ...(extra.areaServed?.length ? { areaServed: extra.areaServed.map((name) => ({ '@type': 'City', name })) } : {}),
+    ...(images.length ? { image: images } : {}),
+    ...(extra.reviews?.length
+      ? {
+          review: extra.reviews.slice(0, 5).map((r) => ({
+            '@type': 'Review',
+            author: { '@type': 'Person', name: (r.author_name ?? '').split(' ')[0] || 'A bride' },
+            datePublished: r.created_at.toISOString().slice(0, 10),
+            reviewRating: { '@type': 'Rating', ratingValue: (r.rating_artist + r.rating_service) / 2, bestRating: 5, worstRating: 1 },
+            reviewBody: r.body.slice(0, 500),
+          })),
+        }
+      : {}),
     ...(v.starting_price_inr != null ? { priceRange: `From ${formatInr(v.starting_price_inr)}` } : {}),
     ...(v.rating != null && v.review_count > 0
       ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: v.rating, reviewCount: v.review_count } }
