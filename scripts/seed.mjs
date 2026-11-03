@@ -1,6 +1,7 @@
 // Demo data for local development and walkthroughs. Refuses to run in production.
 // Every business and person here is fictional.
 import postgres from 'postgres';
+import { starterArticles } from './starter-articles.mjs';
 
 if (process.env.NODE_ENV === 'production') {
   console.error('Refusing to seed demo data in production');
@@ -105,6 +106,16 @@ try {
       await sql`insert into mkt.vendor_media (vendor_id, url, caption, tags, sort) values (${vid}, ${url}, ${`${name}, sample ${k + 1}`}, ${tagSets[k]}, ${k})`;
       if (k === 0) await sql`update mkt.vendors set cover_image_url = ${url} where id = ${vid}`;
     }
+  }
+
+  // Starter guides, published, with demo covers.
+  let art = 0;
+  for (const a of starterArticles) {
+    const cat = a.category ? await id(sql`select id from mkt.categories where slug = ${a.category}`) : null;
+    await sql`
+      insert into mkt.articles (slug, title, excerpt, body, section, category_id, cover_url, status, author_name, published_at)
+      values (${a.slug}, ${a.title}, ${a.excerpt}, ${a.body}, ${a.section}, ${cat}, ${`/demo/demo-${(art++ % 12) + 1}.jpg`}, 'published',
+        'OLReady team', now() - ${`${art} days`}::interval)`;
   }
 
   // One draft profile Ops built, waiting to be claimed.

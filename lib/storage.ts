@@ -27,7 +27,7 @@ export function storageConfigured() {
  * Stores one image and returns its public URL. Uses Supabase Storage when configured;
  * in local development it falls back to public/uploads.
  */
-export async function storeImage(file: File, folder: 'vendors' | 'real-weddings' | 'invites' | 'reviews'): Promise<string> {
+export async function storeImage(file: File, folder: 'vendors' | 'real-weddings' | 'invites' | 'reviews' | 'articles'): Promise<string> {
   if (!file || file.size === 0) throw new DomainError('no_file', 'Choose a photo');
   if (file.size > MAX_BYTES) throw new DomainError('too_big', 'Each photo must be under 5 MB');
   const buf = new Uint8Array(await file.arrayBuffer());

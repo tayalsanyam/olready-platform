@@ -56,6 +56,9 @@ export async function Header() {
           <Link href="/real-weddings" className="hover:text-[var(--color-pink)]">
             Real weddings
           </Link>
+          <Link href="/blog" className="hover:text-[var(--color-pink)]">
+            Guides
+          </Link>
           <Link href="/vendor/onboard" className="hover:text-[var(--color-pink)]">
             For vendors
           </Link>
@@ -89,6 +92,9 @@ export async function Header() {
         </Link>
         <Link href="/real-weddings" className="chip">
           Real weddings
+        </Link>
+        <Link href="/blog" className="chip">
+          Guides
         </Link>
       </nav>
     </header>
@@ -136,6 +142,7 @@ export async function Footer() {
             <Link href="/ideas">Ideas</Link>
             <Link href="/invitations">E-invites</Link>
             <Link href="/real-weddings">Real weddings</Link>
+            <Link href="/blog">Guides</Link>
             <Link href="/vendors">All vendors</Link>
           </div>
         </div>

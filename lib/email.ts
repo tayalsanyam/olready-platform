@@ -11,7 +11,8 @@ export type EmailTemplate =
   | 'quote_accepted'
   | 'rm_assigned'
   | 'review_request'
-  | 'callback_booked';
+  | 'callback_booked'
+  | 'newsletter_welcome';
 
 const site = () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
@@ -80,6 +81,11 @@ function render(template: EmailTemplate, p: Record<string, string>) {
       return {
         subject: 'We will call you',
         text: `Hi ${p.name},\n\nThanks. Someone from OLReady will call you on ${p.phone}${p.when ? ` (${p.when})` : ''} about ${p.topic}. Support hours are Monday to Saturday, 10:00 to 18:30.\n\nOLReady`,
+      };
+    case 'newsletter_welcome':
+      return {
+        subject: 'Wedding ideas from OLReady',
+        text: `Thanks for signing up. We will send you new ideas, real Tricity weddings and planning guides now and then.\n\nStart here: ${site()}/blog\n\nTo stop these emails: ${site()}/unsubscribe/${p.token}\n\nOLReady`,
       };
     case 'booking_confirmed':
       return {
