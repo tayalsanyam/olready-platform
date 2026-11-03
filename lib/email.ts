@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { Db } from './db';
 
 export type EmailTemplate =
@@ -14,6 +15,10 @@ export type EmailTemplate =
   | 'callback_booked'
   | 'banner_approved'
   | 'banner_rejected'
+  | 'event_eve_bride'
+  | 'event_eve_vendor'
+  | 'checkin_7'
+  | 'still_looking_15'
   | 'newsletter_welcome';
 
 const site = () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
@@ -89,6 +94,26 @@ function render(template: EmailTemplate, p: Record<string, string>) {
         subject: 'Your banner needs changes',
         text: `Hi ${p.name},\n\nWe could not approve your banner: ${p.reason}\n\nThe full amount is back in your ads wallet. You can book again with a new image or headline:\n\n${site()}/vendor/promote\n\nOLReady`,
       };
+    case 'event_eve_bride':
+      return {
+        subject: `Tomorrow: ${p.events}`,
+        text: `Hi ${p.name},\n\nTomorrow is a big day: ${p.events}.\n\n${p.details}\n\nYour booked vendors:\n${p.vendors}\n\nEverything is in one place here:\n${site()}/me\n\nWishing you the happiest day.\nOLReady`,
+      };
+    case 'event_eve_vendor':
+      return {
+        subject: `Tomorrow: ${p.bride}'s ${p.events}`,
+        text: `Hi ${p.name},\n\nA reminder for your booking with ${p.bride} tomorrow:\n\n${p.details}\n\nPhone: ${p.phone}\n\nThe conversation is here:\n${site()}/vendor/threads\n\nOLReady`,
+      };
+    case 'checkin_7':
+      return {
+        subject: 'How are your quotes looking?',
+        text: `Hi ${p.name},\n\nIt has been a week since we verified your request. Compare the quotes you have side by side, and ask vendors anything before you decide:\n\n${site()}/me/compare\n\nIf you want more options, reply to this email and our team will help.\n\nOLReady`,
+      };
+    case 'still_looking_15':
+      return {
+        subject: 'Still looking for the right vendors?',
+        text: `Hi ${p.name},\n\nWe have not heard from you in a while. If you are still looking, tell us what is missing and we will ask more verified vendors to quote. If you have booked, tell us so we stop sending requests:\n\n${site()}/me\n\nOLReady`,
+      };
     case 'callback_booked':
       return {
         subject: 'We will call you',
@@ -117,12 +142,25 @@ export async function flushOutbox(db: Db, limit = 50) {
     order by created_at limit ${limit}`;
   let sent = 0;
   for (const m of due) {
+    // Never email an address that bounced, complained or unsubscribed.
+    const [blocked] = await db`select reason from mkt.email_suppressions where email = ${m.to_email.toLowerCase()}`;
+    if (blocked) {
+      await db`update mkt.email_outbox set sent_at = now(), error = ${`suppressed: ${blocked.reason}`} where id = ${m.id}`;
+      continue;
+    }
     const { subject, text } = render(m.template, m.payload);
+    const unsub = unsubscribeUrl(m.to_email);
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: process.env.EMAIL_FROM ?? 'OLReady <care@olready.in>', to: m.to_email, subject, text }),
+        body: JSON.stringify({
+          from: process.env.EMAIL_FROM ?? 'OLReady <care@olready.in>',
+          to: m.to_email,
+          subject,
+          text: `${text}\n\n--\nStop emails from OLReady: ${unsub}`,
+          headers: { 'List-Unsubscribe': `<${unsub.replace('/unsubscribe/email', '/api/unsubscribe')}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+        }),
       });
       if (!res.ok) throw new Error(`Resend ${res.status}`);
       await db`update mkt.email_outbox set sent_at = now(), error = null where id = ${m.id}`;
@@ -156,4 +194,33 @@ export async function queuePostEventFeedback(db: Db) {
     );
   }
   return rows.length;
+}
+
+// ---------------------------------------------------------------- unsubscribe and suppression
+const unsubSecret = () => process.env.UNSUBSCRIBE_SECRET ?? process.env.CRON_SECRET ?? 'olready-dev';
+const b64 = (s: string) => Buffer.from(s).toString('base64url');
+
+/** A signed link that unsubscribes this address without a sign-in; it cannot be forged for another address. */
+export function unsubscribeToken(email: string) {
+  return createHmac('sha256', unsubSecret()).update(email.trim().toLowerCase()).digest('base64url').slice(0, 32);
+}
+export function unsubscribeUrl(email: string) {
+  return `${site()}/unsubscribe/email?e=${b64(email.trim().toLowerCase())}&t=${unsubscribeToken(email)}`;
+}
+export function verifyUnsubscribe(e: string, t: string) {
+  let email = '';
+  try {
+    email = Buffer.from(e, 'base64url').toString('utf8');
+  } catch {
+    return null;
+  }
+  const want = Buffer.from(unsubscribeToken(email));
+  const got = Buffer.from(t);
+  return email.includes('@') && want.length === got.length && timingSafeEqual(want, got) ? email : null;
+}
+
+export async function suppress(db: Db, email: string, reason: 'hard_bounce' | 'complaint' | 'soft_bounce' | 'unsubscribed', detail = '') {
+  await db`
+    insert into mkt.email_suppressions (email, reason, detail) values (${email.trim().toLowerCase()}, ${reason}, ${detail.slice(0, 300)})
+    on conflict (email) do nothing`;
 }

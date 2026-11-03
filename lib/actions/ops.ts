@@ -422,3 +422,13 @@ export async function rmAddNote(fd: FormData) {
     return { ok: 'Note saved' };
   });
 }
+
+export async function opsClearSuppression(fd: FormData) {
+  await attempt('/ops/emails', async () => {
+    const p = await requireRole(OPS);
+    const email = str(fd, 'email').toLowerCase();
+    await sql`delete from mkt.email_suppressions where email = ${email}`;
+    await audit(sql, p.id, 'email.allow_again', 'email', email);
+    return { ok: `${email} can receive email again` };
+  });
+}

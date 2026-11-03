@@ -5,6 +5,7 @@ import { flushOutbox, queuePostEventFeedback } from '@/lib/email';
 import { endExpiredEngagements } from '@/lib/rm';
 import { expirePlans } from '@/lib/payments';
 import { endFinishedBoosts } from '@/lib/promotion';
+import { queueBrideCheckins } from '@/lib/automations';
 
 /**
  * Daily jobs (Vercel Cron, Authorization: Bearer $CRON_SECRET):
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest) {
   const plans = await expirePlans(sql);
   const rmEnded = await endExpiredEngagements(sql);
   const boostsEnded = await endFinishedBoosts(sql);
+  const checkins = await queueBrideCheckins(sql);
   const mail = await flushOutbox(sql);
-  return NextResponse.json({ expiredDisputes: expired, feedbackQueued: feedback, expiredPlans: plans, rmEnded, boostsEnded, mail });
+  return NextResponse.json({ expiredDisputes: expired, feedbackQueued: feedback, expiredPlans: plans, rmEnded, boostsEnded, checkins, mail });
 }
