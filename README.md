@@ -40,8 +40,8 @@ npm install
 cp .env.example .env.local        # set DATABASE_URL to a local Postgres; DEV_AUTH=1
 npm run db:reset                  # schema + reference data + fictional demo data
 npm run dev                       # http://localhost:3000/dev-login to sign in as any demo person
-npm test                          # 98 integration tests against the database
-node tests/e2e/walkthrough.mjs    # 41-step UI walkthrough in headless Chrome at phone width (fresh demo data)
+npm test                          # 113 integration tests against the database
+node tests/e2e/walkthrough.mjs    # 44-step UI walkthrough in headless Chrome at phone width (fresh demo data)
 node tests/e2e/sweep.mjs          # every sitemap page, contact-leak scan, 7-role access matrix (fresh demo data)
 ```
 
@@ -62,7 +62,6 @@ node tests/e2e/sweep.mjs          # every sitemap page, contact-leak scan, 7-rol
 ## Not in this build yet
 
 - Mobile apps (web first, by decision).
-- Vendor date availability. Brides find out by sending a request; Ask OLReady says so instead of guessing.
 - Self-makeup classes (marked "coming soon" in the spec).
 - Error monitoring beyond the server logs.
 - Razorpay and PayU follow their documented signatures but are untested without live keys; run one test-mode payment on each before switching them on. WhatsApp sends nothing until Meta approves the templates.
@@ -90,3 +89,16 @@ node tests/e2e/sweep.mjs          # every sitemap page, contact-leak scan, 7-rol
 - **Price guides** (`/cost/<category>` and `/cost/<category>/<town>`): what vendors cost, from live starting prices and, once there are 5 or more, the middle of real quotes from the last year. Each guide shows the range, a breakdown by type, the lowest-priced and best-reviewed vendors, and FAQs. A guide stays `noindex` until `min_vendors_to_index` vendors list a price.
 - **Directory** (`/directory`): every town, category, filter page, price guide, idea topic and guide in one place, linked from the footer.
 - **Search engines.** The sitemap lists landing and filter pages, vendors with their photos, price guides, idea photos, guides and collections. `llms.txt` lists the same for answer engines. Vendor pages carry LocalBusiness JSON-LD with the areas served, images and reviews. Price guides carry FAQPage and BreadcrumbList. Each key page has its own 1200×630 share image (`lib/og.tsx`). Filter pages are titled the way people search ("Airbrush makeup artists in Mohali"). `robots.txt` hides private areas and is covered by a test.
+
+## Pan-India places and vendor calendars (November 2026)
+
+- **Towns across India.** Every district is a town (`data/towns.csv`, 614 towns), named the way people search (Gurugram, Noida, Kochi, Ooty) with old names kept as aliases (Gurgaon, Gautam Buddha Nagar, Ernakulam). The Tricity towns (Mohali, Zirakpur, Kharar, New Chandigarh, Dera Bassi) are carved out of the Mohali district by pincode. *Launched* towns show in menus, the home page and the footer; every town works in forms, search and listings. Ops > Places searches, launches, renames and switches off towns.
+- **Pincodes.** `data/pincodes.csv.gz` holds all 19,097 pincodes from the All India Pincode Directory (Department of Posts, data.gov.in, Government Open Data License – India; credited on /about). Each maps to one town. Ops can move a pincode to another town, and later reloads keep that choice. `npm run db:migrate` loads both files when they change; the first load takes about 15 seconds. Tests load only North India (`MKT_PLACE_STATES`).
+- **Areas.** 268 hand-made Tricity areas (Chandigarh sectors with their India Post pincodes, Mohali phases and sectors, Panchkula sectors and MDC, Zirakpur VIP Road and Patiala Road, and so on), and 18,712 elsewhere from each pincode's main post office. Ops adds, renames or switches off areas per town.
+- **One place box.** Requests, the wedding setup, vendor onboarding and the vendor profile use one type-ahead: a town, an old name or a pincode. A pincode fills in the town and the area. Requests also take a place per function (home, venue, area), shared with the wedding plan.
+- **Vendor addresses.** Area, street address, pincode, Google Maps link (coordinates read from it) and the towns served. The street address, map and coordinates reach the browser only when the vendor ticks "show my full address" (venues by default); billing details never do. Vendor JSON-LD carries postal code, street address and geo when public.
+- **Search pages.** Area pages (`/vendors/chandigarh/venues/sector-35`, "Wedding venues in Sector 35, Chandigarh") and India-wide pages (`/vendors/india/photographers`) are indexed once they have enough vendors. Price guides are India-wide and per town. The directory groups towns by state.
+- **GST.** GSTINs are checked with their check digit. A billing pincode sets the invoice state when there is no GSTIN. Place of supply: GSTIN state, then billing state, then the vendor's town's state.
+- **Vendor calendars** (`/vendor/calendar`). Vendors mark days booked or closed (whole day, day or evening; per hall for venues) and set how many bookings they take a day. A booking reported on OLReady fills its function dates in on its own. A day is *free*, *some bookings*, *booked* or *closed*. Brides are told "free" only when the calendar was updated in the last 45 days (`calendar_fresh_days`); otherwise "not marked, your request will ask". "My calendar is up to date" confirms it. Vendors who have not updated in 30 days get a monthly reminder email.
+- **Google Calendar.** Vendors paste their calendar's secret iCal address and the daily job reads it, replacing the earlier import. OLReady dates are also published as a private iCal feed (`/api/calendar/<token>.ics`) they can add to their phone.
+- **Where brides see it.** A "Check a date" box on every vendor page (her own function dates are checked when she is signed in), a "Free on" date filter on listings with a "Free on 14 Feb" badge, her shortlist against her dates, and Ask OLReady (`search_vendors` takes a date; `vendor_details` checks her dates). Vendors see a warning on a lead whose dates they have marked booked, and are left out of new-lead alerts when booked on every date. Ops can mark dates for a vendor on the phone.

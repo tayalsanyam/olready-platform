@@ -3,6 +3,8 @@ import { DomainError, getSetting } from './db';
 import { aiEnabled } from './ai';
 import { displayValue, fieldsFor, formatInr, getCity, getCityBySlug, listCategories, listCities } from './catalog';
 import { searchPlaces } from './locations';
+import { weddingFunctions } from './functions';
+import { calendarFreshDays, checkDates, freshness } from './availability';
 import { weddingFor, checklist, shortlist, events } from './weddings';
 import { budgetSummary, canSeeBudget, weddingQuotes } from './budget';
 import { spacesFor } from './venueSpaces';
@@ -48,6 +50,7 @@ export const TOOLS = [
         guests: { type: 'integer', description: 'Guest count; for venues, only places that hold this many' },
         min_rating: { type: 'number', description: 'Lowest average rating, 1 to 5' },
         keyword: { type: 'string', description: 'Style or feature, e.g. "airbrush", "lawn", "candid", "Arabic"' },
+        date: { type: 'string', description: 'YYYY-MM-DD. Leaves out vendors marked booked or closed that day, and says who is free as per a recently updated calendar' },
         sort: { type: 'string', enum: ['best', 'price_low', 'rating'] },
       },
       required: ['category'],
@@ -55,8 +58,12 @@ export const TOOLS = [
   },
   {
     name: 'vendor_details',
-    description: "One vendor's public profile: prices, facts, halls, reviews. Contact details are never available; brides reach vendors by sending a request.",
-    input_schema: { type: 'object', properties: { slug: { type: 'string' } }, required: ['slug'] },
+    description: "One vendor's public profile: prices, facts, halls, reviews, and whether their calendar is free on given dates. Contact details are never available; brides reach vendors by sending a request.",
+    input_schema: {
+      type: 'object',
+      properties: { slug: { type: 'string' }, dates: { type: 'array', items: { type: 'string' }, description: 'YYYY-MM-DD dates to check against their calendar (up to 8). Her own function dates are checked when left out.' } },
+      required: ['slug'],
+    },
   },
   {
     name: 'my_wedding',
@@ -160,9 +167,12 @@ async function searchTool(ctx: Ctx, i: Record<string, unknown>) {
   const kw = str(i.keyword).slice(0, 40);
   const like = kw ? `%${kw.replace(/[%_\\]/g, (m) => `\\${m}`)}%` : null;
   const sort = str(i.sort);
-  const rows = await db<{ slug: string; business_name: string; city: string; starting_price_inr: number | null; verified: boolean; assured: boolean; attributes: Record<string, unknown>; tagline: string; rating: number | null; n: number }[]>`
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(str(i.date)) && str(i.date) >= today() ? str(i.date) : null;
+  const freshDays = await calendarFreshDays(db);
+  const rows = await db<{ slug: string; business_name: string; city: string; starting_price_inr: number | null; verified: boolean; assured: boolean; attributes: Record<string, unknown>; tagline: string; rating: number | null; n: number; day_status: string | null; calendar_updated_at: Date | null }[]>`
     select v.slug, v.business_name, ci.name as city, v.starting_price_inr, v.verified_at is not null as verified, v.assured, v.attributes, v.tagline,
-           r.rating, coalesce(r.n, 0)::int as n
+           r.rating, coalesce(r.n, 0)::int as n, v.calendar_updated_at,
+           case when ${date}::date is null then null else mkt.vendor_day(v.id, ${date}::date) end as day_status
     from mkt.vendors v join mkt.cities ci on ci.id = v.city_id
     left join lateral (
       select round(avg((rating_artist + rating_service) / 2.0), 1)::float as rating, count(*) as n
@@ -172,6 +182,7 @@ async function searchTool(ctx: Ctx, i: Record<string, unknown>) {
       and (${maxPrice}::int is null or v.starting_price_inr <= ${maxPrice})
       and (${guests}::int is null or ((v.attributes ->> 'capacity_max') ~ '^[0-9]+$' and (v.attributes ->> 'capacity_max')::int >= ${guests}))
       and (${minRating}::float is null or r.rating >= ${minRating})
+      and (${date}::date is null or not mkt.vendor_busy(v.id, ${date}::date))
       and (${like}::text is null or v.business_name ilike ${like} or v.tagline ilike ${like} or v.about ilike ${like}
            or v.attributes::text ilike ${like} or array_to_string(coalesce(v.known_for, '{}'), ' ') ilike ${like})
     order by ${sort === 'price_low' ? db`v.starting_price_inr asc nulls last,` : sort === 'rating' ? db`r.rating desc nulls last, r.n desc,` : db``}
@@ -194,21 +205,37 @@ async function searchTool(ctx: Ctx, i: Record<string, unknown>) {
       checked: r.assured ? 'OLReady Assured' : r.verified ? 'Verified' : 'Not yet verified',
       tagline: clip(r.tagline, 120),
       facts: cardFields.map((f) => ({ f, v: displayValue(f, r.attributes[f.key]) })).filter((x) => x.v != null).map((x) => `${x.f.label}: ${x.v}`),
+      ...(date
+        ? {
+            on_date: freshness(r.calendar_updated_at, freshDays).fresh
+              ? `free on ${date} as per their calendar (updated ${freshness(r.calendar_updated_at, freshDays).ago})`
+              : `not marked busy on ${date}, but their calendar is not up to date; a request will confirm`,
+          }
+        : {}),
     })),
+    ...(date ? { date_note: 'Vendors marked booked or closed on this date are left out.' } : {}),
   };
 }
 
 async function detailsTool(ctx: Ctx, i: Record<string, unknown>) {
   const { db } = ctx;
   const slug = str(i.slug).replace(/^\/?v\//, '');
-  const [v] = await db<{ id: string; slug: string; business_name: string; category_id: number; category: string; price_unit: string; city: string; tagline: string; about: string; starting_price_inr: number | null; years_experience: number | null; attributes: Record<string, unknown>; verified: boolean; assured: boolean; known_for: string[] | null }[]>`
+  const [v] = await db<{ id: string; slug: string; business_name: string; category_id: number; category: string; price_unit: string; city: string; tagline: string; about: string; starting_price_inr: number | null; years_experience: number | null; attributes: Record<string, unknown>; verified: boolean; assured: boolean; known_for: string[] | null; calendar_updated_at: Date | null }[]>`
     select v.id, v.slug, v.business_name, v.category_id, c.name as category, c.price_unit, ci.name as city, v.tagline, v.about, v.starting_price_inr,
-           v.years_experience, v.attributes, v.verified_at is not null as verified, v.assured, v.known_for
+           v.years_experience, v.attributes, v.verified_at is not null as verified, v.assured, v.known_for, v.calendar_updated_at
     from mkt.vendors v join mkt.categories c on c.id = v.category_id join mkt.cities ci on ci.id = v.city_id
     where v.slug = ${slug} and v.status = 'live'`;
   if (!v) return { error: 'No live vendor with that link.' };
   ctx.slugs.add(v.slug);
-  const [fields, halls, reviews] = await Promise.all([fieldsFor(db, v.category_id), spacesFor(db, v.id), reviewsForVendor(db, v.id)]);
+  const asked = (Array.isArray(i.dates) ? i.dates : []).map(str).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && d >= today());
+  const labels: Record<string, string> = {};
+  if (!asked.length && ctx.wedding) for (const f of await weddingFunctions(db, ctx.wedding.id)) if (f.date && f.date >= today()) labels[f.date] = labels[f.date] ? `${labels[f.date]} and ${f.name}` : f.name;
+  const [fields, halls, reviews, dates] = await Promise.all([
+    fieldsFor(db, v.category_id),
+    spacesFor(db, v.id),
+    reviewsForVendor(db, v.id),
+    checkDates(db, v, (asked.length ? asked : Object.keys(labels)).slice(0, 8), labels),
+  ]);
   const avg = reviews.length ? Math.round((reviews.reduce((s, r) => s + (r.rating_artist + r.rating_service) / 2, 0) / reviews.length) * 10) / 10 : null;
   return {
     name: v.business_name,
@@ -228,6 +255,7 @@ async function detailsTool(ctx: Ctx, i: Record<string, unknown>) {
       average: avg,
       latest: reviews.slice(0, 4).map((r) => ({ by: (r.author_name ?? '').split(' ')[0] || 'A bride', work: r.rating_artist, service: r.rating_service, booked_here: r.verified_booking, said: clip(r.body, 300) })),
     },
+    availability: dates.map((d) => d.text),
     how_to_contact: 'Send a request through OLReady; the vendor replies in her OLReady inbox.',
   };
 }
@@ -484,7 +512,7 @@ async function systemPrompt(db: Db) {
   const [cats, cities] = await Promise.all([listCategories(db, { activeOnly: true }), listCities(db)]);
   return `You are ${ASSISTANT_NAME}, the planning helper inside OLReady, a wedding marketplace for India (it started in Chandigarh, Mohali and Panchkula). You help a bride (or her family) plan: choosing vendors, budgets, timelines, ideas and comparing quotes. Today is ${today()} (India).
 
-How OLReady works: vendors list for free. A bride sends one request for any categories; our team confirms it on a short call; verified vendors then message and quote inside OLReady. Vendor phone numbers are private until she chooses to share hers. You cannot see vendor contact details and must never give any, or say vendors are available on a date (you do not know; a request finds out).
+How OLReady works: vendors list for free. A bride sends one request for any categories; our team confirms it on a short call; verified vendors then message and quote inside OLReady. Vendor phone numbers are private until she chooses to share hers. You cannot see vendor contact details and must never give any. Vendors keep calendars on OLReady: say a vendor is free on a date only when a tool says so, and say it is "as per their calendar" with when it was updated; if a tool says the calendar is not up to date, say a request will confirm. Booked or closed means booked.
 
 Categories (slug: name, price unit): ${cats.map((c) => `${c.slug}: ${c.plural_name}, ${c.price_unit}`).join('; ')}.
 Launched towns (slug: name): ${cities.map((c) => `${c.slug}: ${c.name}`).join('; ')}. Any other town in India works too: pass its name or pincode as city.

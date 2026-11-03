@@ -9,6 +9,9 @@ type Place =
   | { kind: 'pincode'; city_id: number | null; city: string | null; state: string; pincode: string; area: string | null; locality_id: number | null }
   | { kind: 'area'; city_id: number; city: string; state: string; locality_id: number; area: string; pincode: string | null };
 
+/** "Mohali, Punjab", but just "Chandigarh" or "Delhi" where the town and the state share a name. */
+const withState = (name: string | null | undefined, state: string | null | undefined) => [name, state && state !== name ? state : null].filter(Boolean).join(', ');
+
 async function lookup(q: string, city?: number | null): Promise<Place[]> {
   const u = `/api/public/places?q=${encodeURIComponent(q)}${city ? `&city=${city}` : ''}`;
   try {
@@ -164,13 +167,13 @@ export function PlacePicker(props: {
         id={`${uid}-town`}
         label={props.label ?? 'Town or city'}
         hint={props.townHint}
-        value={town ? `${town.name}, ${town.state}` : ''}
+        value={town ? withState(town.name, town.state) : ''}
         placeholder="Type a town or a pincode"
         required={props.required}
         quick={quick}
         search={(q) => lookup(q)}
         render={(p) =>
-          p.kind === 'pincode' ? { main: `${p.pincode}${p.area ? `, ${p.area}` : ''}`, sub: [p.city, p.state].filter(Boolean).join(', ') } : { main: p.city ?? '', sub: p.state }
+          p.kind === 'pincode' ? { main: `${p.pincode}${p.area ? `, ${p.area}` : ''}`, sub: withState(p.city, p.state) } : { main: p.city ?? '', sub: p.state !== p.city ? p.state : undefined }
         }
         onPick={(p) => {
           if (p.kind === 'pincode') fromPincode(p);
@@ -195,7 +198,7 @@ export function PlacePicker(props: {
             search={(q) => lookup(q, /^\d{3,6}$/.test(q.trim()) ? null : town?.id)}
             render={(p) =>
               p.kind === 'pincode'
-                ? { main: `${p.pincode}${p.area ? `, ${p.area}` : ''}`, sub: [p.city, p.state].filter(Boolean).join(', ') }
+                ? { main: `${p.pincode}${p.area ? `, ${p.area}` : ''}`, sub: withState(p.city, p.state) }
                 : p.kind === 'area'
                   ? { main: p.area, sub: p.pincode ?? undefined }
                   : { main: p.city ?? '' }

@@ -3,6 +3,8 @@ import { sql } from '@/lib/db';
 import { requireBrideWedding } from '@/lib/brideSession';
 import { formatInr } from '@/lib/catalog';
 import { shortlist } from '@/lib/weddings';
+import { weddingFunctions } from '@/lib/functions';
+import { checkDates, todayIst } from '@/lib/availability';
 import { askShortlistedAction, removeShortlistAction } from '@/lib/actions/bride';
 import { Card, Empty, Field, Notice, PageTitle } from '@/components/ui';
 
@@ -16,6 +18,14 @@ export default async function Shortlist({ searchParams }: P) {
   const { p, w } = await requireBrideWedding('/me/shortlist');
   const list = await shortlist(sql, w.id);
   const byCat = Map.groupBy(list, (s) => s.category_name);
+  // Her function dates against each shortlisted vendor's calendar.
+  const fns = (await weddingFunctions(sql, w.id)).filter((f) => f.date && f.date >= todayIst());
+  const labels: Record<string, string> = {};
+  for (const f of fns) labels[f.date!] = labels[f.date!] ? `${labels[f.date!]} and ${f.name}` : f.name;
+  const vendors = await sql<{ id: string; calendar_updated_at: Date | null }[]>`select id, calendar_updated_at from mkt.vendors where id = any(${list.map((s) => s.vendor_id)}::uuid[])`;
+  const checks = new Map(
+    await Promise.all(vendors.map(async (v) => [v.id, Object.keys(labels).length ? await checkDates(sql, v, Object.keys(labels).slice(0, 8), labels) : []] as const))
+  );
   return (
     <>
       <PageTitle title="Shortlist" sub="Vendors your family saved. Ask them all for quotes in one go." />
@@ -34,6 +44,15 @@ export default async function Shortlist({ searchParams }: P) {
                           {s.business_name}
                         </Link>
                         <div className="hint">{s.starting_price_inr != null ? `from ${formatInr(s.starting_price_inr)} ${s.price_unit}` : 'price on request'}</div>
+                        {checks.get(s.vendor_id)?.length ? (
+                          <ul className="mt-1 space-y-0.5 text-xs">
+                            {checks.get(s.vendor_id)!.map((c) => (
+                              <li key={c.day} className={c.tone === 'ok' ? 'text-[#1d5c3a]' : c.tone === 'bad' ? 'text-[var(--color-pink-deep)]' : 'text-[var(--color-muted)]'}>
+                                {c.text}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
                       </div>
                       <form action={removeShortlistAction}>
                         <input type="hidden" name="vendor_id" value={s.vendor_id} />

@@ -74,16 +74,16 @@ async function as(name) {
 const [invoice] = await db`select d.id, p.full_name as buyer from mkt.tax_documents d join mkt.orders o on o.id = d.order_id join mkt.profiles p on p.id = o.profile_id order by d.issued_at limit 1`;
 
 // ok = 200; login = sent to sign in; away = sent elsewhere (denied); no = 403/404
-const ROUTES = ['/me', '/me/assistant', '/me/budget', '/vendor', '/vendor/packs', '/ops', '/ops/leads', '/ops/data', '/ops/data/vendors', '/ops/assistant', '/ops/bride-ai', '/ops/whatsapp', '/ops/settings', '/ops/staff', '/ops/content', '/ops/rm', '/ops/export?set=vendors', ...(invoice ? [`/invoices/${invoice.id}`] : [])];
+const ROUTES = ['/me', '/me/assistant', '/me/budget', '/me/shortlist', '/vendor', '/vendor/packs', '/vendor/calendar', '/ops', '/ops/places', '/ops/leads', '/ops/data', '/ops/data/vendors', '/ops/assistant', '/ops/bride-ai', '/ops/whatsapp', '/ops/settings', '/ops/staff', '/ops/content', '/ops/rm', '/ops/export?set=vendors', ...(invoice ? [`/invoices/${invoice.id}`] : [])];
 const EXPECT = {
   visitor: { default: 'login', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'login' },
   // Simran has no wedding plan yet, so Budget sends her to set one up.
-  'Simran Kaur': { '/me': 'ok', '/me/assistant': 'ok', '/me/budget': ['ok', 'away'], '/vendor': 'away', '/vendor/packs': 'away', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'no' },
-  'Glow by Kirti owner': { '/me': 'away', '/me/assistant': 'ok', '/me/budget': 'away', '/vendor': 'ok', '/vendor/packs': 'ok', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: invoice?.buyer === 'Glow by Kirti owner' ? 'ok' : 'no' },
-  'Meera (content)': { '/ops': 'ok', '/ops/content': 'ok', '/me': 'away', '/me/assistant': 'ok', '/me/budget': 'away', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'no' },
-  'Tanya (RM)': { '/ops': 'ok', '/ops/rm': 'ok', '/me': 'away', '/me/assistant': 'ok', '/me/budget': 'away', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'no' },
-  'Rohit (ops)': { default: 'ok', '/me': 'away', '/me/budget': 'away', '/vendor': 'away', '/vendor/packs': 'away', '/ops/settings': 'away', '/ops/staff': 'away', '/ops/export?set=vendors': 'no' },
-  'Asha (admin)': { default: 'ok', '/me': 'away', '/me/budget': 'away', '/vendor': 'away', '/vendor/packs': 'away' },
+  'Simran Kaur': { '/me': 'ok', '/me/assistant': 'ok', '/me/budget': ['ok', 'away'], '/me/shortlist': ['ok', 'away'], '/vendor': 'away', '/vendor/packs': 'away', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'no' },
+  'Glow by Kirti owner': { '/me': 'away', '/me/assistant': 'ok', '/me/budget': 'away', '/me/shortlist': 'away', '/vendor': 'ok', '/vendor/packs': 'ok', '/vendor/calendar': 'ok', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: invoice?.buyer === 'Glow by Kirti owner' ? 'ok' : 'no' },
+  'Meera (content)': { '/ops': 'ok', '/ops/content': 'ok', '/me': 'away', '/me/assistant': 'ok', '/me/budget': 'away', '/me/shortlist': 'away', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'no' },
+  'Tanya (RM)': { '/ops': 'ok', '/ops/rm': 'ok', '/me': 'away', '/me/assistant': 'ok', '/me/budget': 'away', '/me/shortlist': 'away', default: 'away', '/ops/export?set=vendors': 'no', [`/invoices/${invoice?.id}`]: 'no' },
+  'Rohit (ops)': { default: 'ok', '/me': 'away', '/me/budget': 'away', '/me/shortlist': 'away', '/vendor': 'away', '/vendor/packs': 'away', '/vendor/calendar': 'away', '/ops/settings': 'away', '/ops/staff': 'away', '/ops/export?set=vendors': 'no' },
+  'Asha (admin)': { default: 'ok', '/me': 'away', '/me/budget': 'away', '/me/shortlist': 'away', '/vendor': 'away', '/vendor/packs': 'away', '/vendor/calendar': 'away' },
 };
 const results = {};
 for (const [who, exp] of Object.entries(EXPECT)) {

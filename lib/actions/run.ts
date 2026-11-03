@@ -5,13 +5,15 @@ import { DomainError, sql } from '../db';
 import { flushOutbox } from '../email';
 import { flushWhatsApp, waProvider } from '../whatsapp';
 
+/** Adds ?ok= or ?error= to a path, keeping its query and putting any #anchor back at the end. */
 export function withParam(path: string, key: string, value: string) {
-  const [base, query = ''] = path.split('?');
+  const [noHash, hash = ''] = path.split('#');
+  const [base, query = ''] = noHash.split('?');
   const q = new URLSearchParams(query);
   q.delete('error');
   q.delete('ok');
   q.set(key, value);
-  return `${base}?${q.toString()}`;
+  return `${base}?${q.toString()}${hash ? `#${hash}` : ''}`;
 }
 
 /**

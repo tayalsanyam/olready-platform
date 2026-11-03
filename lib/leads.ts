@@ -1,3 +1,4 @@
+import { blockForBooking } from './availability';
 import type { Db, Sql } from './db';
 import { type FunctionInput, MAX_FUNCTIONS, headline, saveLeadFunctions, seedWeddingFunctions } from './functions';
 import { DomainError, audit, getSetting } from './db';
@@ -257,6 +258,7 @@ export type NeedCard = {
   category_name: string;
   bride_first_name: string;
   city_name: string;
+  area_name: string | null;
   event_date: string | null;
   guest_count: number | null;
   tier_label: string | null;
@@ -276,6 +278,7 @@ export async function visibleNeeds(db: Db, vendorId: string) {
     with v as (select * from mkt.vendors where id = ${vendorId} and status = 'live')
     select ln.id as need_id, l.id as lead_id, ln.category_id, c.name as category_name,
            split_part(l.bride_name, ' ', 1) as bride_first_name, ci.name as city_name,
+           (select lo.name from mkt.localities lo where lo.id = l.locality_id) as area_name,
            to_char(l.event_date, 'YYYY-MM-DD') as event_date, l.guest_count, bt.label as tier_label, ln.budget_inr,
            (select count(*) from mkt.unlocks u where u.lead_need_id = ln.id and not u.refunded)::int as unlocks,
            ln.unlock_cap, c.unlock_credit_cost as credit_cost, (ln.direct_vendor_id is not null) as direct,
@@ -432,6 +435,8 @@ export async function reportBooking(
     await tx`
       update mkt.lead_needs set status = 'closed_booked', booked_vendor_id = ${input.vendorId} where id = ${input.needId}`;
     await tx`update mkt.threads set status = 'booked' where id = ${thread.id}`;
+    // The booked dates come off the vendor's calendar, so other brides see them as booked.
+    await blockForBooking(tx, input.needId, input.vendorId, input.reporterProfileId);
 
     if (input.side === 'vendor') {
       const reward = await getSetting(tx, 'booking_reward_credits', 1);

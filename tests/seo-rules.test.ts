@@ -33,3 +33,11 @@ describe('filter page titles', async () => {
     expect(landingTitle(cat('Wedding venues'), city, f('200+ guests', { min: 200 }))).toBe('Wedding venues in Mohali for 200+ guests');
   });
 });
+
+describe('redirect messages', async () => {
+  const { withParam } = await import('@/lib/actions/run');
+  it('keeps the query and puts the anchor after the message', () => {
+    expect(withParam('/vendor/profile#where', 'ok', 'Saved')).toBe('/vendor/profile?ok=Saved#where');
+    expect(withParam('/ops/places?q=moh&error=x', 'ok', 'Done')).toBe('/ops/places?q=moh&ok=Done');
+  });
+});

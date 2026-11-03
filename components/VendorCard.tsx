@@ -15,8 +15,11 @@ export function VendorCard({
   backPath,
   shortlisted = false,
   sponsored,
+  dateNote,
 }: {
   v: VC;
+  /** "Free on 14 Feb" when the listing is filtered by a date and the vendor's calendar is fresh. */
+  dateNote?: string | null;
   fields: CategoryField[];
   backPath?: string;
   shortlisted?: boolean;
@@ -66,8 +69,9 @@ export function VendorCard({
           </div>
           <p className="mt-0.5 flex items-center gap-1 text-sm text-[var(--color-muted)]">
             <IconPin size={14} />
-            {v.city_name}
+            {v.locality_name ? `${v.locality_name}, ${v.city_name}` : v.city_name}
           </p>
+          {dateNote ? <p className="mt-1 inline-flex rounded-full bg-[#e6f4ec] px-2 py-0.5 text-xs font-semibold text-[#1d5c3a]">{dateNote}</p> : null}
           <p className="mt-1.5 flex items-baseline gap-1.5">
             {v.starting_price_inr != null ? (
               <>

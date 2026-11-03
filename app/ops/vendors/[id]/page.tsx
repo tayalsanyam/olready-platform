@@ -4,6 +4,8 @@ import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { citiesByIds, displayValue, fieldsFor, formatInr } from '@/lib/catalog';
 import { TownChips } from '@/components/PlacePicker';
+import { calendarFreshDays, calendarRange, freshness, shortDate, todayIst } from '@/lib/availability';
+import { opsCalendarAddAction } from '@/lib/actions/calendar';
 import { balances } from '@/lib/leads';
 import { vendorStats } from '@/lib/vendorStats';
 import type { Vendor } from '@/lib/vendors';
@@ -32,6 +34,11 @@ export default async function OpsVendor({ params, searchParams }: P) {
     sql<{ id: number; credit_kind: string; delta: number; reason: string; note: string; created_at: Date }[]>`
       select id, credit_kind, delta, reason, note, created_at from mkt.credit_ledger where vendor_id = ${id} order by id desc limit 25`,
   ]);
+  const [upcoming, freshDays] = await Promise.all([
+    calendarRange(sql, v.id, todayIst(), new Date(Date.parse(todayIst()) + 90 * 864e5).toISOString().slice(0, 10)),
+    calendarFreshDays(sql),
+  ]);
+  const fresh = freshness(v.calendar_updated_at ?? null, freshDays);
   return (
     <>
       <PageTitle
@@ -151,6 +158,48 @@ export default async function OpsVendor({ params, searchParams }: P) {
               <button className="btn btn-sm">Adjust</button>
             </form>
           ) : null}
+        </Card>
+        <Card className="lg:col-span-2">
+          <h2 id="calendar" className="scroll-mt-24 font-semibold">Calendar</h2>
+          <p className="hint">
+            {fresh.fresh ? `Up to date (updated ${fresh.ago}).` : fresh.ago ? `Last updated ${fresh.ago}; brides see unmarked days as not marked.` : 'Never updated.'}{' '}
+            {v.calendar_import_url ? `Google Calendar connected${v.calendar_import_error ? `, last read failed: ${v.calendar_import_error}` : ''}.` : ''}
+          </p>
+          {upcoming.length ? (
+            <ul className="mt-2 flex flex-wrap gap-1.5 text-xs">
+              {upcoming.slice(0, 40).map((e) => (
+                <li key={e.id} className="chip py-0.5">
+                  {shortDate(e.day)} {e.status === 'closed' ? 'closed' : 'booked'}
+                  {e.slot !== 'full' ? ` (${e.slot})` : ''}
+                  {e.source === 'olready' ? ' · OLReady' : e.source === 'import' ? ' · imported' : ''}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-[var(--color-muted)]">Nothing marked in the next 90 days.</p>
+          )}
+          <form action={opsCalendarAddAction} className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_120px_120px_1.5fr_auto] sm:items-end">
+            <input type="hidden" name="vendor_id" value={v.id} />
+            <label>
+              <span className="label">From</span>
+              <input name="from" type="date" required className="input py-1" />
+            </label>
+            <label>
+              <span className="label">Until</span>
+              <input name="to" type="date" className="input py-1" />
+            </label>
+            <select name="status" className="input py-1" aria-label="Mark as">
+              <option value="booked">Booked</option>
+              <option value="closed">Closed</option>
+            </select>
+            <select name="slot" className="input py-1" aria-label="When">
+              <option value="full">Whole day</option>
+              <option value="day">Day</option>
+              <option value="evening">Evening</option>
+            </select>
+            <input name="note" maxLength={120} className="input py-1" placeholder="Note, e.g. told us on the phone" aria-label="Note" />
+            <button className="btn btn-sm">Mark</button>
+          </form>
         </Card>
       </div>
     </>

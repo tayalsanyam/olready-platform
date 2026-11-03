@@ -4,6 +4,7 @@ import { requireVendor } from '@/lib/vendorSession';
 import { formatInr } from '@/lib/catalog';
 import { balances, visibleNeeds } from '@/lib/leads';
 import { needFunctions } from '@/lib/functions';
+import { clashesForNeeds } from '@/lib/availability';
 import { FunctionList } from '@/components/FunctionList';
 import { vendorStats } from '@/lib/vendorStats';
 import { unlockAction } from '@/lib/actions/vendor';
@@ -19,7 +20,7 @@ export default async function VendorHome({ searchParams }: P) {
   const { vendor } = await requireVendor();
   const [bal, needs, stats] = await Promise.all([balances(sql, vendor.id), visibleNeeds(sql, vendor.id), vendorStats(sql, vendor.id)]);
   const credits = (bal.planUsable ? bal.plan : 0) + bal.topup;
-  const fnsByNeed = await needFunctions(sql, needs.map((n) => n.need_id));
+  const [fnsByNeed, clashes] = await Promise.all([needFunctions(sql, needs.map((n) => n.need_id)), clashesForNeeds(sql, vendor.id, needs.map((n) => n.need_id))]);
   return (
     <>
       <PageTitle title="Verified leads" sub={`${vendor.category_name} · ${vendor.city_name}`} />
@@ -56,7 +57,7 @@ export default async function VendorHome({ searchParams }: P) {
             <li key={n.need_id} className="card flex flex-col p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{n.bride_first_name}</span>
-                <span className="text-sm text-[var(--color-muted)]">· {n.city_name}</span>
+                <span className="text-sm text-[var(--color-muted)]">· {n.area_name ? `${n.area_name}, ${n.city_name}` : n.city_name}</span>
                 {n.direct ? <Badge tone="gold">Asked for you</Badge> : null}
                 {n.shortlisted ? <Badge tone="gold">Shortlisted you</Badge> : null}
               </div>
@@ -89,6 +90,14 @@ export default async function VendorHome({ searchParams }: P) {
                   {n.unlocks} of {n.unlock_cap} vendors
                 </dd>
               </dl>
+              {clashes.get(n.need_id)?.length ? (
+                <p className="mt-3 rounded-lg bg-[#fff6e0] px-3 py-2 text-sm">
+                  Your calendar shows you booked for {clashes.get(n.need_id)!.join('; ')}.{' '}
+                  <Link href="/vendor/calendar" className="underline">
+                    Check your calendar
+                  </Link>
+                </p>
+              ) : null}
               <form action={unlockAction} className="mt-3">
                 <input type="hidden" name="need_id" value={n.need_id} />
                 <button className="btn btn-sm w-full" disabled={credits < n.credit_cost}>

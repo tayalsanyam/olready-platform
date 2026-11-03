@@ -30,7 +30,10 @@ export async function notifyNewLead(db: Db, leadId: string) {
       and (ln.direct_vendor_id is null or ln.direct_vendor_id = v.id)
     left join mkt.profiles p on p.id = v.owner_profile_id
     where l.id = ${leadId} and l.status = 'verified' and ln.status = 'open'
-      and coalesce(p.email, v.email) is not null and coalesce(p.notify_email, true)`;
+      and coalesce(p.email, v.email) is not null and coalesce(p.notify_email, true)
+      -- Not vendors already booked on every dated function this category is needed for.
+      and not coalesce((select bool_and(mkt.vendor_busy(v.id, e.event_date)) from mkt.need_events ne join mkt.lead_events e on e.id = ne.event_id
+        where ne.need_id = ln.id and e.event_date is not null), false)`;
   for (const r of rows) {
     await queueEmail(db, r.email, 'vendor_new_lead', { business: r.business, category: r.category.toLowerCase(), city: r.city, date: r.date ?? '' }, `newlead:${r.need_id}:${r.vendor_id}`);
   }
@@ -55,7 +58,10 @@ async function whatsappNewLead(db: Db, leadId: string) {
     join mkt.vendors v on v.category_id = ln.category_id and v.status = 'live' and v.whatsapp_alerts
       and (v.city_id = l.city_id or l.city_id = any(v.service_city_ids))
       and (ln.direct_vendor_id is null or ln.direct_vendor_id = v.id)
-    where l.id = ${leadId} and ln.status = 'open'`;
+    where l.id = ${leadId} and ln.status = 'open'
+      -- Not vendors already booked on every dated function this category is needed for.
+      and not coalesce((select bool_and(mkt.vendor_busy(v.id, e.event_date)) from mkt.need_events ne join mkt.lead_events e on e.id = ne.event_id
+        where ne.need_id = ln.id and e.event_date is not null), false)`;
   for (const v of vendors)
     await queueWhatsApp(db, v.phone, 'vendor_new_lead', [v.business, v.category, v.city, v.date ?? '', `${siteUrl()}/vendor`], `wa:newlead:${v.need_id}:${v.vendor_id}`);
 }

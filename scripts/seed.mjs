@@ -168,6 +168,18 @@ try {
       select ${rw}, id, true from mkt.vendors where slug = ${slugs[name]}`;
   }
 
+  // Calendars: most vendors keep theirs up to date; a few dates are booked so "free on" filters show something.
+  const ist = (n) => new Date(Date.now() + 5.5 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  await sql`update mkt.vendors set calendar_updated_at = now() - interval '2 days' where slug = any(${Object.values(slugs)}) and business_name <> 'Lens & Light Studio'`;
+  for (const [name, days] of [['Glow by Kirti', [20, 21, 35]], ['Frames & Phere', [21, 50]], ['Rosewood Banquets', [21, 22, 60]], ['Sukhna Greens Lawn', [35]]]) {
+    for (const d of days) {
+      await sql`insert into mkt.vendor_calendar (vendor_id, day, slot, status, note, source)
+        select id, ${ist(d)}::date, 'full', 'booked', 'Demo booking', 'vendor' from mkt.vendors where slug = ${slugs[name]}`;
+    }
+  }
+  await sql`insert into mkt.vendor_calendar (vendor_id, day, slot, status, note, source)
+    select id, ${ist(40)}::date, 'full', 'closed', 'Family function', 'vendor' from mkt.vendors where slug = ${slugs['Glow by Kirti']}`;
+
   await sql`update mkt.gateway_settings set enabled = true where gateway in ('manual', 'test')`;
   await sql`insert into mkt.audit_log (actor_profile_id, action, entity) values (${admin}, 'demo.seed', 'system')`;
   console.log(`Demo data loaded: ${vendors.length} live vendors, 1 unclaimed draft, 1 lead to verify, 1 real wedding`);

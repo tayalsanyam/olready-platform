@@ -17,6 +17,7 @@ import { formatInr } from '@/lib/catalog';
 import { JsonLd, VendorCard } from './VendorCard';
 import { sponsored } from '@/lib/promotion';
 import { RememberTown } from './RememberTown';
+import { calendarFreshDays, freshness, shortDate, todayIst } from '@/lib/availability';
 
 export const PAGE_SIZE = 24;
 
@@ -77,6 +78,14 @@ export async function ListingPage({
   const viewer = await currentProfile();
   if (vendors.length && (await visitorKey())) after(() => bump(sql, vendors.map((v) => v.id), 'impressions').catch(() => undefined));
   const hearts = await shortlistedIds(sql, viewer?.role === 'bride' ? viewer.id : null);
+  // With a date, say which vendors' calendars show them free that day (only fresh calendars).
+  const freshDays = freeOn ? await calendarFreshDays(sql) : 0;
+  const notes = new Map<string, string>();
+  if (freeOn && vendors.length) {
+    const rows = await sql<{ id: string; status: string; updated: Date | null }[]>`
+      select v.id, mkt.vendor_day(v.id, ${freeOn}::date) as status, v.calendar_updated_at as updated from mkt.vendors v where v.id = any(${vendors.map((v) => v.id)}::uuid[])`;
+    for (const r of rows) if (freshness(r.updated, freshDays).fresh && (r.status === 'free' || r.status === 'some')) notes.set(r.id, `Free on ${shortDate(freeOn)}`);
+  }
   const withSort = (path: string, p = 1, rating: number | null = minRating) => {
     const q = new URLSearchParams();
     if (sort !== 'recommended') q.set('sort', sort);
@@ -87,13 +96,24 @@ export async function ListingPage({
     return s ? `${path}?${s}` : path;
   };
   const selfPath = withSort(here, page);
+  const withSortNoDate = (path: string) => {
+    const q = new URLSearchParams();
+    if (sort !== 'recommended') q.set('sort', sort);
+    if (minRating) q.set('rating', String(minRating));
+    return q.toString() ? `${path}?${q}` : path;
+  };
   const title = landingTitle(category, place, filter);
   const faq = landingFaq(category, place, vendors, filter);
   const [launched, areas] = await Promise.all([listCities(sql), localitiesFor(sql, city.id, { withVendorsOnly: true, categoryId: category.id })]);
   const otherCities = launched.filter((c) => c.id !== city.id);
   const [collections, guide] = await Promise.all([publishedCollections(sql, { categoryId: category.id }), costGuide(sql, category.slug, city.slug)]);
   // Sponsored cards sit above the results on the first page only; they never reorder the results.
-  const promoted = page === 1 && !filter && !area ? await sponsored(sql, { categoryId: category.id, cityId: city.id, placement: 'search', limit: 2 }) : [];
+  const boosted = page === 1 && !filter && !area ? await sponsored(sql, { categoryId: category.id, cityId: city.id, placement: 'search', limit: 2 }) : [];
+  // A date filter applies to sponsored cards too: a vendor booked that day is not shown.
+  const busy = freeOn && boosted.length
+    ? new Set((await sql<{ id: string }[]>`select id from mkt.vendors where id = any(${boosted.map((b) => b.id)}::uuid[]) and mkt.vendor_busy(id, ${freeOn}::date)`).map((r) => r.id))
+    : new Set<string>();
+  const promoted = boosted.filter((b) => !busy.has(b.id));
   const crumbs = [
     { name: 'Vendors', path: '/vendors' },
     { name: city.name, path: `/vendors/${city.slug}` },
@@ -170,6 +190,20 @@ export async function ListingPage({
             ))}
           </div>
         ) : null}
+        <form action={here} method="get" className="mt-2 flex flex-wrap items-center gap-2 text-sm" aria-label="Free on a date">
+          {sort !== 'recommended' ? <input type="hidden" name="sort" value={sort} /> : null}
+          {minRating ? <input type="hidden" name="rating" value={minRating} /> : null}
+          <label htmlFor="free-on" className="text-[var(--color-muted)]">
+            Free on
+          </label>
+          <input id="free-on" name="date" type="date" defaultValue={freeOn ?? ''} min={todayIst()} className="input w-auto py-1 text-sm" />
+          <button className="btn btn-ghost btn-sm">Apply</button>
+          {freeOn ? (
+            <Link href={withSortNoDate(here)} className="chip py-0.5" aria-label={`Clear date ${shortDate(freeOn)}`}>
+              {shortDate(freeOn)} ×
+            </Link>
+          ) : null}
+        </form>
         <div className="no-scrollbar mt-2 flex items-center gap-3 overflow-x-auto text-sm" role="group" aria-label="Sort">
           <Link
             href={withSort(here, 1, minRating ? null : 4)}
@@ -184,6 +218,7 @@ export async function ListingPage({
             const q = new URLSearchParams();
             if (s.key !== 'recommended') q.set('sort', s.key);
             if (minRating) q.set('rating', String(minRating));
+            if (freeOn) q.set('date', freeOn);
             return (
               <Link
                 key={s.key}
@@ -207,7 +242,7 @@ export async function ListingPage({
       {vendors.length ? (
         <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {vendors.map((v) => (
-            <VendorCard key={v.id} v={v} fields={fields} backPath={selfPath} shortlisted={hearts.has(v.id)} />
+            <VendorCard key={v.id} v={v} fields={fields} backPath={selfPath} shortlisted={hearts.has(v.id)} dateNote={notes.get(v.id)} />
           ))}
         </div>
       ) : (

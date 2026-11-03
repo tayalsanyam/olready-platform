@@ -175,7 +175,7 @@ export async function saveVendorPlace(db: Db, vendorId: string, input: VendorPla
 }
 
 /** What a visitor sees: the full address only when the vendor chose to show it. */
-export function publicAddress(v: { address_public: boolean; address_line: string | null; locality: string | null; city: string; pincode: string | null; state?: string | null }) {
+export function publicAddress(v: { address_public?: boolean; address_line?: string | null; locality: string | null; city: string; pincode?: string | null; state?: string | null }) {
   const area = [v.locality, v.city].filter(Boolean).join(', ');
   if (!v.address_public) return { line: area, full: false };
   return { line: [v.address_line, area, v.pincode].filter(Boolean).join(', '), full: true };

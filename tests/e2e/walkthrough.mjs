@@ -67,6 +67,14 @@ async function submit(locator) {
   await page.waitForLoadState('networkidle');
 }
 
+/** Types into a town (or area) box and picks the first suggestion containing `option`. */
+async function pickPlace(label, text, option) {
+  const box = page.getByLabel(label, { exact: true });
+  await box.fill(text);
+  await page.getByRole('option').filter({ hasText: option }).first().click({ timeout: 8000 });
+}
+const istDay = (n) => new Date(Date.now() + 5.5 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+
 async function signInAs(name) {
   await go('/dev-login');
   const signOut = page.getByRole('button', { name: /^Sign out/ });
@@ -123,6 +131,7 @@ await step('anonymous multi-category enquiry', async () => {
   await page.getByLabel('Your name *').fill('Priya Walkthrough');
   await page.getByLabel('Mobile number *').fill('98111 22233');
   await page.getByLabel('Email').fill('priya@demo.in');
+  await pickPlace('Town or city *', 'Chandig', 'Chandigarh');
   await page.getByRole('checkbox', { name: 'Wedding photographers' }).check();
   await page.getByRole('checkbox', { name: 'DJs and dhol players' }).check();
   await page.getByLabel('Budget for Wedding photographers').fill('90000');
@@ -608,6 +617,11 @@ await step('a bride asks for three functions and says which ones the photographe
   await go('/enquire');
   await page.getByLabel('Your name *').fill('Neha Functions');
   await page.getByLabel('Mobile number *').fill('98222 33344');
+  // A pincode alone picks the town and the area.
+  await pickPlace('Town or city *', '160022', '160022');
+  await page.waitForFunction(() => [...document.querySelectorAll('input[role=combobox]')].some((i) => i.value.startsWith('Chandigarh')), null, { timeout: 5000 }).catch(() => {
+    throw new Error('pincode did not pick the town');
+  });
   await page.getByRole('button', { name: '+ Mehendi' }).click();
   await page.getByRole('button', { name: '+ Reception' }).click();
   await page.getByLabel('Date of Wedding').fill('2027-02-14');
@@ -667,6 +681,56 @@ await step('photographer quotes the wedding and reception separately', async () 
   await see('Quote sent');
   await see('1,00,000');
   await shot('quote-per-function');
+});
+
+// ------------------------------------------------------------------ places and calendars
+await step('vendor adds their area and street address, shown on their page', async () => {
+  await signInAs('Glow by Kirti owner');
+  await go('/vendor/profile');
+  await pickPlace('Area or pincode (optional)', 'Sector 3', 'Sector 35');
+  await page.getByLabel('Street address').fill('SCO 12, Sector 35-C');
+  await page.getByLabel('Show my full address and map on my page').check();
+  await submit(page.getByRole('button', { name: 'Save address' }));
+  await ok();
+  await see('Address saved');
+  await go('/v/glow-by-kirti-demo');
+  await see('SCO 12, Sector 35-C');
+  await see('Open in Maps');
+});
+
+await step('vendor marks a date booked; brides see it on the profile and in listings', async () => {
+  await go('/vendor/calendar');
+  await see('My calendar is up to date');
+  const form = page.locator('form', { has: page.getByRole('button', { name: 'Mark on calendar' }) });
+  await form.getByLabel('From').fill(istDay(70));
+  await form.getByLabel('Note for you (private)').fill('Walkthrough booking');
+  await submit(form.getByRole('button', { name: 'Mark on calendar' }));
+  await ok();
+  await see('Date marked');
+  await shot('vendor-calendar');
+  await go(`/v/glow-by-kirti-demo?date=${istDay(70)}`);
+  await see(': booked');
+  if (await page.getByText('Walkthrough booking').count()) throw new Error('private note shown to brides');
+  await go(`/v/glow-by-kirti-demo?date=${istDay(71)}`);
+  await see('free as per their calendar');
+  await go(`/vendors/chandigarh/bridal-makeup?date=${istDay(70)}`);
+  await see('Free on');
+  if (await page.getByRole('heading', { name: 'Glow by Kirti' }).count()) throw new Error('booked vendor listed as free');
+  await shot('listing-free-on');
+});
+
+await step('India-wide pages, area search and Ops places', async () => {
+  await go('/vendors/india/venues');
+  await see('Wedding venues in India');
+  await see('By town');
+  const r = await page.request.get(BASE + '/api/public/places?q=gurgaon');
+  const j = await r.json();
+  if (j.places?.[0]?.city !== 'Gurugram') throw new Error('old town names do not resolve');
+  await signInAs('Rohit (ops)');
+  await go('/ops/places?q=jaipur&show=all');
+  await see('Jaipur');
+  await see('pincodes');
+  await shot('ops-places');
 });
 
 await step('cron endpoint needs its secret', async () => {

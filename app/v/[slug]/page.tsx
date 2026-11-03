@@ -5,6 +5,9 @@ import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { currentProfile, STAFF_ROLES } from '@/lib/auth';
 import { citiesByIds, displayValue, fieldsFor, formatInr } from '@/lib/catalog';
+import { checkDates, todayIst } from '@/lib/availability';
+import { weddingFunctions } from '@/lib/functions';
+import { DateCheckBox } from '@/components/DateCheck';
 import { costGuide, costPath } from '@/lib/costGuide';
 import { getVendorBySlug, publicVendor, recentDemand, similarVendors, vendorFaq, vendorMedia } from '@/lib/vendors';
 import { SPACE_KINDS, spacesFor } from '@/lib/venueSpaces';
@@ -12,7 +15,7 @@ import { JsonLd, VendorCard } from '@/components/VendorCard';
 import { sponsored } from '@/lib/promotion';
 import { reviewsForVendor } from '@/lib/reviews';
 import { realWeddingsForVendor } from '@/lib/realWeddings';
-import { shortlistedIds } from '@/lib/weddings';
+import { shortlistedIds, weddingFor } from '@/lib/weddings';
 import { breadcrumbLd, faqLd, vendorLd } from '@/lib/seo';
 import { shortlistAction } from '@/lib/actions/public';
 import { Badge, Container, Cover, Notice, Stars } from '@/components/ui';
@@ -96,6 +99,12 @@ export default async function VendorPage({ params, searchParams }: P) {
   // Gallery: cover first, then up to four portfolio photos.
   const side = media.filter((m) => m.url !== v.cover_image_url).slice(0, 4);
   const quoteHref = `/enquire?vendor=${v.slug}`;
+  // Her dates: the one she typed, plus her wedding's functions when she is signed in.
+  const asked = /^\d{4}-\d{2}-\d{2}$/.test(String(q.date ?? '')) && String(q.date) >= todayIst() ? String(q.date) : null;
+  const hers = viewer?.role === 'bride' ? await weddingFunctions(sql, (await weddingFor(sql, viewer.id))?.id ?? null) : [];
+  const labels: Record<string, string> = {};
+  for (const f of hers) if (f.date && f.date >= todayIst()) labels[f.date] = labels[f.date] ? `${labels[f.date]} and ${f.name}` : f.name;
+  const checks = await checkDates(sql, { id: raw.id, calendar_updated_at: raw.calendar_updated_at ?? null }, [...(asked ? [asked] : []), ...Object.keys(labels)].slice(0, 8), labels);
   const price =
     v.starting_price_inr != null ? (
       <p className="flex items-baseline gap-1.5">
@@ -215,6 +224,9 @@ export default async function VendorPage({ params, searchParams }: P) {
               </p>
             ) : null}
             <div className="mt-4 md:hidden">{price}</div>
+            <div className="mt-4 md:hidden">
+              <DateCheckBox action={`/v/${v.slug}`} date={asked} checks={checks} id="date-main" />
+            </div>
 
             {facts.length ? (
               <dl className="mt-6 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
@@ -445,6 +457,9 @@ export default async function VendorPage({ params, searchParams }: P) {
           <aside className="hidden md:col-start-2 md:row-start-1 md:block">
             <div className="sticky top-20 rounded-[18px] border border-[var(--color-line)] p-5">
               {price}
+              <div className="mt-4">
+                <DateCheckBox action={`/v/${v.slug}`} date={asked} checks={checks} id="date-side" />
+              </div>
               <Link href={quoteHref} className="btn btn-pink mt-4 w-full">
                 Request a quote
               </Link>

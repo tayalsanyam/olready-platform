@@ -21,7 +21,8 @@ export type EmailTemplate =
   | 'still_looking_15'
   | 'refund_issued'
   | 'newsletter_welcome'
-  | 'contact_received';
+  | 'contact_received'
+  | 'calendar_reminder';
 
 const site = () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
@@ -55,6 +56,11 @@ function render(template: EmailTemplate, p: Record<string, string>) {
       return {
         subject: `Claim your ${p.business} profile on OLReady`,
         text: `Hello,\n\nWe have prepared a profile for ${p.business} on OLReady. It stays private until you claim it and check the details:\n\n${site()}/claim/${p.token}\n\nOLReady`,
+      };
+    case 'calendar_reminder':
+      return {
+        subject: `Is your OLReady calendar up to date, ${p.business}?`,
+        text: `Hello ${p.business},\n\nBrides on OLReady can check your dates before they send a request. Your calendar was last updated ${p.ago}, so brides now see "not marked" instead of "free".\n\nMark the days you are booked, or tap "My calendar is up to date":\n${site()}/vendor/calendar\n\nYou can also connect your Google Calendar so this happens on its own.\n\nOLReady`,
       };
     case 'vendor_new_lead':
       return {

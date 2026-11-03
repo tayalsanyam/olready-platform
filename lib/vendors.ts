@@ -48,6 +48,12 @@ export type Vendor = {
   address_public?: boolean;
   billing_state_code?: string | null;
   billing_pincode?: string | null;
+  bookings_per_day?: number;
+  calendar_updated_at?: Date | null;
+  calendar_token?: string;
+  calendar_import_url?: string | null;
+  calendar_imported_at?: Date | null;
+  calendar_import_error?: string | null;
   created_at: Date;
 };
 
@@ -69,7 +75,7 @@ export type VendorCard = Vendor & {
  * map and coordinates only when the vendor chose to show them. Billing details never.
  */
 export function publicVendor<T extends Vendor>(v: T) {
-  const { phone: _p, email: _e, instagram: _i, website: _w, legal_name: _l, billing_address: _b, gstin: _g, billing_state_code: _s, billing_pincode: _bp, ...rest } = v;
+  const { phone: _p, email: _e, instagram: _i, website: _w, legal_name: _l, billing_address: _b, gstin: _g, billing_state_code: _s, billing_pincode: _bp, calendar_token: _t, calendar_import_url: _iu, calendar_import_error: _ie, ...rest } = v;
   if (!rest.address_public) return { ...rest, address_line: null, maps_url: null, lat: null, lng: null };
   return rest;
 }
