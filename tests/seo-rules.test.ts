@@ -41,3 +41,16 @@ describe('redirect messages', async () => {
     expect(withParam('/ops/places?q=moh&error=x', 'ok', 'Done')).toBe('/ops/places?q=moh&ok=Done');
   });
 });
+
+describe('first admin', async () => {
+  const { listedAdmin } = await import('@/lib/auth');
+  it('only emails in ADMIN_EMAILS, case-insensitive', () => {
+    process.env.ADMIN_EMAILS = 'Owner@OLReady.in, ops-lead@olready.in';
+    expect(listedAdmin('owner@olready.in')).toBe(true);
+    expect(listedAdmin('OPS-LEAD@olready.in')).toBe(true);
+    expect(listedAdmin('someone@olready.in')).toBe(false);
+    expect(listedAdmin(null)).toBe(false);
+    delete process.env.ADMIN_EMAILS;
+    expect(listedAdmin('owner@olready.in')).toBe(false);
+  });
+});

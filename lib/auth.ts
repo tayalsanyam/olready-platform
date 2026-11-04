@@ -56,21 +56,34 @@ export async function currentProfile(): Promise<Profile | null> {
   const user = data.user;
   if (!user) return null;
   const [existing] = await sql<Profile[]>`select * from mkt.profiles where auth_user_id = ${user.id}`;
-  if (existing) return existing;
+  if (existing) return promoteListedAdmin(existing);
   // An Ops-created profile (e.g. a migrated artist) is linked by email on first sign-in.
   const email = user.email?.toLowerCase() ?? null;
   const [linked] = await sql<Profile[]>`
     update mkt.profiles set auth_user_id = ${user.id}
     where email = ${email} and auth_user_id is null
     returning *`;
-  if (linked) return linked;
+  if (linked) return promoteListedAdmin(linked);
   const [created] = await sql<Profile[]>`
     insert into mkt.profiles (auth_user_id, email, full_name, role, terms_version, terms_accepted_at)
     values (${user.id}, ${email}, ${(user.user_metadata?.full_name as string) ?? ''}, 'bride', ${LEGAL_VERSION}, now())
     returning *`;
   // Enquiries sent before signing up are attached by email.
   await sql`update mkt.leads set bride_profile_id = ${created.id} where bride_profile_id is null and email = ${email}`;
-  return created;
+  return promoteListedAdmin(created);
+}
+
+/** Emails in ADMIN_EMAILS (comma-separated) become admins when they sign in: how the first admin is made. */
+export function listedAdmin(email: string | null | undefined) {
+  const list = (process.env.ADMIN_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return Boolean(email && list.includes(email.toLowerCase()));
+}
+
+async function promoteListedAdmin(p: Profile): Promise<Profile> {
+  if (p.role === 'admin' || !listedAdmin(p.email)) return p;
+  const [up] = await sql<Profile[]>`update mkt.profiles set role = 'admin', role_source = 'platform' where id = ${p.id} returning *`;
+  await sql`insert into mkt.audit_log (actor_profile_id, action, entity, entity_id) values (${p.id}, 'staff.admin_from_env', 'profile', ${p.id})`;
+  return up ?? p;
 }
 
 export async function requireProfile(next = '/'): Promise<Profile> {

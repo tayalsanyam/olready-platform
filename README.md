@@ -50,7 +50,7 @@ node tests/e2e/sweep.mjs          # every sitemap page, contact-leak scan, 7-rol
 ## Deploy
 
 1. **Database.** On the existing "Olready Website" Supabase project, run `DATABASE_URL=<pooler URI> npm run db:migrate`. It applies the migrations in `supabase/migrations` and loads reference data. It never drops anything without `--reset`, and `--reset` refuses to run in production.
-2. **Auth.** Supabase > Authentication > Email: enable email OTP and put `{{ .Token }}` in the sign-in template. Add `/auth/confirm` as a redirect URL if you also want magic links.
+2. **Auth.** Supabase > Authentication > Email: enable email OTP and put `{{ .Token }}` in the sign-in template. Add `/auth/confirm` as a redirect URL if you also want magic links. There are no passwords: everyone signs in at `/login` with a 6-digit code sent to their email. Put the first admin's email in `ADMIN_EMAILS`; signing in with it makes that account an admin, and admins then turn on a sign-in code (authenticator app) in Ops before reaching downloads.
 3. **Vercel.** Import the repo, set the variables from `.env.example`, and keep the region `bom1`. `vercel.json` schedules `/api/cron/daily` (07:00 IST) for dispute expiry, feedback emails, plan expiry (unused plan credits are written off), RM engagements ending, and the email outbox; set `CRON_SECRET`. `proxy.ts` keeps Supabase sign-ins fresh.
 4. **Photos.** Set `SUPABASE_SERVICE_ROLE_KEY` (server only). Migration 4 creates the public `olready-media` bucket.
 5. **Payments.** Add Razorpay and PayU keys, point the Razorpay webhook at `/api/payments/razorpay/webhook` (events `payment.captured`, `order.paid`), then switch the gateways on in Ops > Payments.
