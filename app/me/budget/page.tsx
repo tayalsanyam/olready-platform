@@ -80,8 +80,8 @@ export default async function Budget({ searchParams }: P) {
         </p>
       </Card>
 
-      <Card className="mt-5 overflow-x-auto p-0">
-        <table className="data min-w-[680px]">
+      <Card className="mt-5 overflow-x-auto p-0" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+        <table className="data stack min-w-[680px]">
           <thead>
             <tr>
               <th>Category</th>
@@ -98,14 +98,14 @@ export default async function Budget({ searchParams }: P) {
               return (
                 <tr key={l.category_id}>
                   <td className="font-semibold">{l.category_name}</td>
-                  <td>
+                  <td data-label="Your budget">
                     <form action={saveCategoryBudgetAction} className="flex gap-1">
                       <input type="hidden" name="category_id" value={l.category_id} />
                       <input name="budget" inputMode="numeric" defaultValue={l.planned ?? ''} className="input w-28 py-1" aria-label={`Budget for ${l.category_name}`} />
                       <button className="btn btn-ghost btn-sm">Save</button>
                     </form>
                   </td>
-                  <td>
+                  <td data-label="Quotes">
                     {open.length ? (
                       <>
                         {open.length} open, {formatInr(Math.min(...open))}
@@ -116,8 +116,8 @@ export default async function Budget({ searchParams }: P) {
                       <span className="text-[var(--color-muted)]">None yet</span>
                     )}
                   </td>
-                  <td>{l.booked ? `${l.booked.vendor}${l.booked.amount != null ? `, ${formatInr(l.booked.amount)}` : ''}` : <span className="text-[var(--color-muted)]">–</span>}</td>
-                  <td>
+                  <td data-label="Booked">{l.booked ? `${l.booked.vendor}${l.booked.amount != null ? `, ${formatInr(l.booked.amount)}` : ''}` : <span className="text-[var(--color-muted)]">–</span>}</td>
+                  <td data-label="Likely">
                     <span className={`font-semibold ${over ? 'text-[var(--color-pink-deep)]' : ''}`}>{formatInr(l.likely)}</span>
                     <span className="block text-xs text-[var(--color-muted)]">
                       {SOURCE[l.source]}

@@ -1,5 +1,6 @@
 import type { Db } from './db';
 import { DomainError, audit } from './db';
+import { fmtDay } from './dates';
 
 // A wedding is several big days. Functions live on the request (lead_events), each vendor
 // category says which functions it is for (need_events), and quotes can price each function.
@@ -70,7 +71,7 @@ export async function needFunctions(db: Db, needIds: string[]) {
   return m;
 }
 
-const short = (d: string | null) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'date not fixed');
+const short = (d: string | null) => fmtDay(d, 'date not fixed');
 /** "Mehendi, 12 Feb, 150 guests, at home in Sector 35" */
 export const describeFunction = (f: LeadFunction | FunctionInput) => {
   const date = 'event_date' in f ? f.event_date : f.date;

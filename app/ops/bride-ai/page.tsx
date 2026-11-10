@@ -60,7 +60,7 @@ export default async function BrideAi({ searchParams }: P) {
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
         <Stat label="Questions today" value={d.q_today} />
-        <Stat label="Questions, 7 days" value={d.q_week} hint={`${d.brides_week} brides`} />
+        <Stat label="Questions, 7 days" value={d.q_week} hint={`${d.brides_week} ${d.brides_week === 1 ? 'bride' : 'brides'}`} />
         <Stat label="Helpful, 7 days" value={d.up + d.down ? `${Math.round((d.up / (d.up + d.down)) * 100)}%` : '–'} hint={`${d.up} yes, ${d.down} no`} />
         <Stat label="Cards confirmed, 7 days" value={`${d.actions_done} of ${d.actions_total}`} hint={`${d.flagged} answers caught by checks`} />
       </div>

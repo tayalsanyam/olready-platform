@@ -88,7 +88,7 @@ export default async function TownAreas({ params, searchParams }: P) {
         <Card>
           <h2 className="font-semibold">Pincodes in {town.name}</h2>
           <p className="hint">From the India Post directory. Move a wrong one on the Places page.</p>
-          <ul className="mt-2 max-h-[32rem] space-y-1 overflow-auto text-sm">
+          <ul tabIndex={0} aria-label="Pincodes, scrolls" className="mt-2 max-h-[32rem] space-y-1 overflow-auto text-sm">
             {pins.map((p) => (
               <li key={p.pincode}>
                 <span className="font-medium">{p.pincode}</span> <span className="text-[var(--color-muted)]">{p.offices.slice(0, 4).join(', ')}</span>

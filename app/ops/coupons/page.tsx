@@ -3,6 +3,7 @@ import { requireRole } from '@/lib/auth';
 import { allCoupons } from '@/lib/coupons';
 import { opsCreateCoupon, opsToggleCoupon } from '@/lib/actions/promotion';
 import { Badge, Card, Empty, Field, Notice, PageTitle, sp } from '@/components/ui';
+import { fmtDate, fmtDateTime, fmtDay, fmtLongDate } from '@/lib/dates';
 
 export const metadata = { title: 'Discount codes' };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
@@ -18,8 +19,8 @@ export default async function Coupons({ searchParams }: P) {
       <PageTitle title="Discount codes" sub="Codes vendors and brides type at checkout. Uses count only once a payment succeeds." />
       <Notice error={sp(q.error)} ok={sp(q.ok)} />
       {rows.length ? (
-        <Card className="overflow-x-auto p-0">
-          <table className="data min-w-[720px]">
+        <Card className="overflow-x-auto p-0" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+          <table className="data stack min-w-[720px]">
             <thead>
               <tr>
                 <th>Code</th>
@@ -47,7 +48,7 @@ export default async function Coupons({ searchParams }: P) {
                     {c.used}
                     {c.max_uses ? ` of ${c.max_uses}` : ''} · {inr(c.discount_given)} given
                   </td>
-                  <td>{c.ends_at ? c.ends_at.toISOString().slice(0, 10) : 'never'}</td>
+                  <td>{fmtDate(c.ends_at, 'never')}</td>
                   <td>
                     {me.role === 'admin' ? (
                       <form action={opsToggleCoupon}>

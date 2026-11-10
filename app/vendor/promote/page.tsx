@@ -4,6 +4,7 @@ import { requireVendor } from '@/lib/vendorSession';
 import { gatewayStates } from '@/lib/payments';
 import { listCities } from '@/lib/catalog';
 import { getSetting } from '@/lib/db';
+import { fmtDate, fmtDay, plural } from '@/lib/dates';
 import {
   PLACEMENTS,
   WALLET_TOPUPS,
@@ -84,7 +85,7 @@ export default async function Promote({ searchParams }: P) {
                 ))}
               </select>
               <input name="gstin" className="input" placeholder="GSTIN (optional)" aria-label="GSTIN" />
-              <input name="coupon" className="input uppercase" placeholder="Discount code (optional)" aria-label="Discount code" maxLength={24} />
+              <input name="coupon" className="input uppercase placeholder:normal-case" placeholder="Discount code (optional)" aria-label="Discount code" maxLength={24} />
               <AcceptTerms />
               <button className="btn btn-pink btn-sm">Top up</button>
             </form>
@@ -158,8 +159,8 @@ export default async function Promote({ searchParams }: P) {
                     <Badge tone={b.status === 'active' ? 'ok' : b.status === 'paused' ? 'warn' : 'plain'}>{b.paused_by_ops ? 'paused by OLReady' : b.status}</Badge>
                   </div>
                   <p className="mt-1 text-[var(--color-muted)]">
-                    {inr(b.daily_budget_inr)} a day · from {b.starts_on}
-                    {b.ends_on ? ` to ${b.ends_on}` : ''} · {b.city_ids.length ? cities.filter((c) => b.city_ids.includes(c.id)).map((c) => c.name).join(', ') : 'all your cities'}
+                    {inr(b.daily_budget_inr)} a day · from {fmtDate(b.starts_on)}
+                    {b.ends_on ? ` to ${fmtDate(b.ends_on)}` : ''} · {b.city_ids.length ? cities.filter((c) => b.city_ids.includes(c.id)).map((c) => c.name).join(', ') : 'all your cities'}
                   </p>
                   <p className="mt-1">
                     Today: {b.visits_today} visit{b.visits_today === 1 ? '' : 's'}, {inr(b.spent_today)} · All time: {b.visits_total} visits, {inr(b.spent_total)}

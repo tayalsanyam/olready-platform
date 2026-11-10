@@ -1,3 +1,4 @@
+import { fmtDate } from '@/lib/dates';
 import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
@@ -56,7 +57,7 @@ export default async function VerifyLead({ params, searchParams }: P) {
             </a>
             {lead.email ? <span>{lead.email}</span> : null}
             <span>· {[lead.area, lead.city, lead.state_name].filter(Boolean).join(', ')}{lead.pincode ? ` ${lead.pincode}` : ''}</span>
-            <span>· wedding {lead.event ?? 'not fixed'}</span>
+            <span>· wedding {fmtDate(lead.event, 'not fixed')}</span>
             {lead.guest_count ? <span>· about {lead.guest_count} guests</span> : null}
             {lead.whatsapp_opt_in ? <Badge tone="ok">WhatsApp updates: yes</Badge> : null}
             <span>· via {lead.source}</span>
@@ -121,8 +122,8 @@ export default async function VerifyLead({ params, searchParams }: P) {
           </Card>
           <Card>
             <h2 className="font-semibold">Categories</h2>
-            <div className="-mx-4 mt-2 overflow-x-auto px-4">
-            <table className="data min-w-[520px]">
+            <div className="-mx-4 mt-2 overflow-x-auto px-4" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+            <table className="data stack min-w-[520px]">
               <thead>
                 <tr>
                   <th>Category</th>
@@ -237,7 +238,7 @@ export default async function VerifyLead({ params, searchParams }: P) {
             const done = lead.verification_stage >= s.n;
             const next = lead.verification_stage + 1 === s.n && !closed;
             return (
-              <Card key={s.n} className={done ? 'border-[#bfe3cd]' : next ? 'border-[var(--color-pink)]' : 'opacity-60'}>
+              <Card key={s.n} className={done ? 'border-[#bfe3cd]' : next ? 'border-[var(--color-pink)]' : 'bg-[var(--color-tint)]'}>
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold">
                     {s.n}. {s.title}

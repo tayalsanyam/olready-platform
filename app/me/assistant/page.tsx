@@ -19,9 +19,12 @@ export default async function AssistantPage({ searchParams }: P) {
   const p = await requireProfile('/me/assistant');
   if (p.role !== 'bride') {
     return (
+      <>
+        <PageTitle title={ASSISTANT_NAME} sub="The brides' planning helper." />
       <Empty title={`${ASSISTANT_NAME} is for brides and their family`}>
         Vendors can see their leads and insights in <Link className="underline" href="/vendor">your business</Link>.
       </Empty>
+      </>
     );
   }
   const t = sp(q.t) ? await ownThread(sql, sp(q.t)!, p.id) : null;
@@ -40,7 +43,7 @@ export default async function AssistantPage({ searchParams }: P) {
   if (wedding) {
     starters.push('What should I book next, and by when?', 'Compare my quotes for me', `Suggest a budget split for my wedding${city ? ` in ${city.name}` : ''}`);
   } else {
-    starters.push(city ? `Find a venue in ${city.name} for 300 guests` : 'Find a venue for 300 guests', 'Where do I start planning a wedding?', 'How much does bridal makeup cost in the Tricity?');
+    starters.push(city ? `Find a venue in ${city.name} for 300 guests` : 'Find a venue for 300 guests', 'Where do I start planning a wedding?', 'How much does bridal makeup cost?');
   }
   starters.push('Show me mehendi designs I might like');
 

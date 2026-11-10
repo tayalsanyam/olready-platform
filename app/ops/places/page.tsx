@@ -1,3 +1,4 @@
+import { plural } from '@/lib/dates';
 import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
@@ -95,7 +96,7 @@ export default async function Places({ searchParams }: P) {
                 </p>
               )}
               <p className="mt-1 text-xs text-[var(--color-muted)]">
-                {c.live} live vendors · {c.leads} requests · {c.pins} pincodes ·{' '}
+                {plural(c.live, 'live vendor')} · {plural(c.leads, 'request')} · {plural(c.pins, 'pincode')} ·{' '}
                 <Link href={`/ops/places/${c.id}`} className="underline">
                   {c.areas} areas
                 </Link>{' '}

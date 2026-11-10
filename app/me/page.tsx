@@ -11,6 +11,7 @@ import { weddingFor } from '@/lib/weddings';
 import { activatePerkAction, closeNeedAction, saveWeddingAction } from '@/lib/actions/bride';
 import { needFunctions } from '@/lib/functions';
 import { Badge, Card, Empty, Field, Notice, PageTitle } from '@/components/ui';
+import { fmtDate, fmtDateTime, fmtDay, fmtLongDate, plural } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'My wedding', robots: { index: false } };
@@ -66,7 +67,7 @@ export default async function MyWedding({ searchParams }: P) {
     <>
       <PageTitle
         title={wedding ? wedding.title : 'Welcome to OLReady'}
-        sub={wedding ? [wedding.wedding_date, [area?.name, town?.name].filter(Boolean).join(', ')].filter(Boolean).join(' · ') : 'Tell us a little about your wedding to start planning.'}
+        sub={wedding ? [fmtDate(wedding.wedding_date), [area?.name, town?.name].filter(Boolean).join(', ')].filter(Boolean).join(' · ') : 'Tell us a little about your wedding to start planning.'}
         action={
           <Link href="/enquire" className="btn btn-pink btn-sm">
             Get more quotes
@@ -136,8 +137,8 @@ export default async function MyWedding({ searchParams }: P) {
                 <span>
                   7 days of relationship-manager help{' '}
                   {k.activated_at
-                    ? `· active until ${k.expires_at!.toISOString().slice(0, 10)}`
-                    : `· use by ${k.claim_by.toISOString().slice(0, 10)}`}
+                    ? `· active until ${fmtDate(k.expires_at)}`
+                    : `· use by ${fmtDate(k.claim_by)}`}
                 </span>
                 {!k.activated_at && k.claim_by > new Date() ? (
                   <form action={activatePerkAction}>

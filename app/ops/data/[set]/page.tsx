@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/auth';
 import { formatInr, listCategories, citiesInUse } from '@/lib/catalog';
 import { dataset, runDataset, type Column, type Filters } from '@/lib/opsData';
 import { Empty, PageTitle, sp } from '@/components/ui';
+import { fmtDate, fmtDateTime, fmtDay, fmtLongDate } from '@/lib/dates';
 
 type P = { params: Promise<{ set: string }>; searchParams: Promise<Record<string, string | string[]>> };
 
@@ -22,9 +23,10 @@ function show(c: Column, v: unknown) {
   if (c.kind === 'number') return Number(v).toLocaleString('en-IN');
   if (c.kind === 'date' || v instanceof Date) {
     const d = v instanceof Date ? v : new Date(String(v));
-    return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    return Number.isNaN(d.getTime()) ? String(v) : fmtDate(d);
   }
-  const s = String(v);
+  // Stored codes ("closed_booked", "vendor_new_lead") read as words.
+  const s = /^[a-z]+(_[a-z0-9]+)+$/.test(String(v)) ? String(v).replace(/_/g, ' ').replace(/^./, (ch) => ch.toUpperCase()) : String(v);
   return s.length > 80 ? <span title={s}>{s.slice(0, 78)}…</span> : s;
 }
 
@@ -141,7 +143,7 @@ export default async function OpsDataSet({ params, searchParams }: P) {
         </div>
       </form>
       {rows.length ? (
-        <div className="overflow-x-auto rounded-2xl border border-[var(--color-line)] bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-[var(--color-line)] bg-white" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="bg-[var(--color-tint)] text-xs text-[var(--color-muted)]">
               <tr>

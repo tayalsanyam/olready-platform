@@ -119,7 +119,7 @@ export default async function CategoryEditor({ params, searchParams }: P) {
               <form key={f.id} action={opsDeleteField}>
                 <input type="hidden" name="category_id" value={c.id} />
                 <input type="hidden" name="field_id" value={f.id} />
-                <button className="btn btn-ghost btn-sm">Delete {f.key}</button>
+                <button className="btn btn-ghost btn-sm">Delete “{f.label}”</button>
               </form>
             ))}
           </div>

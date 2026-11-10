@@ -116,10 +116,10 @@ export default async function OpsWhatsApp({ searchParams }: P) {
             </button>
           </form>
         </Card>
-        <Card className="overflow-x-auto">
+        <Card className="overflow-x-auto" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
           <h2 className="font-semibold">Recent messages</h2>
           {recent.length ? (
-            <table className="data mt-2">
+            <table className="data stack mt-2">
               <thead>
                 <tr>
                   <th>To</th>

@@ -4,6 +4,8 @@ import { requireBrideWedding } from '@/lib/brideSession';
 import { checklist } from '@/lib/weddings';
 import { addChecklistAction, toggleChecklistAction } from '@/lib/actions/bride';
 import { Card, Notice, PageTitle } from '@/components/ui';
+import { todayIst } from '@/lib/availability';
+import { fmtDate, fmtDay, plural } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Checklist', robots: { index: false } };
@@ -15,7 +17,7 @@ export default async function Checklist({ searchParams }: P) {
   const { w } = await requireBrideWedding('/me/checklist');
   const items = await checklist(sql, w.id);
   const done = items.filter((i) => i.done).length;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIst();
   return (
     <>
       <PageTitle title="Checklist" sub={`${done} of ${items.length} done${w.wedding_date ? '' : ' · add your wedding date to get due dates'}`} />
@@ -43,7 +45,7 @@ export default async function Checklist({ searchParams }: P) {
               </div>
               {i.due_date ? (
                 <span className={`text-xs ${!i.done && i.due_date < today ? 'font-semibold text-[var(--color-bad)]' : 'text-[var(--color-muted)]'}`}>
-                  {i.due_date}
+                  {fmtDate(i.due_date)}
                 </span>
               ) : null}
             </li>

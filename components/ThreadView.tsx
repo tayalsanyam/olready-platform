@@ -1,3 +1,4 @@
+import { fmtDate, fmtDay } from '@/lib/dates';
 import { formatInr } from '@/lib/catalog';
 import type { ThreadRow } from '@/lib/threads';
 import { REPORT_REASONS } from '@/lib/moderation';
@@ -142,7 +143,7 @@ export function ThreadView(props: {
             ) : (
               <>
                 <dt className="text-[var(--color-muted)]">Wedding</dt>
-                <dd>{t.event_date ?? 'Not fixed'}</dd>
+                <dd>{fmtDate(t.event_date, 'Not fixed')}</dd>
               </>
             )}
             <dt className="text-[var(--color-muted)]">City</dt>
@@ -213,7 +214,7 @@ export function ThreadView(props: {
                     <label key={`${f.name}-${i}`} className="grid grid-cols-[1fr_120px] items-center gap-2 text-sm">
                       <span>
                         {f.name}
-                        {f.event_date ? <span className="text-[var(--color-muted)]">, {new Date(`${f.event_date}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span> : null}
+                        {f.event_date ? <span className="text-[var(--color-muted)]">, {fmtDay(f.event_date)}</span> : null}
                       </span>
                       <input type="hidden" name={`line_label_${i}`} value={f.name} />
                       <input name={`line_amount_${i}`} className="input py-1" inputMode="numeric" placeholder="₹" aria-label={`Price for ${f.name}`} />

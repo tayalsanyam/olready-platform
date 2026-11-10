@@ -5,6 +5,7 @@ import { realWeddingBySlug } from '@/lib/realWeddings';
 import { breadcrumbLd, siteUrl } from '@/lib/seo';
 import { Container, Cover } from '@/components/ui';
 import { JsonLd } from '@/components/VendorCard';
+import { fmtDate, fmtDay, plural } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 type P = { params: Promise<{ slug: string }> };
@@ -45,7 +46,7 @@ export default async function RealWeddingPage({ params }: P) {
       <p className="text-sm text-[var(--color-muted)]">
         <Link href="/real-weddings">Real weddings</Link>
         {rw.city_name ? ` · ${rw.city_name}` : ''}
-        {rw.wedding_date ? ` · ${rw.wedding_date}` : ''}
+        {rw.wedding_date ? ` · ${fmtDate(rw.wedding_date)}` : ''}
       </p>
       <h1 className="mt-1 font-semibold text-3xl">{rw.couple_names}</h1>
       <p className="text-lg text-[var(--color-muted)]">{rw.title}</p>

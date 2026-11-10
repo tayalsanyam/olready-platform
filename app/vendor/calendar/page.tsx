@@ -6,6 +6,7 @@ import { spacesFor } from '@/lib/venueSpaces';
 import { siteUrl } from '@/lib/seo';
 import { calendarAddAction, calendarCapacityAction, calendarConfirmAction, calendarImportAction, calendarRemoveAction } from '@/lib/actions/calendar';
 import { Badge, Card, Field, Notice, PageTitle, sp } from '@/components/ui';
+import { fmtDate, fmtDateTime, fmtDay, fmtLongDate } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Calendar', robots: { index: false } };
@@ -43,7 +44,7 @@ export default async function CalendarPage({ searchParams }: P) {
   const lead = (new Date(`${month}-01T00:00:00Z`).getUTCDay() + 6) % 7; // Monday first
   const selected = day ? grid.find((g) => g.day === day) ?? null : null;
   const self = `/vendor/calendar?m=${month}${day ? `&d=${day}` : ''}`;
-  const monthName = new Date(`${month}-01T00:00:00`).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  const monthName = new Date(`${month}-01T12:00:00+05:30`).toLocaleDateString('en-IN', { month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' });
   const feed = `${siteUrl()}/api/calendar/${vendor.calendar_token}.ics`;
   return (
     <>
@@ -96,7 +97,7 @@ export default async function CalendarPage({ searchParams }: P) {
                     href={`/vendor/calendar?m=${month}&d=${g.day}`}
                     aria-label={label}
                     aria-current={g.day === day ? 'date' : undefined}
-                    className={`flex aspect-square flex-col items-center justify-center rounded-lg border text-sm ${CELL[g.status]} ${g.day === day ? 'border-[var(--color-pink)] ring-2 ring-[var(--color-pink)]' : 'border-[var(--color-line)]'} ${past ? 'opacity-40' : ''} ${g.day === today ? 'font-semibold' : ''}`}
+                    className={`flex aspect-square flex-col items-center justify-center rounded-lg border text-sm ${CELL[g.status]} ${g.day === day ? 'border-[var(--color-pink)] ring-2 ring-[var(--color-pink)]' : 'border-[var(--color-line)]'} ${past ? 'border-transparent bg-transparent text-[var(--color-muted)]' : ''} ${g.day === today ? 'font-semibold' : ''}`}
                   >
                     {Number(g.day.slice(8))}
                     {WORD[g.status] ? <span className="hidden text-[10px] leading-none sm:block">{WORD[g.status]}</span> : null}
@@ -119,7 +120,7 @@ export default async function CalendarPage({ searchParams }: P) {
         </Card>
 
         <Card>
-          <h2 className="font-semibold">{day ? new Date(`${day}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Mark dates'}</h2>
+          <h2 className="font-semibold">{day ? fmtLongDate(day).replace(/ \d{4}$/, '') : 'Mark dates'}</h2>
           {selected?.entries.length ? (
             <ul className="mt-3 space-y-2 text-sm">
               {selected.entries.map((e) => (

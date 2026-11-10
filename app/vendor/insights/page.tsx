@@ -3,6 +3,7 @@ import { sql } from '@/lib/db';
 import { requireVendor } from '@/lib/vendorSession';
 import { vendorInsights } from '@/lib/analytics';
 import { Card, PageTitle, sp } from '@/components/ui';
+import { fmtDate, fmtDay, plural } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Insights', robots: { index: false } };
@@ -75,15 +76,15 @@ export default async function Insights({ searchParams }: P) {
             return (
               <rect key={d.day} x={i * w + w * 0.15} y={40 - h} width={w * 0.7} height={Math.max(h, d.views ? 0.6 : 0.2)} rx={0.4} fill={d.views ? 'var(--color-pink)' : 'var(--color-line)'}>
                 {/* One text child: React 19 mismatches a <title> built from several pieces. */}
-                <title>{`${d.day}: ${d.views} view${d.views === 1 ? '' : 's'}, ${d.impressions} in search`}</title>
+                <title>{`${fmtDay(d.day)}: ${plural(d.views, 'view')}, ${d.impressions} in search`}</title>
               </rect>
             );
           })}
         </svg>
         <div className="mt-1 flex justify-between text-xs text-[var(--color-muted)]">
-          <span>{data.days[0].day}</span>
-          <span>Busiest day: {max === 1 && !data.days.some((d) => d.views) ? 'none yet' : `${max} views`}</span>
-          <span>{data.days.at(-1)!.day}</span>
+          <span>{fmtDay(data.days[0].day)}</span>
+          <span>Busiest day: {max === 1 && !data.days.some((d) => d.views) ? 'none yet' : plural(max, 'view')}</span>
+          <span>{fmtDay(data.days.at(-1)!.day)}</span>
         </div>
       </Card>
 

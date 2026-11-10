@@ -80,7 +80,7 @@ export async function NationalCategory({ categorySlug }: { categorySlug: string 
                 <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm">
                   {ts.map((t) => (
                     <li key={t.id}>
-                      <Link href={`/vendors/${t.slug}/${cat.slug}`} className="hover:text-[var(--color-pink-deep)]">
+                      <Link href={`/vendors/${t.slug}/${cat.slug}`} className="inline-block py-0.5 hover:text-[var(--color-pink-deep)]">
                         {t.name} <span className="text-[var(--color-muted)]">{t.vendors}</span>
                       </Link>
                     </li>
@@ -161,7 +161,7 @@ export async function NationalHub() {
               <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm">
                 {ts.map((t) => (
                   <li key={t.id}>
-                    <Link href={`/vendors/${t.slug}`} className="hover:text-[var(--color-pink-deep)]">
+                    <Link href={`/vendors/${t.slug}`} className="inline-block py-0.5 hover:text-[var(--color-pink-deep)]">
                       {t.name}
                     </Link>
                   </li>

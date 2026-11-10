@@ -11,6 +11,7 @@ import { vendorStats } from '@/lib/vendorStats';
 import type { Vendor } from '@/lib/vendors';
 import { opsAdjustCredits, opsInviteClaim, opsVendorStatus } from '@/lib/actions/ops';
 import { Badge, Card, Notice, PageTitle, Stat } from '@/components/ui';
+import { fmtDate, fmtDateTime, fmtDay, fmtLongDate } from '@/lib/dates';
 
 export const metadata = { title: 'Vendor' };
 type P = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[]>> };
@@ -124,7 +125,7 @@ export default async function OpsVendor({ params, searchParams }: P) {
         </Card>
         <Card className="lg:col-span-2">
           <h2 className="font-semibold">Credit history</h2>
-          <table className="data mt-2">
+          <table className="data stack mt-2">
             <thead>
               <tr>
                 <th>Date</th>
@@ -137,7 +138,7 @@ export default async function OpsVendor({ params, searchParams }: P) {
             <tbody>
               {ledger.map((l) => (
                 <tr key={l.id}>
-                  <td>{l.created_at.toISOString().slice(0, 10)}</td>
+                  <td>{fmtDate(l.created_at)}</td>
                   <td className={l.delta > 0 ? 'text-[var(--color-ok)]' : ''}>{l.delta > 0 ? `+${l.delta}` : l.delta}</td>
                   <td>{l.credit_kind}</td>
                   <td>{l.reason.replace('_', ' ')}</td>

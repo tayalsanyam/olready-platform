@@ -80,8 +80,8 @@ export default async function Promotions({ searchParams }: P) {
       {live.length ? (
         <>
           <h2 className="mb-2 mt-8 font-semibold">Approved banners, this month and ahead</h2>
-          <Card className="overflow-x-auto p-0">
-            <table className="data">
+          <Card className="overflow-x-auto p-0" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+            <table className="data stack">
               <thead>
                 <tr>
                   <th>Headline</th>
@@ -107,8 +107,8 @@ export default async function Promotions({ searchParams }: P) {
 
       <h2 className="mb-2 mt-8 font-semibold">Boosts</h2>
       {boosts.length ? (
-        <Card className="overflow-x-auto p-0">
-          <table className="data min-w-[700px]">
+        <Card className="overflow-x-auto p-0" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+          <table className="data stack min-w-[700px]">
             <thead>
               <tr>
                 <th>Vendor</th>

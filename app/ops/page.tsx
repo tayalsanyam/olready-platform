@@ -155,11 +155,11 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
         <Stat label="Bookings, 7 days" value={c.bookings_7d} />
       </div>
       <ul className="grid gap-3 sm:grid-cols-3">
-        {queues.map(([label, n, href, warn]) => (
+        {[...queues].sort((a, b) => Number(b[1] > 0) - Number(a[1] > 0)).map(([label, n, href, warn]) => (
           <li key={label}>
-            <Link href={href} className={`card block p-4 hover:shadow-md ${n ? '' : 'opacity-60'}`}>
-              <div className="text-sm text-[var(--color-muted)]">{label}</div>
-              <div className="text-2xl font-semibold">{n}</div>
+            <Link href={href} className={`card block p-4 hover:shadow-md ${n ? 'border-[var(--color-pink)]' : 'bg-[var(--color-tint)]'}`}>
+              <div className={`text-sm ${n ? 'font-medium' : 'text-[var(--color-muted)]'}`}>{label}</div>
+              <div className={`text-2xl font-semibold ${n ? '' : 'text-[var(--color-muted)]'}`}>{n}</div>
               {warn ? <div className="text-xs font-semibold text-[var(--color-bad)]">{warn}</div> : null}
             </Link>
           </li>

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 
 export function Container({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`mx-auto w-full max-w-6xl px-4 ${className}`}>{children}</div>;
@@ -17,8 +17,12 @@ export function PageTitle({ title, sub, action }: { title: string; sub?: ReactNo
   );
 }
 
-export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`card p-4 ${className}`}>{children}</div>;
+export function Card({ children, className = '', ...rest }: { children: ReactNode; className?: string } & Omit<HTMLAttributes<HTMLDivElement>, 'className' | 'children'>) {
+  return (
+    <div className={`card p-4 ${className}`} {...rest}>
+      {children}
+    </div>
+  );
 }
 
 const badgeTones = {
@@ -74,26 +78,7 @@ export function Stat({ label, value, hint }: { label: string; value: ReactNode; 
   );
 }
 
-export function Tabs({ items, active }: { items: { href: string; label: string }[]; active?: string }) {
-  return (
-    <nav className="-mx-4 mb-5 overflow-x-auto border-b border-[var(--color-line)] px-4">
-      <ul className="flex gap-4 whitespace-nowrap text-sm">
-        {items.map((i) => (
-          <li key={i.href}>
-            <Link
-              href={i.href}
-              className={`inline-block border-b-2 py-2 ${
-                active === i.href ? 'border-[var(--color-pink)] font-semibold' : 'border-transparent text-[var(--color-muted)]'
-              }`}
-            >
-              {i.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
+export { Tabs } from './TabsNav';
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (

@@ -3,6 +3,7 @@ import { sql } from '@/lib/db';
 import { requireVendor } from '@/lib/vendorSession';
 import { threadsForVendor } from '@/lib/threads';
 import { Badge, Empty, PageTitle } from '@/components/ui';
+import { fmtDate, fmtDay, plural } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Conversations', robots: { index: false } };
@@ -21,7 +22,7 @@ export default async function VendorThreads() {
                 <div>
                   <div className="font-semibold">{t.bride_name}</div>
                   <div className="hint">
-                    {t.city_name} · {t.event_date ?? 'date not fixed'}
+                    {t.city_name} · {fmtDate(t.event_date, 'date not fixed')}
                   </div>
                 </div>
                 <Badge tone={t.status === 'booked' ? 'ok' : t.status === 'quote_accepted' ? 'gold' : 'plain'}>{t.status.replace('_', ' ')}</Badge>

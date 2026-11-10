@@ -4,6 +4,7 @@ import { requireProfile } from '@/lib/auth';
 import { formatInr } from '@/lib/catalog';
 import { seller, taxDocuments } from '@/lib/invoices';
 import { Card, Container } from '@/components/ui';
+import { fmtDate, fmtDateTime, fmtDay, fmtLongDate } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Payment receipt', robots: { index: false } };
@@ -44,13 +45,13 @@ export default async function Receipt({ params }: P) {
         <div className="text-sm">
           <div>Billed to: {o.billed_to}</div>
           {o.buyer_gstin ? <div>GSTIN {o.buyer_gstin}</div> : null}
-          <div>Paid on: {o.paid_at.toISOString().slice(0, 10)}</div>
+          <div>Paid on: {fmtDate(o.paid_at)}</div>
           <div>
             Method: {o.gateway}
             {o.gateway_payment_id ? ` · ref ${o.gateway_payment_id}` : ''}
           </div>
         </div>
-        <table className="data">
+        <table className="data stack">
           <tbody>
             <tr>
               <td>OLReady {o.product}</td>

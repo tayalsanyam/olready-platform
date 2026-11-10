@@ -25,10 +25,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
 *{box-sizing:border-box}body{margin:0;font:14px/1.45 "DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#111014;background:#fff}
 .w{border:1px solid #e7e3e7;border-radius:14px;padding:14px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.r{background:#ed0064;color:#fff;border-radius:999px;padding:2px 10px;font-weight:600}
-h1{font-size:16px;margin:0}small{color:#77747c}
+.r{background:#e2005e;color:#fff;border-radius:999px;padding:2px 10px;font-weight:600}
+h1{font-size:16px;margin:0}small{color:#6b6870}
 ul{list-style:none;margin:10px 0 0;padding:0}li{border-top:1px solid #e7e3e7;padding:8px 0}
-.row{display:flex;justify-content:space-between}.s{color:#ed0064;letter-spacing:1px}
+.row{display:flex;justify-content:space-between}.s{color:#e2005e;letter-spacing:1px}
 p{margin:4px 0 0;color:#333}.tag{display:inline-block;margin-top:4px;font-size:11px;color:#047857}
 a.cta{display:block;margin-top:10px;text-align:center;color:#a60048;font-weight:600;text-decoration:none}
 .brand{font-weight:700;letter-spacing:.04em}

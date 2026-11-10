@@ -87,8 +87,8 @@ export default async function OpsVendors({ searchParams }: P) {
           </Link>
         ))}
       </div>
-      <Card className="overflow-x-auto">
-        <table className="data">
+      <Card className="overflow-x-auto" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+        <table className="data stack">
           <thead>
             <tr>
               <th>Business</th>

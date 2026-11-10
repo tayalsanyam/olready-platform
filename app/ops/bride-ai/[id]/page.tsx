@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { sql, audit } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { Badge, Card, PageTitle } from '@/components/ui';
+import { fmtDate, fmtDateTime, fmtDay, fmtLongDate } from '@/lib/dates';
 
 export const metadata = { title: 'Ask OLReady chat' };
 type P = { params: Promise<{ id: string }> };
@@ -26,7 +27,7 @@ export default async function BrideAiThread({ params }: P) {
           Ask OLReady
         </Link>
       </p>
-      <PageTitle title={t.title} sub={`${t.bride.split(' ')[0]} · started ${t.created_at.toLocaleDateString('en-IN')}`} />
+      <PageTitle title={t.title} sub={`${t.bride.split(' ')[0]} · started ${fmtDate(t.created_at)}`} />
       <Card className="space-y-4">
         {rows.map((r) => {
           if (r.text) {

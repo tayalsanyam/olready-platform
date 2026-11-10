@@ -5,6 +5,7 @@ import { formatInr } from '@/lib/catalog';
 import { gatewayStates } from '@/lib/payments';
 import { opsActivateSub, opsMarkPaid, opsSavePack, opsToggleGateway } from '@/lib/actions/ops';
 import { Badge, Card, Notice, PageTitle } from '@/components/ui';
+import { fmtDate, fmtDateTime, fmtDay, fmtLongDate } from '@/lib/dates';
 
 export const metadata = { title: 'Payments' };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
@@ -102,13 +103,13 @@ export default async function OpsPayments({ searchParams }: P) {
           </ul>
           <p className="hint mt-2">When a method is off, vendors see it as temporarily unavailable.</p>
         </Card>
-        <Card className="overflow-x-auto">
+        <Card className="overflow-x-auto" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
           <h2 className="font-semibold">Recent orders</h2>
-          <table className="data mt-2">
+          <table className="data stack mt-2">
             <tbody>
               {recent.map((o) => (
                 <tr key={o.id}>
-                  <td>{o.created_at.toISOString().slice(0, 10)}</td>
+                  <td>{fmtDate(o.created_at)}</td>
                   <td>{o.vendor}</td>
                   <td>{o.pack}</td>
                   <td>{formatInr(o.amount_inr)}</td>
@@ -125,7 +126,7 @@ export default async function OpsPayments({ searchParams }: P) {
         </Card>
       </div>
       {admin ? (
-        <Card className="mt-5 overflow-x-auto">
+        <Card className="mt-5 overflow-x-auto" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
           <h2 className="font-semibold">Packs</h2>
           <p className="hint">
             Prices include GST and apply to new purchases only. Pro, Phoenix and Privy prices here are also the prices the sales

@@ -18,8 +18,8 @@ export default async function Catalog({ searchParams }: P) {
     <>
       <PageTitle title="Categories" sub="Turn categories on in waves. Credit cost and unlock cap are per category; changes apply to new leads." />
       <Notice error={q.error} ok={q.ok} />
-      <Card className="overflow-x-auto">
-        <table className="data">
+      <Card className="overflow-x-auto" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+        <table className="data stack">
           <thead>
             <tr>
               <th>Category</th>

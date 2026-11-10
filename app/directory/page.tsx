@@ -35,7 +35,7 @@ export default async function Directory() {
           <ul className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-3">
             {national.map((p) => (
               <li key={p.path}>
-                <Link href={p.path} className="hover:text-[var(--color-pink-deep)]">
+                <Link href={p.path} className="inline-block py-0.5 hover:text-[var(--color-pink-deep)]">
                   {p.title}
                 </Link>{' '}
                 <span className="text-[var(--color-muted)]">{p.vendors}</span>
@@ -52,7 +52,7 @@ export default async function Directory() {
           {byCity.filter((x) => x.city.state === state).map(({ city, pages }) => (
             <div key={city.slug}>
               <h3 className="font-semibold">
-                <Link href={`/vendors/${city.slug}`} className="hover:text-[var(--color-pink-deep)]">
+                <Link href={`/vendors/${city.slug}`} className="inline-block py-0.5 hover:text-[var(--color-pink-deep)]">
                   {city.name}
                 </Link>
               </h3>
@@ -61,7 +61,7 @@ export default async function Directory() {
                   .filter((p) => p.path.split('/').length === 4)
                   .map((p) => (
                     <li key={p.path}>
-                      <Link href={p.path} className="hover:text-[var(--color-pink-deep)]">
+                      <Link href={p.path} className="inline-block py-0.5 hover:text-[var(--color-pink-deep)]">
                         {p.title}
                       </Link>{' '}
                       <span className="text-[var(--color-muted)]">{p.vendors}</span>
@@ -71,7 +71,7 @@ export default async function Directory() {
                             .filter((x) => x.path.startsWith(p.path + '/'))
                             .map((x) => (
                               <li key={x.path}>
-                                <Link href={x.path} className="hover:text-[var(--color-ink)]">
+                                <Link href={x.path} className="inline-block py-1 hover:text-[var(--color-ink)]">
                                   {x.title}
                                 </Link>
                               </li>
@@ -99,7 +99,7 @@ export default async function Directory() {
                   <span className="font-medium">{name} cost</span>
                   <span className="mt-0.5 flex flex-wrap gap-x-3">
                     {group.map((c) => (
-                      <Link key={c.path} href={c.path} className="text-[var(--color-muted)] hover:text-[var(--color-pink-deep)]" aria-label={c.title}>
+                      <Link key={c.path} href={c.path} className="inline-block py-0.5 text-[var(--color-muted)] hover:text-[var(--color-pink-deep)]" aria-label={c.title}>
                         {c.title.split(' cost in ')[1]?.replace(/^India$/, 'All of India')}
                       </Link>
                     ))}
@@ -119,7 +119,7 @@ export default async function Directory() {
               .filter((t) => t.photo_count > 0)
               .map((t) => (
                 <li key={t.slug}>
-                  <Link href={`/ideas/${t.slug}`} className="hover:text-[var(--color-pink-deep)]">
+                  <Link href={`/ideas/${t.slug}`} className="inline-block py-0.5 hover:text-[var(--color-pink-deep)]">
                     {t.name}
                   </Link>
                 </li>
@@ -131,7 +131,7 @@ export default async function Directory() {
           <ul className="mt-2 space-y-1 text-sm">
             {Object.entries(SECTIONS).map(([k, s]) => (
               <li key={k}>
-                <Link href={`/blog/section/${k}`} className="hover:text-[var(--color-pink-deep)]">
+                <Link href={`/blog/section/${k}`} className="inline-block py-0.5 hover:text-[var(--color-pink-deep)]">
                   {s.label}
                 </Link>
               </li>
@@ -143,7 +143,7 @@ export default async function Directory() {
           <ul className="mt-2 space-y-1 text-sm">
             {collections.map((c) => (
               <li key={c.slug}>
-                <Link href={`/collections/${c.slug}`} className="hover:text-[var(--color-pink-deep)]">
+                <Link href={`/collections/${c.slug}`} className="inline-block py-0.5 hover:text-[var(--color-pink-deep)]">
                   {c.title}
                 </Link>
               </li>
@@ -162,7 +162,7 @@ export default async function Directory() {
               ['/contact', 'Contact'],
             ].map(([href, label]) => (
               <li key={href}>
-                <Link href={href} className="hover:text-[var(--color-pink-deep)]">
+                <Link href={href} className="inline-block py-0.5 hover:text-[var(--color-pink-deep)]">
                   {label}
                 </Link>
               </li>

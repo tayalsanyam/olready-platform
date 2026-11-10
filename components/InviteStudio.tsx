@@ -34,14 +34,14 @@ export function InviteStudio(props: {
   const wa = link ? `https://wa.me/?text=${encodeURIComponent(`${bride} & ${groom} would love you to celebrate with them: ${link}`)}` : '';
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <form action={props.action} className="space-y-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <form action={props.action} className="min-w-0 space-y-5">
         <input type="hidden" name="kind" value={props.kind} />
-        <fieldset>
+        <fieldset className="min-w-0">
           <legend className="label mb-2">Design</legend>
           <div className="no-scrollbar -mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
             {[...props.designs].sort((a, b) => Number(b.code === props.initial.design) - Number(a.code === props.initial.design)).map((x) => (
-              <label key={x.code} className="w-24 shrink-0 cursor-pointer text-center text-xs">
+              <label key={x.code} className="relative w-24 shrink-0 cursor-pointer text-center text-xs">
                 <input type="radio" name="design" value={x.code} checked={x.code === design} onChange={() => setDesign(x.code)} className="peer sr-only" />
                 <span className="block rounded-[6px] ring-1 ring-[var(--color-line)] peer-checked:ring-2 peer-checked:ring-[var(--color-pink)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-ink)]">
                   <InviteCard layout={x.layout} theme={x.theme} content={{ ...content, events: [], message: '', family: '' }} compact />

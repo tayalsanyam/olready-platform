@@ -4,6 +4,7 @@ import { requireRole } from '@/lib/auth';
 import { caseload, rmQueue, rmStaff } from '@/lib/rm';
 import { opsApproveRm, opsReassignRm, opsRejectRm } from '@/lib/actions/ops';
 import { Badge, Card, Empty, Notice, PageTitle } from '@/components/ui';
+import { fmtDate, fmtDay, plural } from '@/lib/dates';
 
 export const metadata = { title: 'Relationship managers' };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
@@ -26,7 +27,7 @@ export default async function RmDesk({ searchParams }: P) {
                 <Link href={`/ops/rm/${e.id}`} className="card block p-4 hover:shadow-md">
                   <b>{e.bride_name}</b>
                   <div className="hint">
-                    {e.wedding_title ?? 'No wedding set up'} · wedding {e.wedding_date ?? 'not fixed'} · until {fmt(e.ends_at)}
+                    {e.wedding_title ?? 'No wedding set up'} · wedding {fmtDate(e.wedding_date, 'not fixed')} · until {fmt(e.ends_at)}
                   </div>
                 </Link>
               </li>
@@ -63,7 +64,7 @@ export default async function RmDesk({ searchParams }: P) {
                       {e.bride_name}
                     </Link>
                     <div className="hint">
-                      {e.bride_email} · {e.wedding_title ?? 'no wedding yet'} · wedding {e.wedding_date ?? 'not fixed'}
+                      {e.bride_email} · {e.wedding_title ?? 'no wedding yet'} · wedding {fmtDate(e.wedding_date, 'not fixed')}
                     </div>
                   </div>
                   <span className="flex gap-1">

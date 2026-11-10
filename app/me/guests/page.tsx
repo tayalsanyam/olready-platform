@@ -35,10 +35,10 @@ export default async function Guests({ searchParams }: P) {
         ))}
       </div>
       <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
-        <Card className="overflow-x-auto">
+        <Card className="overflow-x-auto" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
           <h2 className="mb-2 font-semibold">Guest list</h2>
           {list.length ? (
-            <table className="data">
+            <table className="data stack">
               <thead>
                 <tr>
                   <th>Name</th>

@@ -1,5 +1,6 @@
 import type { Db } from './db';
 import { DomainError, audit, getSetting } from './db';
+import { fmtDay } from './dates';
 
 // Vendor date availability. A day is 'closed', 'full', 'some' (booked, room left) or 'free'.
 // "Free" is only said to brides when the vendor has kept the calendar up to date recently.
@@ -24,7 +25,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** Today in India, YYYY-MM-DD. */
 export const todayIst = () => new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
 const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
-export const shortDate = (d: string) => new Date(`${d}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+export const shortDate = (d: string) => fmtDay(d);
 
 function checkDay(d: string, label = 'date') {
   if (!DAY.test(d) || Number.isNaN(Date.parse(d))) throw new DomainError('bad_date', `Check the ${label}`);

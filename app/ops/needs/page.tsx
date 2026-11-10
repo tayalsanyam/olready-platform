@@ -21,8 +21,8 @@ export default async function CappedNeeds({ searchParams }: P) {
       <PageTitle title="Capped leads" sub="Each lead hit its unlock limit. Reopen only if the bride still wants more options (up to 2 extra rounds of 10)." />
       <Notice error={q.error} ok={q.ok} />
       {rows.length ? (
-        <Card className="overflow-x-auto">
-          <table className="data">
+        <Card className="overflow-x-auto" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+          <table className="data stack">
             <thead>
               <tr>
                 <th>Bride</th>

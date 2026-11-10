@@ -8,6 +8,7 @@ import { threadsForBride } from '@/lib/threads';
 import { checklist, shortlist } from '@/lib/weddings';
 import { rmAddNote } from '@/lib/actions/ops';
 import { Badge, Card, Notice, PageTitle } from '@/components/ui';
+import { fmtDate, fmtDay, plural } from '@/lib/dates';
 
 export const metadata = { title: 'Bride' };
 type P = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[]>> };
@@ -46,7 +47,7 @@ export default async function RmBride({ params, searchParams }: P) {
               </a>
             ) : null}
             <span>{e.bride_email}</span>
-            <span>· wedding {e.wedding_date ?? 'not fixed'}</span>
+            <span>· wedding {fmtDate(e.wedding_date, 'not fixed')}</span>
             <Badge tone={e.status === 'active' ? 'ok' : 'warn'}>{e.status.replace('_', ' ')}</Badge>
           </span>
         }
@@ -98,7 +99,7 @@ export default async function RmBride({ params, searchParams }: P) {
           <ul className="mt-1 space-y-1 text-sm">
             {open.map((t) => (
               <li key={t.id}>
-                {t.title} <span className="hint">{t.due_date ?? ''}</span>
+                {t.title} <span className="hint">{fmtDate(t.due_date)}</span>
               </li>
             ))}
           </ul>

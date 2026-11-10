@@ -5,6 +5,7 @@ import { aiEnabled } from '@/lib/ai';
 import { MAX_ROWS, assistantAllowance, logEntry, recentQuestions } from '@/lib/opsAssistant';
 import { askAssistantAction, rerunAssistantAction } from '@/lib/actions/assistant';
 import { Card, Notice, PageTitle, sp } from '@/components/ui';
+import { fmtDate, fmtDateTime, fmtDay, fmtLongDate } from '@/lib/dates';
 
 export const metadata = { title: 'Ask the data' };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
@@ -22,7 +23,7 @@ function cell(v: unknown) {
   if (v == null) return <span className="text-[var(--color-muted)]">–</span>;
   if (typeof v === 'boolean') return v ? 'Yes' : 'No';
   if (typeof v === 'number') return v.toLocaleString('en-IN');
-  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)) return new Date(v).toLocaleString('en-IN', { dateStyle: 'medium' });
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)) return fmtDate(v);
   if (typeof v === 'object') return JSON.stringify(v);
   const s = String(v);
   return /^-?\d+(\.\d+)?$/.test(s) ? Number(s).toLocaleString('en-IN') : s;
@@ -171,7 +172,7 @@ export default async function Assistant({ searchParams }: P) {
                       {r.question}
                     </Link>
                     <span className="text-xs text-[var(--color-muted)]">
-                      {r.created_at.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      {fmtDay(r.created_at)}
                       {r.error ? ', failed' : ''}
                     </span>
                   </li>

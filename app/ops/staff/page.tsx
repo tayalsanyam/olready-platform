@@ -37,8 +37,8 @@ export default async function Staff({ searchParams }: P) {
       />
       <Notice error={q.error} ok={q.ok} />
       <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
-        <Card className="overflow-x-auto p-0">
-          <table className="data">
+        <Card className="overflow-x-auto p-0" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+          <table className="data stack">
             <thead>
               <tr>
                 <th>Email</th>

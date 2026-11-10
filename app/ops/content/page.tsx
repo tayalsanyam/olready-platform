@@ -4,6 +4,7 @@ import { requireRole } from '@/lib/auth';
 import { moderationQueue, realWeddingBySlug } from '@/lib/realWeddings';
 import { opsModerateWedding, opsTagVendor } from '@/lib/actions/ops';
 import { Badge, Card, Empty, Notice, PageTitle } from '@/components/ui';
+import { fmtDate, fmtDay, plural } from '@/lib/dates';
 
 export const metadata = { title: 'Real weddings' };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
@@ -27,7 +28,7 @@ export default async function Content({ searchParams }: P) {
                     <div>
                       <b>{w.couple_names}</b> · {w.title}
                       <div className="hint">
-                        {w.city_name ?? 'no city'} · {w.wedding_date ?? 'no date'} · {w.photos.length} photos
+                        {w.city_name ?? 'no city'} · {fmtDate(w.wedding_date, 'no date')} · {w.photos.length} photos
                       </div>
                     </div>
                     {w.consent_confirmed ? <Badge tone="ok">consent given</Badge> : <Badge tone="bad">no consent</Badge>}

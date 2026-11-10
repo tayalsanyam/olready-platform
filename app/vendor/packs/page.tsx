@@ -8,6 +8,7 @@ import { balances } from '@/lib/leads';
 import { gatewayStates, packsFor } from '@/lib/payments';
 import { buyPack, saveBillingAction } from '@/lib/actions/vendor';
 import { Badge, Card, Field, Notice, PageTitle } from '@/components/ui';
+import { fmtDate, fmtDateTime, fmtDay, fmtLongDate } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Credits and plans', robots: { index: false } };
@@ -86,9 +87,9 @@ export default async function Packs({ searchParams }: P) {
         ))}
       </div>
       {orders.length ? (
-        <Card className="mt-6 overflow-x-auto">
+        <Card className="mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
           <h2 className="mb-2 font-semibold">Orders</h2>
-          <table className="data min-w-[600px] whitespace-nowrap">
+          <table className="data stack min-w-[600px] whitespace-nowrap">
             <thead>
               <tr>
                 <th>Date</th>
@@ -102,7 +103,7 @@ export default async function Packs({ searchParams }: P) {
             <tbody>
               {orders.map((o) => (
                 <tr key={o.id}>
-                  <td>{o.created_at.toISOString().slice(0, 10)}</td>
+                  <td>{fmtDate(o.created_at)}</td>
                   <td>{o.pack}</td>
                   <td>{formatInr(o.amount_inr)}</td>
                   <td>{o.gateway}</td>
@@ -111,11 +112,11 @@ export default async function Packs({ searchParams }: P) {
                     {o.status === 'paid' || o.status === 'refunded' ? (
                       <span className="flex flex-wrap gap-x-3">
                         {o.invoice_id ? (
-                          <a className="underline" href={`/invoices/${o.invoice_id}`} target="_blank" rel="noreferrer">
+                          <a className="inline-block py-1 underline" href={`/invoices/${o.invoice_id}`} target="_blank" rel="noreferrer">
                             Invoice {o.invoice_no}
                           </a>
                         ) : null}
-                        <Link className="underline" href={`/receipt/${o.id}`}>
+                        <Link className="inline-block py-1 underline" href={`/receipt/${o.id}`}>
                           Receipt
                         </Link>
                       </span>

@@ -5,6 +5,7 @@ import { sql } from '@/lib/db';
 import { listCategories, listCities } from '@/lib/catalog';
 import { Container } from './ui';
 import { rememberedTown } from '@/lib/town';
+import { OutsideAreas } from './ChromeGate';
 import { HeaderSearch } from './HeaderSearch';
 
 export function Wordmark({ className = '', height = 22 }: { className?: string; height?: number }) {
@@ -79,11 +80,15 @@ export async function Header() {
               Sign in
             </Link>
           )}
-          <Link href="/enquire" className="btn btn-pink btn-sm">
-            Get quotes
-          </Link>
+          {/* Brides and visitors get the call to action; vendors and staff are here to work. */}
+          {!p || p.role === 'bride' ? (
+            <Link href="/enquire" className="btn btn-pink btn-sm">
+              Get quotes
+            </Link>
+          ) : null}
         </div>
       </Container>
+      <OutsideAreas areas={['/ops', '/vendor', '/me', '/mfa', '/pay', '/receipt']}>
       <nav className="no-scrollbar flex gap-2 overflow-x-auto border-t border-[var(--color-line)] px-4 py-2 text-sm md:hidden" aria-label="Categories">
         {cats.map((c) => (
           <Link key={c.slug} href={`/vendors/${base}/${c.slug}`} className="chip">
@@ -103,6 +108,7 @@ export async function Header() {
           Guides
         </Link>
       </nav>
+      </OutsideAreas>
     </header>
   );
 }
@@ -113,7 +119,9 @@ export async function Footer() {
   return (
     <footer className="mt-16 bg-[var(--color-tint)]">
       <Container className="py-10">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
+        {/* Dashboards get the slim legal row only. */}
+        <OutsideAreas areas={['/ops', '/vendor', '/me', '/mfa', '/pay', '/receipt']}>
+        <div className="mb-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <Wordmark height={20} />
             <p className="mt-3 max-w-xs text-sm text-[var(--color-muted)]">
@@ -177,7 +185,8 @@ export async function Footer() {
             </ul>
           </div>
         </div>
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] pt-5 text-xs text-[var(--color-muted)]">
+        </OutsideAreas>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] pt-5 text-xs text-[var(--color-muted)]">
           <p>An enquiry is a chance to connect with a vendor, not a confirmed booking. Support Monday to Saturday, 10:00 to 18:30 IST.</p>
           <nav aria-label="More" className="flex flex-wrap gap-x-4 gap-y-2">
             <Link href="/about">About</Link>

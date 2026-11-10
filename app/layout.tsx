@@ -1,3 +1,4 @@
+import { TableLabels } from '@/components/TableLabels';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Footer, Header } from '@/components/Header';
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <main className="pb-6 pt-6">{children}</main>
         <Footer />
+        <TableLabels />
       </body>
     </html>
   );

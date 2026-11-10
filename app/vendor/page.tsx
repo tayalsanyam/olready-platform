@@ -9,6 +9,7 @@ import { FunctionList } from '@/components/FunctionList';
 import { vendorStats } from '@/lib/vendorStats';
 import { unlockAction } from '@/lib/actions/vendor';
 import { Badge, Card, Empty, Notice, PageTitle, Stat } from '@/components/ui';
+import { fmtDate, fmtDay, plural } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Leads', robots: { index: false } };
@@ -72,7 +73,7 @@ export default async function VendorHome({ searchParams }: P) {
                 ) : (
                   <>
                     <dt className="text-[var(--color-muted)]">Wedding</dt>
-                    <dd>{n.event_date ?? 'Date not fixed'}</dd>
+                    <dd>{fmtDate(n.event_date, 'Date not fixed')}</dd>
                   </>
                 )}
                 {n.guest_count ? (

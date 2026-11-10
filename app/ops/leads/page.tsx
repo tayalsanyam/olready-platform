@@ -4,6 +4,7 @@ import { requireRole } from '@/lib/auth';
 import { listCategories, citiesInUse } from '@/lib/catalog';
 import { opsCreateLead } from '@/lib/actions/ops';
 import { Badge, Card, Notice, PageTitle, sp } from '@/components/ui';
+import { fmtDate, fmtDateTime, fmtDay, fmtLongDate, plural } from '@/lib/dates';
 
 export const metadata = { title: 'Leads' };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
@@ -37,8 +38,8 @@ export default async function OpsLeads({ searchParams }: P) {
           </Link>
         ))}
       </div>
-      <Card className="overflow-x-auto">
-        <table className="data">
+      <Card className="overflow-x-auto" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+        <table className="data stack">
           <thead>
             <tr>
               <th>Received</th>
@@ -53,14 +54,14 @@ export default async function OpsLeads({ searchParams }: P) {
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td className="whitespace-nowrap">{r.created_at.toISOString().slice(0, 16).replace('T', ' ')}</td>
+                <td className="whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
                 <td>
                   <Link className="font-semibold underline-offset-4 hover:underline" href={`/ops/leads/${r.id}`}>
                     {r.bride_name}
                   </Link>
                 </td>
                 <td>{r.city}</td>
-                <td>{r.event_date ?? '–'}</td>
+                <td className="whitespace-nowrap">{fmtDate(r.event_date, '–')}</td>
                 <td>{r.cats || '–'}</td>
                 <td>{r.source}</td>
                 <td>

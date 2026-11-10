@@ -155,7 +155,7 @@ await step('bride sets up her wedding and gets a dated checklist', async () => {
   await shot('bride-home');
   await go('/me/checklist');
   await see('Book the venue');
-  await see('2026-05-14');
+  await see('14 May 2026');
 });
 
 await step('bride shortlists two vendors', async () => {

@@ -25,8 +25,8 @@ export default async function Articles({ searchParams }: P) {
       />
       <Notice error={q.error} ok={q.ok} />
       {rows.length ? (
-        <Card className="overflow-x-auto p-0">
-          <table className="data">
+        <Card className="overflow-x-auto p-0" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+          <table className="data stack">
             <thead>
               <tr>
                 <th>Title</th>
