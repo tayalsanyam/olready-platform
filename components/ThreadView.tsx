@@ -150,6 +150,12 @@ export function ThreadView(props: {
             <dd>{t.city_name}</dd>
             <dt className="text-[var(--color-muted)]">Budget</dt>
             <dd>{t.budget_inr != null ? formatInr(t.budget_inr) : (t.tier_label ?? '–')}</dd>
+            {t.brief ? (
+              <>
+                <dt className="text-[var(--color-muted)]">{side === 'bride' ? 'You asked for' : 'She wants'}</dt>
+                <dd>{t.brief}</dd>
+              </>
+            ) : null}
             {side !== 'bride' ? (
               <>
                 <dt className="text-[var(--color-muted)]">Phone</dt>

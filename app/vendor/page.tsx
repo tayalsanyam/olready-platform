@@ -84,6 +84,12 @@ export default async function VendorHome({ searchParams }: P) {
                 ) : null}
                 <dt className="text-[var(--color-muted)]">Budget</dt>
                 <dd>{n.budget_inr != null ? formatInr(n.budget_inr) : (n.tier_label ?? 'Not shared')}</dd>
+                {n.brief ? (
+                  <>
+                    <dt className="text-[var(--color-muted)]">She wants</dt>
+                    <dd>{n.brief}</dd>
+                  </>
+                ) : null}
                 <dt className="text-[var(--color-muted)]">Also needs</dt>
                 <dd>{n.other_categories ? `${n.other_categories} more categor${n.other_categories > 1 ? 'ies' : 'y'}` : 'Only this'}</dd>
                 <dt className="text-[var(--color-muted)]">Unlocked by</dt>

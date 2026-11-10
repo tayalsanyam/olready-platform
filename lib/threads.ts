@@ -25,7 +25,9 @@ export type ThreadRow = {
   status: 'open' | 'quoted' | 'quote_accepted' | 'booked' | 'closed';
   last_message_at: Date | null;
   created_at: Date;
-  functions: { name: string; event_date: string | null; guests: number | null }[] | null;
+  functions: { name: string; event_date: string | null; guests: number | null; place?: string | null; city?: string | null; time_of_day?: 'morning' | 'day' | 'evening' | null }[] | null;
+  /** What she wants from this category, as noted on the verification call. */
+  brief: string | null;
 };
 
 const threadSelect = (db: Db) => db`
@@ -33,9 +35,10 @@ const threadSelect = (db: Db) => db`
          (t.vendor_id = any(ln.preferred_vendor_ids) or t.vendor_id is not distinct from ln.direct_vendor_id) as picked,
          c.name as category_name, l.bride_name, l.phone as bride_phone, l.email as bride_email,
          to_char(l.event_date, 'YYYY-MM-DD') as event_date, ci.name as city_name, ln.budget_inr,
-         bt.label as tier_label, ln.status as need_status, t.status,
+         bt.label as tier_label, ln.status as need_status, ln.brief, t.status,
          (select max(created_at) from mkt.messages m where m.thread_id = t.id) as last_message_at, t.created_at,
-         (select json_agg(json_build_object('name', e.name, 'event_date', to_char(e.event_date, 'YYYY-MM-DD'), 'guests', e.guests, 'place', e.place) order by e.event_date nulls last, e.sort)
+         (select json_agg(json_build_object('name', e.name, 'event_date', to_char(e.event_date, 'YYYY-MM-DD'), 'guests', e.guests, 'place', e.place, 'time_of_day', e.time_of_day,
+            'city', (select ec.name from mkt.cities ec where ec.id = e.city_id and e.city_id <> l.city_id)) order by e.event_date nulls last, e.sort)
           from mkt.need_events ne join mkt.lead_events e on e.id = ne.event_id where ne.need_id = t.lead_need_id) as functions
   from mkt.threads t
   join mkt.lead_needs ln on ln.id = t.lead_need_id

@@ -2,10 +2,11 @@ import { fmtDate } from '@/lib/dates';
 import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
-import { formatInr, listCategories } from '@/lib/catalog';
+import { formatInr, listCategories, listCities } from '@/lib/catalog';
+import { PlacePicker } from '@/components/PlacePicker';
 import type { Lead } from '@/lib/leads';
-import { opsAddNeed, opsAdvance, opsSetLeadContact, opsMarkFake, opsRejectLead, opsRemoveNeed, opsReopen, opsSetBudget } from '@/lib/actions/ops';
-import { FUNCTION_PRESETS, MAX_FUNCTIONS, leadFunctions } from '@/lib/functions';
+import { opsAddNeed, opsAdvance, opsSaveLeadDetails, opsMarkFake, opsRejectLead, opsRemoveNeed, opsReopen, opsSetBudget } from '@/lib/actions/ops';
+import { FUNCTION_PRESETS, MAX_FUNCTIONS, TIMES, leadFunctions } from '@/lib/functions';
 import { opsRemoveFunctionAction, opsSaveFunctionAction } from '@/lib/actions/ops';
 import { Badge, Card, Notice, PageTitle } from '@/components/ui';
 
@@ -14,8 +15,8 @@ type P = { params: Promise<{ id: string }>; searchParams: Promise<Record<string,
 
 const STAGES = [
   { n: 1, title: 'Reached her', script: 'Introduce OLReady. Confirm her name, that she sent the request, and the wedding date.' },
-  { n: 2, title: 'Needs confirmed', script: 'Confirm city and budget. Go through every category below and ask: "Have you booked this yet?" Add each one she still needs.' },
-  { n: 3, title: 'Verified', script: 'She is genuine and still looking. Take her email and save it above, so she can sign in to see chats and quotes. Tell her verified vendors will message or call her, and that an enquiry is not a booking.' },
+  { n: 2, title: 'Needs confirmed', script: 'Confirm the town, each function with its date, town and venue, and the budget. Go through every category below and ask: "Have you booked this yet?" Add each one she still needs.' },
+  { n: 3, title: 'Verified', script: 'She is genuine and still looking. Take her email and save it under Her details, so she can sign in to see chats and quotes. Tell her verified vendors will message or call her, and that an enquiry is not a booking.' },
 ] as const;
 
 export default async function VerifyLead({ params, searchParams }: P) {
@@ -27,8 +28,8 @@ export default async function VerifyLead({ params, searchParams }: P) {
     select l.*, ci.name as city, ci.state as state_name, lo.name as area, to_char(l.event_date, 'YYYY-MM-DD') as event
     from mkt.leads l join mkt.cities ci on ci.id = l.city_id left join mkt.localities lo on lo.id = l.locality_id where l.id = ${id}`;
   if (!lead) notFound();
-  const needs = await sql<{ id: string; category_id: number; category: string; budget_inr: number | null; tier: string | null; status: string; unlock_cap: number; reopen_rounds: number; unlocks: number; direct: string | null; booked: string | null }[]>`
-    select ln.id, ln.category_id, c.name as category, ln.budget_inr, bt.label as tier, ln.status, ln.unlock_cap, ln.reopen_rounds,
+  const needs = await sql<{ id: string; category_id: number; category: string; budget_inr: number | null; tier: string | null; status: string; unlock_cap: number; reopen_rounds: number; brief: string | null; unlocks: number; direct: string | null; booked: string | null }[]>`
+    select ln.id, ln.category_id, c.name as category, ln.budget_inr, bt.label as tier, ln.status, ln.unlock_cap, ln.reopen_rounds, ln.brief,
       (select count(*) from mkt.unlocks u where u.lead_need_id = ln.id and not u.refunded)::int as unlocks,
       dv.business_name as direct, bv.business_name as booked
     from mkt.lead_needs ln join mkt.categories c on c.id = ln.category_id
@@ -42,6 +43,8 @@ export default async function VerifyLead({ params, searchParams }: P) {
     join mkt.categories c on c.id = ln.category_id where ln.lead_id = ${id} order by u.created_at`;
   const cats = await listCategories(sql, { activeOnly: true });
   const fns = await leadFunctions(sql, id);
+  const quick = (await listCities(sql)).map((c) => ({ id: c.id, name: c.name, state: c.state }));
+  const leadTown = { id: lead.city_id, name: lead.city, state: lead.state_name };
   const liveNeeds = needs.filter((n) => n.status !== 'removed');
   const missing = cats.filter((c) => !needs.some((n) => n.category_id === c.id && n.status !== 'removed'));
   const closed = lead.status === 'fake' || lead.status === 'rejected';
@@ -67,36 +70,91 @@ export default async function VerifyLead({ params, searchParams }: P) {
       />
       <Notice error={q.error} ok={q.ok} />
       <Card className="mb-5">
-        <h2 className="font-semibold">Her sign-in email</h2>
+        <h2 className="font-semibold">Her details</h2>
         <p className="hint">
+          Confirm each of these on the call.{' '}
           {lead.email
-            ? 'She signs in on olready.in with this email to see her chats and quotes. No password: we email her a code.'
-            : 'Ask for her email on the call. Without it she cannot sign in, and vendors can only reach her by phone.'}
+            ? 'She signs in on olready.in with her email to see chats and quotes. No password: we email her a code.'
+            : 'Ask for her email: without it she cannot sign in, and vendors can only reach her by phone.'}
         </p>
-        <form action={opsSetLeadContact} className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <form action={opsSaveLeadDetails} className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <input type="hidden" name="lead_id" value={id} />
-          <input name="name" className="input" defaultValue={lead.bride_name} aria-label="Her name" required />
-          <input name="email" type="email" className="input" defaultValue={lead.email ?? ''} placeholder="Her email" aria-label="Her email" />
-          <button className="btn btn-sm">Save</button>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium">Her name</span>
+            <input name="name" className="input" defaultValue={lead.bride_name} required />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium">Partner&apos;s name</span>
+            <input name="partner_name" className="input" defaultValue={lead.partner_name ?? ''} maxLength={80} />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium">Email she will sign in with</span>
+            <input name="email" type="email" className="input" defaultValue={lead.email ?? ''} />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium">Mobile</span>
+            <input name="phone" className="input" defaultValue={lead.phone} required inputMode="tel" />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium">Another number (family, optional)</span>
+            <input name="alt_phone" className="input" defaultValue={lead.alt_phone ?? ''} inputMode="tel" />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium">Best time to call</span>
+            <input name="best_time" className="input" defaultValue={lead.best_time ?? ''} maxLength={80} placeholder="e.g. after 6 pm" />
+          </label>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <PlacePicker
+              withArea
+              required
+              label="Main wedding town"
+              townHint="Functions in another town are set on each function below."
+              town={leadTown}
+              area={lead.area || lead.pincode ? { id: lead.locality_id, name: lead.area ?? '', pincode: lead.pincode } : null}
+              quick={quick}
+            />
+          </div>
+          <label className="text-sm sm:col-span-2 lg:col-span-3">
+            <span className="mb-1 block font-medium">Notes for the team (vendors do not see these)</span>
+            <textarea name="notes" className="input" rows={2} defaultValue={lead.notes.trim()} maxLength={2000} />
+          </label>
+          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+            <input type="checkbox" name="whatsapp_opt_in" defaultChecked={lead.whatsapp_opt_in} className="h-4 w-4 accent-[var(--color-pink)]" />
+            She agreed to WhatsApp updates about this request
+          </label>
+          <button className="btn btn-sm justify-self-start lg:justify-self-end">Save details</button>
         </form>
       </Card>
       <div className="grid gap-5 lg:grid-cols-[3fr_2fr]">
         <div className="space-y-5">
           <Card>
             <h2 className="font-semibold">Functions</h2>
-            <p className="hint">Confirm each function on the call: date, guests, and which vendors it needs. The headline date and guests follow these.</p>
+            <p className="hint">Confirm each function on the call: date, time, guests, town, venue, and which vendors it needs. A function in another town is shown to vendors who work there.</p>
             <ul className="mt-3 space-y-3">
               {fns.map((f) => (
                 <li key={f.id} className="rounded-xl border border-[var(--color-line)] p-3">
-                  <form action={opsSaveFunctionAction} className="grid gap-2 sm:grid-cols-[1.2fr_1fr_100px_auto]">
+                  <form action={opsSaveFunctionAction} className="grid gap-2 sm:grid-cols-2">
                     <input type="hidden" name="lead_id" value={lead.id} />
                     <input type="hidden" name="event_id" value={f.id} />
                     <input name="name" defaultValue={f.name} className="input py-1" aria-label="Function" list="fn-presets-ops" required />
                     <input name="date" type="date" defaultValue={f.event_date ?? ''} className="input py-1" aria-label={`Date of ${f.name}`} />
+                    <select name="time" defaultValue={f.time_of_day ?? ''} className="input py-1" aria-label={`Time of ${f.name}`}>
+                      <option value="">Time not fixed</option>
+                      {Object.entries(TIMES).map(([k, v]) => (
+                        <option key={k} value={k}>
+                          {v}
+                        </option>
+                      ))}
+                    </select>
                     <input name="guests" defaultValue={f.guests ?? ''} inputMode="numeric" className="input py-1" placeholder="Guests" aria-label={`Guests at ${f.name}`} />
-                    <button className="btn btn-ghost btn-sm">Save</button>
-                    <input name="place" defaultValue={f.place ?? ''} maxLength={80} className="input py-1 sm:col-span-4" placeholder="Where (home, venue name, area)" aria-label={`Where is ${f.name}`} />
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm sm:col-span-4">
+                    <div>
+                      <PlacePicker label={`Town for ${f.name}`} town={{ id: f.town_id, name: f.town, state: f.town_state }} quick={quick} names={{ city: 'fn_city_id' }} />
+                    </div>
+                    <label className="text-sm">
+                      <span className="mb-1 block font-medium">Venue or address</span>
+                      <input name="place" defaultValue={f.place ?? ''} maxLength={80} className="input" placeholder="Home, venue name, area" />
+                    </label>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm sm:col-span-2">
                       <span className="text-[var(--color-muted)]">Needed for</span>
                       {liveNeeds.map((n) => (
                         <label key={n.id} className="flex items-center gap-1.5">
@@ -105,6 +163,7 @@ export default async function VerifyLead({ params, searchParams }: P) {
                         </label>
                       ))}
                     </div>
+                    <button className="btn btn-ghost btn-sm justify-self-start sm:col-span-2">Save {f.name}</button>
                   </form>
                   {fns.length > 1 ? (
                     <form action={opsRemoveFunctionAction} className="mt-1">
@@ -122,15 +181,32 @@ export default async function VerifyLead({ params, searchParams }: P) {
               ))}
             </datalist>
             {fns.length < MAX_FUNCTIONS ? (
-              <form action={opsSaveFunctionAction} className="mt-3 grid gap-2 border-t border-[var(--color-line)] pt-3 sm:grid-cols-[1.2fr_1fr_100px_auto]">
+              <form action={opsSaveFunctionAction} className="mt-3 grid gap-2 border-t border-[var(--color-line)] pt-3 sm:grid-cols-2">
                 <input type="hidden" name="lead_id" value={lead.id} />
                 {liveNeeds.map((n) => (
                   <input key={n.id} type="hidden" name="need_id" value={n.id} />
                 ))}
-                <input name="name" className="input py-1" placeholder="Add a function, e.g. Sangeet" aria-label="New function" list="fn-presets-ops" required />
+                <p className="text-sm font-semibold sm:col-span-2">Add another function</p>
+                <input name="name" className="input py-1" placeholder="e.g. Sangeet" aria-label="New function" list="fn-presets-ops" required />
                 <input name="date" type="date" className="input py-1" aria-label="Date of the new function" />
+                <select name="time" defaultValue="" className="input py-1" aria-label="Time of the new function">
+                  <option value="">Time not fixed</option>
+                  {Object.entries(TIMES).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
                 <input name="guests" inputMode="numeric" className="input py-1" placeholder="Guests" aria-label="Guests at the new function" />
-                <button className="btn btn-sm">Add</button>
+                <div>
+                  <PlacePicker label="Town for the new function" town={leadTown} quick={quick} names={{ city: 'fn_city_id' }} />
+                </div>
+                <label className="text-sm">
+                  <span className="mb-1 block font-medium">Venue or address</span>
+                  <input name="place" maxLength={80} className="input" placeholder="Home, venue name, area" />
+                </label>
+                <p className="hint">It is added for every category. Untick the ones it is not for after adding.</p>
+                <button className="btn btn-sm justify-self-start sm:justify-self-end">Add function</button>
               </form>
             ) : null}
           </Card>
@@ -141,7 +217,7 @@ export default async function VerifyLead({ params, searchParams }: P) {
               <thead>
                 <tr>
                   <th>Category</th>
-                  <th>Budget</th>
+                  <th>Budget and what she wants (vendors see this)</th>
                   <th>Status</th>
                   <th>Unlocks</th>
                   <th />
@@ -156,12 +232,13 @@ export default async function VerifyLead({ params, searchParams }: P) {
                     </td>
                     <td>
                       {closed || n.status === 'removed' ? (
-                        n.budget_inr != null ? formatInr(n.budget_inr) : '–'
+                        [n.budget_inr != null ? formatInr(n.budget_inr) : null, n.brief].filter(Boolean).join(' · ') || '–'
                       ) : (
-                        <form action={opsSetBudget} className="flex gap-1">
+                        <form action={opsSetBudget} className="flex flex-wrap gap-1">
                           <input type="hidden" name="need_id" value={n.id} />
                           <input type="hidden" name="_back" value={self} />
-                          <input name="budget_inr" className="input w-28 py-1" defaultValue={n.budget_inr ?? ''} inputMode="numeric" aria-label={`Budget for ${n.category}`} />
+                          <input name="budget_inr" className="input w-28 py-1" defaultValue={n.budget_inr ?? ''} inputMode="numeric" placeholder="₹" aria-label={`Budget for ${n.category}`} />
+                          <input name="brief" className="input order-last basis-full py-1" defaultValue={n.brief ?? ''} maxLength={240} placeholder="What she wants" aria-label={`What she wants from ${n.category}`} />
                           <button className="btn btn-ghost btn-sm">Save</button>
                         </form>
                       )}
@@ -271,12 +348,6 @@ export default async function VerifyLead({ params, searchParams }: P) {
               </Card>
             );
           })}
-          {lead.notes ? (
-            <Card>
-              <h3 className="font-semibold">Notes</h3>
-              <p className="mt-1 whitespace-pre-line text-sm">{lead.notes.trim()}</p>
-            </Card>
-          ) : null}
           {!closed && !unlocks.length ? (
             <Card>
               <h3 className="font-semibold">Could not verify</h3>

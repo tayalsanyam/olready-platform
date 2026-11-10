@@ -10,6 +10,9 @@ export type Lead = {
   bride_profile_id: string | null;
   /** The ad campaign she answered, when known. */
   campaign: string | null;
+  alt_phone: string | null;
+  partner_name: string | null;
+  best_time: string | null;
   external_id: string | null;
   bride_name: string;
   phone: string;
@@ -135,6 +138,42 @@ export async function addNeed(
     returning *`;
   if (opts.actor) await audit(db, opts.actor, 'need.add', 'lead', leadId, { categoryId, budgetInr });
   return need;
+}
+
+/** What she wants from this category, in a line. Vendors see it on the lead. */
+export async function setNeedBrief(db: Db, needId: string, brief: string, actor: string) {
+  const text = brief.trim().replace(/\s+/g, ' ').slice(0, 240) || null;
+  // Contact details belong to the unlock, not the brief.
+  if (text && /\d{10}|@\w+\.\w/.test(text.replace(/[\s-]/g, ''))) throw new DomainError('brief_contact', 'Keep phone numbers and emails out of the note: vendors see it before they unlock');
+  await db`update mkt.lead_needs set brief = ${text} where id = ${needId}`;
+  await audit(db, actor, 'need.brief', 'lead_need', needId);
+}
+
+/** Everything about her that the call confirms: names, phones, where the wedding is, when to ring. */
+export async function saveLeadDetails(
+  db: Db,
+  leadId: string,
+  input: { name: string; partnerName: string; phone: string; altPhone: string; bestTime: string; whatsappOptIn: boolean; cityId: number | null; localityId: number | null; pincode: string | null; notes: string },
+  actor: string
+) {
+  if (!input.name.trim()) throw new DomainError('bad_name', 'Name is required');
+  const phone = normalisePhone(input.phone);
+  const alt = input.altPhone.trim() ? normalisePhone(input.altPhone) : null;
+  const { resolvePlace } = await import('./locations');
+  const place = await resolvePlace(db, { cityId: input.cityId, localityId: input.localityId, pincode: input.pincode });
+  const [was] = await db<{ whatsapp_opt_in: boolean }[]>`select whatsapp_opt_in from mkt.leads where id = ${leadId}`;
+  if (!was) throw new DomainError('not_found', 'Lead not found');
+  await db`
+    update mkt.leads set bride_name = ${input.name.trim()}, partner_name = ${input.partnerName.trim().slice(0, 80) || null},
+      phone = ${phone}, alt_phone = ${alt}, best_time = ${input.bestTime.trim().slice(0, 80) || null},
+      whatsapp_opt_in = ${input.whatsappOptIn},
+      whatsapp_opt_in_at = ${input.whatsappOptIn ? (was.whatsapp_opt_in ? db`whatsapp_opt_in_at` : new Date()) : null},
+      city_id = ${place.cityId}, locality_id = ${place.localityId}, pincode = ${place.pincode},
+      notes = ${input.notes.trim().slice(0, 2000)}
+    where id = ${leadId}`;
+  // A function saved in what is now the request's town no longer needs its own.
+  await db`update mkt.lead_events set city_id = null where lead_id = ${leadId} and city_id = ${place.cityId}`;
+  await audit(db, actor, 'lead.details', 'lead', leadId);
 }
 
 export async function setNeedBudget(db: Db, needId: string, budgetInr: number | null, actor: string) {
@@ -270,6 +309,7 @@ export type NeedCard = {
   unlock_cap: number;
   credit_cost: number;
   direct: boolean;
+  brief: string | null;
   shortlisted: boolean;
   other_categories: number;
   created_at: Date;
@@ -284,7 +324,7 @@ export async function visibleNeeds(db: Db, vendorId: string) {
            (select lo.name from mkt.localities lo where lo.id = l.locality_id) as area_name,
            to_char(l.event_date, 'YYYY-MM-DD') as event_date, l.guest_count, bt.label as tier_label, ln.budget_inr,
            (select count(*) from mkt.unlocks u where u.lead_need_id = ln.id and not u.refunded)::int as unlocks,
-           ln.unlock_cap, c.unlock_credit_cost as credit_cost, (ln.direct_vendor_id is not null) as direct,
+           ln.unlock_cap, c.unlock_credit_cost as credit_cost, ln.brief, (ln.direct_vendor_id is not null) as direct,
            (v.id = any(ln.preferred_vendor_ids)) as shortlisted,
            (select count(*) from mkt.lead_needs o where o.lead_id = l.id and o.id <> ln.id and o.status <> 'removed')::int
              as other_categories,
@@ -295,7 +335,7 @@ export async function visibleNeeds(db: Db, vendorId: string) {
     join mkt.categories c on c.id = ln.category_id
     join mkt.cities ci on ci.id = l.city_id
     left join mkt.budget_tiers bt on bt.id = ln.budget_tier_id
-    where (l.city_id = v.city_id or l.city_id = any(v.service_city_ids))
+    where mkt.need_city_ids(ln.id) && (v.city_id || v.service_city_ids)
       and (ln.direct_vendor_id is null or ln.direct_vendor_id = v.id)
       and not exists (select 1 from mkt.unlocks u where u.lead_need_id = ln.id and u.vendor_id = v.id)
       -- A wedding that has already happened is not a lead.
@@ -322,7 +362,8 @@ export async function unlockNeed(sql: Sql, needId: string, vendorId: string, act
       select id, category_id, city_id, service_city_ids, status from mkt.vendors where id = ${vendorId}`;
     if (!vendor || vendor.status !== 'live') throw new DomainError('not_live', 'Your profile must be live to unlock leads');
     if (vendor.category_id !== need.category_id) throw new DomainError('wrong_category', 'This lead is for another category');
-    if (vendor.city_id !== need.city_id && !vendor.service_city_ids.includes(need.city_id)) {
+    const [{ towns }] = await tx<{ towns: number[] }[]>`select mkt.need_city_ids(${needId}) as towns`;
+    if (!towns.some((t) => t === vendor.city_id || vendor.service_city_ids.includes(t))) {
       throw new DomainError('wrong_city', 'This lead is outside the cities you serve');
     }
     if (need.direct_vendor_id && need.direct_vendor_id !== vendorId) {

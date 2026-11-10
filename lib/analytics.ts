@@ -60,7 +60,7 @@ export async function vendorInsights(db: Db, vendorId: string, period: number): 
         (select coalesce(sum(photo_views), 0) from mkt.vendor_daily where vendor_id = ${vendorId} and day between ${from}::date and ${to}::date)::int as photo_views,
         (select count(*) from mkt.shortlist where vendor_id = ${vendorId} and (created_at at time zone 'Asia/Kolkata')::date between ${from}::date and ${to}::date)::int as shortlists,
         (select count(*) from mkt.lead_needs ln join mkt.leads l on l.id = ln.lead_id join mkt.vendors v on v.id = ${vendorId}
-          where ln.category_id = v.category_id and l.status = 'verified' and (l.city_id = v.city_id or l.city_id = any(v.service_city_ids))
+          where ln.category_id = v.category_id and l.status = 'verified' and mkt.need_city_ids(ln.id) && (v.city_id || v.service_city_ids)
             and (l.verified_at at time zone 'Asia/Kolkata')::date between ${from}::date and ${to}::date)::int as leads,
         (select count(*) from mkt.unlocks where vendor_id = ${vendorId} and not refunded and (created_at at time zone 'Asia/Kolkata')::date between ${from}::date and ${to}::date)::int as unlocks,
         (select count(distinct lead_need_id) from mkt.booking_reports where vendor_id = ${vendorId} and (created_at at time zone 'Asia/Kolkata')::date between ${from}::date and ${to}::date)::int as bookings`;

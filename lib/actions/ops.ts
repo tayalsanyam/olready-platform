@@ -12,6 +12,8 @@ import {
   removeNeed,
   reopenNeed,
   setNeedBudget,
+  setNeedBrief,
+  saveLeadDetails,
 } from '../leads';
 import { createVendor, decideClaim, inviteClaim, setVendorStatus } from '../vendors';
 import { activateSubscription, markOrderPaid, setGateway, type Gateway } from '../payments';
@@ -58,6 +60,25 @@ export async function opsSetLeadContact(fd: FormData) {
 }
 
 /** A sheet of ad leads pasted in: every row becomes a request waiting for its call. */
+export async function opsSaveLeadDetails(fd: FormData) {
+  const leadId = str(fd, 'lead_id');
+  await attempt(`/ops/leads/${leadId}`, async () => {
+    const p = await requireRole(OPS);
+    await saveLeadDetails(
+      sql,
+      leadId,
+      {
+        name: str(fd, 'name'), partnerName: str(fd, 'partner_name'), phone: str(fd, 'phone'), altPhone: str(fd, 'alt_phone'),
+        bestTime: str(fd, 'best_time'), whatsappOptIn: fd.get('whatsapp_opt_in') === 'on',
+        cityId: num(fd, 'city_id'), localityId: num(fd, 'locality_id'), pincode: str(fd, 'pincode') || null, notes: str(fd, 'notes'),
+      },
+      p.id
+    );
+    const { linked } = await setLeadContact(sql, leadId, { email: str(fd, 'email') }, p.id);
+    return { ok: linked ? 'Saved. She already has an account with this email, so the request is in it now.' : 'Details saved' };
+  });
+}
+
 export async function opsImportLeads(fd: FormData) {
   await attempt('/ops/leads', async () => {
     const p = await requireRole(OPS);
@@ -102,7 +123,8 @@ export async function opsSetBudget(fd: FormData) {
   await attempt(back(fd, '/ops/leads'), async () => {
     const p = await requireRole(OPS);
     await setNeedBudget(sql, str(fd, 'need_id'), num(fd, 'budget_inr'), p.id);
-    return { ok: 'Budget saved' };
+    if (fd.has('brief')) await setNeedBrief(sql, str(fd, 'need_id'), str(fd, 'brief'), p.id);
+    return { ok: 'Saved' };
   });
 }
 
@@ -521,7 +543,7 @@ export async function opsSaveFunctionAction(fd: FormData) {
     const p = await requireRole(OPS);
     const { opsSaveFunction } = await import('../functions');
     const guests = Number(str(fd, 'guests').replace(/[^\d]/g, '')) || null;
-    await opsSaveFunction(sql, leadId, { id: str(fd, 'event_id') || null, name: str(fd, 'name'), date: str(fd, 'date') || null, guests, place: str(fd, 'place') || null, needIds: fd.getAll('need_id').map(String) }, p.id);
+    await opsSaveFunction(sql, leadId, { id: str(fd, 'event_id') || null, name: str(fd, 'name'), date: str(fd, 'date') || null, guests, place: str(fd, 'place') || null, cityId: num(fd, 'fn_city_id'), time: str(fd, 'time') || null, needIds: fd.getAll('need_id').map(String) }, p.id);
     return { ok: 'Function saved' };
   });
 }

@@ -87,3 +87,44 @@ describe('brides who answer an ad', () => {
     expect(row).toMatchObject({ name: 'Riya Sharma', phone: '+919876500010', town: 'Gurgaon', categories: 'Venue', externalId: '777', campaign: 'Winter weddings' });
   });
 });
+
+describe('what the verification call records', () => {
+  it('saves her details, and shows a function in another town to vendors there', async () => {
+    const { liveVendor } = await import('./helpers');
+    const { createEnquiry, saveLeadDetails, setNeedBrief, visibleNeeds, advanceVerification } = await import('@/lib/leads');
+    const { leadFunctions, opsSaveFunction, needFunctions, describeFunction } = await import('@/lib/functions');
+    const ops = await profile(sql, 'ops', 'Ops Three');
+    const chd = await cityId(sql, 'chandigarh');
+    const delhi = await cityId(sql, 'delhi');
+    const cats = await listCategories(sql, { activeOnly: true });
+    const photo = cats.find((c) => c.slug === 'photographers')!.id;
+    const delhiOwner = await profile(sql, 'vendor', 'Delhi Lens');
+    const chdOwner = await profile(sql, 'vendor', 'Chd Lens');
+    const inDelhi = await liveVendor(sql, delhiOwner.id, 'photographers', 'delhi', 'Delhi Lens');
+    const inChd = await liveVendor(sql, chdOwner.id, 'photographers', 'chandigarh', 'Chd Lens');
+    const lead = await createEnquiry(sql, { name: 'Kiran', phone: '9876511111', cityId: chd, source: 'instagram', needs: [{ categoryId: photo }], functions: [{ name: 'Wedding', date: '2027-03-01', guests: 300 }] });
+    await saveLeadDetails(sql, lead.id, { name: 'Kiran Bedi', partnerName: 'Arjun', phone: '9876511111', altPhone: '98765 22222', bestTime: 'after 6 pm', whatsappOptIn: true, cityId: null, localityId: null, pincode: '160022', notes: 'Mother decides' }, ops.id);
+    const [saved] = await sql<{ bride_name: string; partner_name: string; alt_phone: string; best_time: string; whatsapp_opt_in: boolean; pincode: string; city_id: number; notes: string }[]>`select * from mkt.leads where id = ${lead.id}`;
+    expect(saved).toMatchObject({ bride_name: 'Kiran Bedi', partner_name: 'Arjun', alt_phone: '+919876522222', best_time: 'after 6 pm', whatsapp_opt_in: true, pincode: '160022', city_id: chd, notes: 'Mother decides' });
+    await expect(saveLeadDetails(sql, lead.id, { name: 'Kiran', partnerName: '', phone: '123', altPhone: '', bestTime: '', whatsappOptIn: false, cityId: chd, localityId: null, pincode: null, notes: '' }, ops.id)).rejects.toThrow(/valid mobile/);
+
+    const [need] = await sql<{ id: string }[]>`select id from mkt.lead_needs where lead_id = ${lead.id}`;
+    await setNeedBrief(sql, need.id, 'Candid and  traditional, two days', ops.id);
+    await expect(setNeedBrief(sql, need.id, 'call 98765 11111', ops.id)).rejects.toThrow(/phone numbers/);
+    // A reception in Delhi, in the evening, for this photographer.
+    await opsSaveFunction(sql, lead.id, { name: 'Reception', date: '2027-03-03', guests: 500, place: 'The Leela', cityId: delhi, time: 'evening', needIds: [need.id] }, ops.id);
+    const fns = await leadFunctions(sql, lead.id);
+    expect(fns.map((f) => [f.name, f.town, f.city ?? null, f.time_of_day ?? null])).toEqual([['Wedding', 'Chandigarh', null, null], ['Reception', 'Delhi', 'Delhi', 'evening']]);
+    for (const s of [1, 2, 3] as const) await advanceVerification(sql, lead.id, s, ops.id);
+    const seenInDelhi = await visibleNeeds(sql, inDelhi.id);
+    const seenInChd = await visibleNeeds(sql, inChd.id);
+    expect(seenInDelhi.map((n) => n.need_id)).toContain(need.id);
+    expect(seenInChd.map((n) => n.need_id)).toContain(need.id);
+    expect(seenInDelhi.find((n) => n.need_id === need.id)?.brief).toBe('Candid and traditional, two days');
+    const shown = (await needFunctions(sql, [need.id])).get(need.id)!;
+    expect(describeFunction(shown[1])).toBe('Reception, 3 Mar evening, 500 guests, at The Leela, in Delhi');
+    // Move the reception back home: Delhi vendors no longer see it.
+    await opsSaveFunction(sql, lead.id, { id: fns[1].id, name: 'Reception', date: '2027-03-03', guests: 500, cityId: chd, needIds: [need.id] }, ops.id);
+    expect((await visibleNeeds(sql, inDelhi.id)).map((n) => n.need_id)).not.toContain(need.id);
+  });
+});

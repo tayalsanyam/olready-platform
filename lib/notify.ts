@@ -26,7 +26,7 @@ export async function notifyNewLead(db: Db, leadId: string) {
     join mkt.categories c on c.id = ln.category_id
     join mkt.cities ci on ci.id = l.city_id
     join mkt.vendors v on v.category_id = ln.category_id and v.status = 'live'
-      and (v.city_id = l.city_id or l.city_id = any(v.service_city_ids))
+      and mkt.need_city_ids(ln.id) && (v.city_id || v.service_city_ids)
       and (ln.direct_vendor_id is null or ln.direct_vendor_id = v.id)
     left join mkt.profiles p on p.id = v.owner_profile_id
     where l.id = ${leadId} and l.status = 'verified' and ln.status = 'open'
@@ -56,7 +56,7 @@ async function whatsappNewLead(db: Db, leadId: string) {
     from mkt.lead_needs ln join mkt.leads l on l.id = ln.lead_id
     join mkt.categories c on c.id = ln.category_id join mkt.cities ci on ci.id = l.city_id
     join mkt.vendors v on v.category_id = ln.category_id and v.status = 'live' and v.whatsapp_alerts
-      and (v.city_id = l.city_id or l.city_id = any(v.service_city_ids))
+      and mkt.need_city_ids(ln.id) && (v.city_id || v.service_city_ids)
       and (ln.direct_vendor_id is null or ln.direct_vendor_id = v.id)
     where l.id = ${leadId} and ln.status = 'open'
       -- Not vendors already booked on every dated function this category is needed for.
