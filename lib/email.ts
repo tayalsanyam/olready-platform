@@ -50,7 +50,7 @@ function render(template: EmailTemplate, p: Record<string, string>) {
     case 'lead_verified':
       return {
         subject: 'Your enquiry is verified',
-        text: `Hi ${p.name},\n\nThanks for confirming your details. Verified vendors can now reach out, and you can chat and compare quotes here:\n\n${site()}/me\n\nOLReady`,
+        text: `Hi ${p.name},\n\nThanks for confirming your details. Verified vendors can now reach out. To chat with them and compare quotes, sign in with this email address (we send a code, there is no password):\n\n${site()}/login\n\nOLReady`,
       };
     case 'claim_invite':
       return {

@@ -4,7 +4,7 @@ import { sql } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { formatInr, listCategories } from '@/lib/catalog';
 import type { Lead } from '@/lib/leads';
-import { opsAddNeed, opsAdvance, opsMarkFake, opsRejectLead, opsRemoveNeed, opsReopen, opsSetBudget } from '@/lib/actions/ops';
+import { opsAddNeed, opsAdvance, opsSetLeadContact, opsMarkFake, opsRejectLead, opsRemoveNeed, opsReopen, opsSetBudget } from '@/lib/actions/ops';
 import { FUNCTION_PRESETS, MAX_FUNCTIONS, leadFunctions } from '@/lib/functions';
 import { opsRemoveFunctionAction, opsSaveFunctionAction } from '@/lib/actions/ops';
 import { Badge, Card, Notice, PageTitle } from '@/components/ui';
@@ -15,7 +15,7 @@ type P = { params: Promise<{ id: string }>; searchParams: Promise<Record<string,
 const STAGES = [
   { n: 1, title: 'Reached her', script: 'Introduce OLReady. Confirm her name, that she sent the request, and the wedding date.' },
   { n: 2, title: 'Needs confirmed', script: 'Confirm city and budget. Go through every category below and ask: "Have you booked this yet?" Add each one she still needs.' },
-  { n: 3, title: 'Verified', script: 'She is genuine and still looking. Tell her verified vendors will message her on OLReady, and that an enquiry is not a booking.' },
+  { n: 3, title: 'Verified', script: 'She is genuine and still looking. Take her email and save it above, so she can sign in to see chats and quotes. Tell her verified vendors will message or call her, and that an enquiry is not a booking.' },
 ] as const;
 
 export default async function VerifyLead({ params, searchParams }: P) {
@@ -60,12 +60,26 @@ export default async function VerifyLead({ params, searchParams }: P) {
             <span>· wedding {fmtDate(lead.event, 'not fixed')}</span>
             {lead.guest_count ? <span>· about {lead.guest_count} guests</span> : null}
             {lead.whatsapp_opt_in ? <Badge tone="ok">WhatsApp updates: yes</Badge> : null}
-            <span>· via {lead.source}</span>
+            <span>· via {({ instagram: 'Instagram ad', ops: 'phone or walk-in', direct_request: 'direct request', legacy: 'old site' } as Record<string, string>)[lead.source] ?? lead.source}{lead.campaign ? ` (${lead.campaign})` : ''}</span>
             <Badge tone={lead.status === 'verified' ? 'ok' : closed ? 'bad' : 'warn'}>{lead.status}</Badge>
           </span>
         }
       />
       <Notice error={q.error} ok={q.ok} />
+      <Card className="mb-5">
+        <h2 className="font-semibold">Her sign-in email</h2>
+        <p className="hint">
+          {lead.email
+            ? 'She signs in on olready.in with this email to see her chats and quotes. No password: we email her a code.'
+            : 'Ask for her email on the call. Without it she cannot sign in, and vendors can only reach her by phone.'}
+        </p>
+        <form action={opsSetLeadContact} className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+          <input type="hidden" name="lead_id" value={id} />
+          <input name="name" className="input" defaultValue={lead.bride_name} aria-label="Her name" required />
+          <input name="email" type="email" className="input" defaultValue={lead.email ?? ''} placeholder="Her email" aria-label="Her email" />
+          <button className="btn btn-sm">Save</button>
+        </form>
+      </Card>
       <div className="grid gap-5 lg:grid-cols-[3fr_2fr]">
         <div className="space-y-5">
           <Card>

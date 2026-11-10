@@ -8,6 +8,9 @@ export type Lead = {
   id: string;
   wedding_id: string | null;
   bride_profile_id: string | null;
+  /** The ad campaign she answered, when known. */
+  campaign: string | null;
+  external_id: string | null;
   bride_name: string;
   phone: string;
   email: string | null;

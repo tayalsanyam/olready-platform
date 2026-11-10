@@ -24,6 +24,7 @@ import { STATE_CODES } from '../gst';
 import { opsSaveLocality, opsSetPincodeTown, opsSetTownLaunch } from '../locations';
 import { addRmNote, approveEngagement, reassign, rejectEngagement } from '../rm';
 import { attempt, attrsFromForm, back, num, str } from './run';
+import { importLeads, parseLeadSheet, setLeadContact } from '../leadIntake';
 
 const OPS: Role[] = ['ops', 'admin'];
 const CONTENT: Role[] = ['content', 'ops', 'admin'];
@@ -43,6 +44,33 @@ export async function opsCreateLead(fd: FormData) {
       needs: fd.getAll('category_id').map((c) => ({ categoryId: Number(c) })),
     });
     return `/ops/leads/${lead.id}`;
+  });
+}
+
+/** The email (and corrected name) taken on the verification call, so she can sign in to see replies. */
+export async function opsSetLeadContact(fd: FormData) {
+  const leadId = str(fd, 'lead_id');
+  await attempt(`/ops/leads/${leadId}`, async () => {
+    const p = await requireRole(OPS);
+    const { linked } = await setLeadContact(sql, leadId, { email: str(fd, 'email'), name: str(fd, 'name') }, p.id);
+    return { ok: linked ? 'Saved. She already has an account with this email, so the request is in it now.' : 'Saved. She can sign in with this email to see replies.' };
+  });
+}
+
+/** A sheet of ad leads pasted in: every row becomes a request waiting for its call. */
+export async function opsImportLeads(fd: FormData) {
+  await attempt('/ops/leads', async () => {
+    const p = await requireRole(OPS);
+    const rows = parseLeadSheet(str(fd, 'sheet'));
+    const res = await importLeads(
+      sql,
+      rows,
+      { cityId: num(fd, 'city_id') ?? 0, categoryIds: fd.getAll('category_id').map(Number).filter(Boolean), source: str(fd, 'source') === 'ops' ? 'ops' : 'instagram' },
+      p.id
+    );
+    const parts = [`${res.added} added`, res.merged ? `${res.merged} joined to a waiting request` : '', res.skipped ? `${res.skipped} skipped` : ''].filter(Boolean).join(', ');
+    if (!res.added && !res.merged) throw new DomainError('nothing', `Nothing added. ${res.problems.join('; ') || 'Every row was already here.'}`);
+    return { ok: `${parts}.${res.problems.length ? ' ' + res.problems.join('; ') : ''}` };
   });
 }
 
