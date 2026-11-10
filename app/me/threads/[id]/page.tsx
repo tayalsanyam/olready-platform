@@ -29,7 +29,7 @@ export default async function BrideThread({ params, searchParams }: P) {
   const [messages, quotes] = await Promise.all([threadMessages(sql, id), threadQuotes(sql, id)]);
   return (
     <>
-      <PageTitle title={t.vendor_name} sub={`${t.category_name} · ${t.city_name}`} />
+      <PageTitle title={t.vendor_name} sub={`${t.category_name} · ${t.city_name} · ${t.picked ? 'You picked this vendor' : 'This vendor wrote to you'}`} />
       <Notice error={q.error} ok={q.ok} />
       <ThreadView
         thread={t}

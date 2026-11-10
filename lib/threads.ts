@@ -11,6 +11,8 @@ export type ThreadRow = {
   vendor_id: string;
   vendor_name: string;
   vendor_slug: string;
+  /** She shortlisted this vendor or asked for them by name. */
+  picked: boolean;
   category_name: string;
   bride_name: string;
   bride_phone: string;
@@ -28,6 +30,7 @@ export type ThreadRow = {
 
 const threadSelect = (db: Db) => db`
   select t.id, t.lead_need_id, l.id as lead_id, t.vendor_id, v.business_name as vendor_name, v.slug as vendor_slug,
+         (t.vendor_id = any(ln.preferred_vendor_ids) or t.vendor_id is not distinct from ln.direct_vendor_id) as picked,
          c.name as category_name, l.bride_name, l.phone as bride_phone, l.email as bride_email,
          to_char(l.event_date, 'YYYY-MM-DD') as event_date, ci.name as city_name, ln.budget_inr,
          bt.label as tier_label, ln.status as need_status, t.status,

@@ -21,7 +21,7 @@ export default async function VendorThread({ params, searchParams }: P) {
   const [messages, quotes] = await Promise.all([threadMessages(sql, id), threadQuotes(sql, id)]);
   return (
     <>
-      <PageTitle title={t.bride_name} sub={`${t.category_name} enquiry`} />
+      <PageTitle title={t.bride_name} sub={`${t.category_name} enquiry${t.picked ? ' · she picked you' : ''}`} />
       <Notice error={q.error} ok={q.ok} />
       <ThreadView
         thread={t}

@@ -28,6 +28,7 @@ type NeedRow = {
   booked_vendor: string | null;
   booked_outside: { vendor_name: string } | null;
   replies: number;
+  picked: { id: string; name: string; slug: string }[];
 };
 
 const leadStatus: Record<string, [string, 'plain' | 'gold' | 'ok' | 'warn' | 'bad']> = {
@@ -48,7 +49,9 @@ export default async function MyWedding({ searchParams }: P) {
   const needs = await sql<NeedRow[]>`
     select ln.id as need_id, l.id as lead_id, l.status as lead_status, c.name as category_name, ln.status, ln.budget_inr,
       bv.business_name as booked_vendor, ln.booked_outside,
-      (select count(*) from mkt.threads t where t.lead_need_id = ln.id)::int as replies
+      (select count(*) from mkt.threads t where t.lead_need_id = ln.id)::int as replies,
+      coalesce((select json_agg(json_build_object('id', pv.id, 'name', pv.business_name, 'slug', pv.slug) order by pv.business_name)
+        from mkt.vendors pv where pv.id = any(ln.preferred_vendor_ids) or pv.id = ln.direct_vendor_id), '[]'::json) as picked
     from mkt.leads l
     join mkt.lead_needs ln on ln.lead_id = l.id
     join mkt.categories c on c.id = ln.category_id
@@ -182,17 +185,48 @@ export default async function MyWedding({ searchParams }: P) {
                     </Badge>
                   )}
                 </div>
-                {mine.length ? (
-                  <ul className="mt-3 flex flex-wrap gap-2">
-                    {mine.map((t) => (
-                      <li key={t.id}>
-                        <Link href={`/me/threads/${t.id}`} className="btn btn-ghost btn-sm">
-                          {t.vendor_name}
-                          {t.status === 'quoted' ? ' · quote' : t.status === 'quote_accepted' ? ' · accepted' : ''}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+                {mine.length || n.picked.length ? (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    {(() => {
+                      const pickedIds = new Set(n.picked.map((v) => v.id));
+                      const chat = (t: (typeof mine)[number]) => (
+                        <li key={t.id}>
+                          <Link href={`/me/threads/${t.id}`} className="btn btn-ghost btn-sm">
+                            {t.vendor_name}
+                            {t.status === 'quoted' ? ' · quote' : t.status === 'quote_accepted' ? ' · accepted' : ''}
+                          </Link>
+                        </li>
+                      );
+                      const fromPicked = mine.filter((t) => pickedIds.has(t.vendor_id));
+                      const others = mine.filter((t) => !pickedIds.has(t.vendor_id));
+                      const waiting = n.picked.filter((v) => !mine.some((t) => t.vendor_id === v.id));
+                      return (
+                        <>
+                          {n.picked.length ? (
+                            <div>
+                              <h3 className="text-sm font-semibold">Vendors you picked</h3>
+                              <ul className="mt-2 flex flex-wrap gap-2">
+                                {fromPicked.map(chat)}
+                                {waiting.map((v) => (
+                                  <li key={v.id}>
+                                    <Link href={`/v/${v.slug}`} className="btn btn-ghost btn-sm text-[var(--color-muted)]">
+                                      {v.name} · not replied yet
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
+                          {others.length ? (
+                            <div>
+                              <h3 className="text-sm font-semibold">{n.picked.length ? 'Other vendors who wrote to you' : 'Vendors who wrote to you'}</h3>
+                              <ul className="mt-2 flex flex-wrap gap-2">{others.map(chat)}</ul>
+                            </div>
+                          ) : null}
+                        </>
+                      );
+                    })()}
+                  </div>
                 ) : null}
                 {['open', 'capped'].includes(n.status) ? (
                   <details className="mt-3">
