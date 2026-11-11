@@ -37,9 +37,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen antialiased">
-        <Header />
-        <main className="pb-6 pt-6">{children}</main>
-        <Footer />
+        {/* These read the database and the session. On Vercel that work waits until the request,
+            so the production build can finish instead of stalling for a minute. */}
+        <Suspense fallback={<div className="h-16 border-b border-[var(--color-line)] bg-white" />}>
+          <Header />
+        </Suspense>
+        <main className="pb-6 pt-6">
+          <Suspense fallback={null}>{children}</Suspense>
+        </main>
+        <Suspense fallback={null}>
+          <Footer />
+        </Suspense>
         <TableLabels />
         <Suspense fallback={null}>
           <Feel />

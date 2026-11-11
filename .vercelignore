@@ -1,0 +1,12 @@
+node_modules
+.next
+.env
+.env.local
+.env.*
+.pgdata
+.deploy-sql
+.env.supabase
+public/uploads
+walkthrough-shots
+tests/eval/last-run.json
+*.tsbuildinfo

@@ -8,3 +8,7 @@ AGENTS.md
 public/uploads
 tests/eval/last-run.json
 walkthrough-shots/
+
+.deploy-sql/
+.pgdata/
+.env.supabase
