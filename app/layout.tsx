@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { connection } from 'next/server';
 import { Feel } from '@/components/Feel';
 import { TableLabels } from '@/components/TableLabels';
 import type { Metadata, Viewport } from 'next';
@@ -24,6 +25,19 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: '#ffffff', width: 'device-width', initialScale: 1 };
 
+/** Header, page and footer all read the database. Wait for a real request before that work starts,
+ *  or the production build sits on those queries until it times out. */
+async function LivePage({ children }: { children: React.ReactNode }) {
+  await connection();
+  return (
+    <>
+      <Header />
+      <main className="pb-6 pt-6">{children}</main>
+      <Footer />
+    </>
+  );
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN">
@@ -37,16 +51,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen antialiased">
-        {/* These read the database and the session. On Vercel that work waits until the request,
-            so the production build can finish instead of stalling for a minute. */}
         <Suspense fallback={<div className="h-16 border-b border-[var(--color-line)] bg-white" />}>
-          <Header />
-        </Suspense>
-        <main className="pb-6 pt-6">
-          <Suspense fallback={null}>{children}</Suspense>
-        </main>
-        <Suspense fallback={null}>
-          <Footer />
+          <LivePage>{children}</LivePage>
         </Suspense>
         <TableLabels />
         <Suspense fallback={null}>
