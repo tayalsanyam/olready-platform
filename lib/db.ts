@@ -10,11 +10,18 @@ const globalForDb = globalThis as unknown as { __olreadySql?: Sql };
 function create(): Sql {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is not set');
+  const supabase = url.includes('supabase.com');
   return postgres(url, {
-    // Supabase's transaction pooler does not support prepared statements.
+    // The transaction pooler cannot prepare statements, and it stalls when several
+    // queries are sent on one connection before the first answer comes back.
     prepare: false,
-    max: process.env.NODE_ENV === 'production' ? 5 : 10,
+    max_pipeline: 1,
+    fetch_types: false,
+    max: process.env.NODE_ENV === 'production' ? 3 : 10,
     idle_timeout: 20,
+    connect_timeout: 10,
+    queue_timeout: 10,
+    ssl: supabase ? 'require' : undefined,
     onnotice: () => {},
     transform: { undefined: null },
   });
