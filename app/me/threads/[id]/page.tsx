@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { requireProfile } from '@/lib/auth';
 import { DomainError } from '@/lib/db';
-import { getThread, threadAccess, threadMessages, threadQuotes } from '@/lib/threads';
+import { getThread, markThreadRead, threadAccess, threadMessages, threadQuotes } from '@/lib/threads';
 import { decideQuoteAction, postMessageAction } from '@/lib/actions/threads';
 import { brideReportBooking } from '@/lib/actions/bride';
 import { ThreadView } from '@/components/ThreadView';
@@ -26,6 +26,7 @@ export default async function BrideThread({ params, searchParams }: P) {
     throw e;
   }
   const t = (await getThread(sql, id))!;
+  await markThreadRead(sql, id, 'bride');
   const [messages, quotes] = await Promise.all([threadMessages(sql, id), threadQuotes(sql, id)]);
   return (
     <>

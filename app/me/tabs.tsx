@@ -19,8 +19,8 @@ const items = [
   { href: '/me/real-wedding', label: 'Share our wedding' },
 ];
 
-export function BrideTabs() {
+export function BrideTabs({ unread = 0 }: { unread?: number }) {
   const path = usePathname();
   const active = items.filter((i) => path === i.href || (i.href !== '/me' && path.startsWith(i.href))).sort((a, b) => b.href.length - a.href.length)[0]?.href ?? (path.startsWith('/me/threads') ? '/me' : undefined);
-  return <Tabs items={items} active={active} />;
+  return <Tabs items={items.map((i) => (i.href === '/me' ? { ...i, count: unread } : i))} active={active} />;
 }

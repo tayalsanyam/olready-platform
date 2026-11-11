@@ -1,3 +1,4 @@
+import { plansBehind } from '@/lib/alerts';
 import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireVendor } from '@/lib/vendorSession';
@@ -21,6 +22,7 @@ export default async function VendorHome({ searchParams }: P) {
   const { vendor } = await requireVendor();
   const [bal, needs, stats] = await Promise.all([balances(sql, vendor.id), visibleNeeds(sql, vendor.id), vendorStats(sql, vendor.id)]);
   const credits = (bal.planUsable ? bal.plan : 0) + bal.topup;
+  const pace = (await plansBehind(sql)).find((r) => r.vendor_id === vendor.id);
   const [fnsByNeed, clashes] = await Promise.all([needFunctions(sql, needs.map((n) => n.need_id)), clashesForNeeds(sql, vendor.id, needs.map((n) => n.need_id))]);
   return (
     <>
@@ -44,6 +46,24 @@ export default async function VendorHome({ searchParams }: P) {
           hint="What you paid for leads ÷ bookings"
         />
       </div>
+      {pace ? (
+        <Card className="mb-5">
+          <p className="text-sm">
+            <b>
+              You have used {pace.used} of {pace.credits} enquiries and your {pace.plan} plan has {plural(pace.days_left, 'day')} left.
+            </b>{' '}
+            Unused enquiries end with the plan. {pace.open_leads ? `${plural(pace.open_leads, 'verified request')} below ${pace.open_leads === 1 ? 'is' : 'are'} open for you now.` : 'Check here daily: requests close once enough vendors open them.'}{' '}
+            <Link href="/vendor/calendar" className="underline">
+              Update your calendar
+            </Link>{' '}
+            and{' '}
+            <Link href="/vendor/profile" className="underline">
+              add the towns you travel to
+            </Link>{' '}
+            to see more.
+          </p>
+        </Card>
+      ) : null}
       {credits === 0 ? (
         <Card className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm">You have no credits. Buy a small pack to unlock your first leads.</p>

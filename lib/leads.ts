@@ -109,6 +109,11 @@ export async function createEnquiry(sql: Sql, input: EnquiryInput) {
     }
     await saveLeadFunctions(tx, lead.id, fns, picks);
     if (input.weddingId) await seedWeddingFunctions(tx, input.weddingId, fns);
+    if (!['ops', 'instagram', 'legacy'].includes(lead.source)) {
+      const { alertRequestReceived, staffAlert } = await import('./alerts');
+      await alertRequestReceived(tx, lead.id);
+      await staffAlert(tx, 'lead', `${lead.bride_name}, ${lead.source.replace('_', ' ')}`, `/ops/leads/${lead.id}`, `lead:${lead.id}`);
+    }
     return lead;
   });
 }
@@ -398,6 +403,7 @@ export async function unlockNeed(sql: Sql, needId: string, vendorId: string, act
       await tx`update mkt.lead_needs set status = 'capped' where id = ${needId}`;
     }
     await audit(tx, actor, 'need.unlock', 'need', needId, { vendorId, cost, kind });
+    await (await import('./alerts')).alertCreditsLow(tx, vendorId);
     return { unlockId: unlock.id, threadId: thread.id, creditKind: kind, cost };
   });
 }
@@ -495,6 +501,7 @@ export async function reportBooking(
       vendorId: input.vendorId,
       side: input.side,
     });
+    await (await import('./alerts')).alertBooking(tx, input.needId, input.vendorId);
     return report;
   });
 }

@@ -307,6 +307,7 @@ export async function createVendor(
       ${opts.ownerProfileId ? 'pending_review' : 'draft'}, ${opts.claimStatus ?? (opts.ownerProfileId ? 'claimed' : 'unclaimed')})
     returning *`;
   await audit(db, opts.actor, 'vendor.create', 'vendor', v.id, { slug });
+  if (v.status === 'pending_review') await (await import('./alerts')).staffAlert(db, 'profile', v.business_name, `/ops/vendors/${v.id}`, `profile:${v.id}`);
   return v;
 }
 
@@ -331,6 +332,7 @@ export async function updateVendorProfile(
       updated_at = now()
     where id = ${vendorId} returning *`;
   await audit(db, actor, 'vendor.update', 'vendor', vendorId);
+  if (v.status === 'draft' && u.status === 'pending_review') await (await import('./alerts')).staffAlert(db, 'profile', u.business_name, `/ops/vendors/${vendorId}`, `profile:${vendorId}:${new Date().toISOString().slice(0, 10)}`);
   return u;
 }
 
@@ -340,6 +342,7 @@ export async function setVendorStatus(
   change: { status?: Vendor['status']; verified?: boolean; assured?: boolean; serviceCityIds?: number[] },
   actor: string
 ) {
+  const [before] = await db<{ status: string }[]>`select status from mkt.vendors where id = ${vendorId}`;
   if (change.status === 'live') {
     const [v] = await db<{ claim_status: string }[]>`select claim_status from mkt.vendors where id = ${vendorId}`;
     if (!v) throw new DomainError('not_found', 'Vendor not found');
@@ -359,6 +362,7 @@ export async function setVendorStatus(
       updated_at = now()
     where id = ${vendorId}`;
   await audit(db, actor, 'vendor.status', 'vendor', vendorId, change);
+  await (await import('./alerts')).alertVendorStatus(db, vendorId, before?.status ?? null, change.status ?? null);
 }
 
 /** Ops invites a vendor to claim a profile Ops built. Nothing is published until claimed. */
@@ -376,6 +380,7 @@ export async function acceptClaim(db: Db, token: string, profileId: string) {
     select id, vendor_id, status from mkt.vendor_claims where token = ${token}`;
   if (!c || c.status !== 'invited') throw new DomainError('bad_claim', 'This claim link is not valid any more');
   await db`update mkt.vendor_claims set status = 'submitted', profile_id = ${profileId} where id = ${c.id}`;
+  await (await import('./alerts')).staffAlert(db, 'claim', 'A vendor claimed their profile', '/ops/vendors', `claim:${c.id}`);
   return c;
 }
 
@@ -396,6 +401,7 @@ export async function decideClaim(db: Db, claimId: string, approve: boolean, act
     await db`update mkt.vendors set claim_status = 'unclaimed' where id = ${c.vendor_id}`;
   }
   await audit(db, actor, approve ? 'vendor.claim_approved' : 'vendor.claim_rejected', 'vendor', c.vendor_id);
+  await (await import('./alerts')).alertClaimDecided(db, claimId, approve);
 }
 
 export function isPubliclyVisible(v: Pick<Vendor, 'status'>) {

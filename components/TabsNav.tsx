@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'react';
  * A row of section tabs. On narrow screens it scrolls sideways: the right edge fades to show there
  * is more, and the current tab is scrolled into view.
  */
-export function Tabs({ items, active }: { items: { href: string; label: string }[]; active?: string }) {
+export function Tabs({ items, active }: { items: { href: string; label: string; count?: number }[]; active?: string }) {
   const cur = useRef<HTMLAnchorElement>(null);
   useEffect(() => {
     cur.current?.scrollIntoView({ block: 'nearest', inline: 'center' });
@@ -24,6 +24,11 @@ export function Tabs({ items, active }: { items: { href: string; label: string }
               className={`inline-flex min-h-10 items-center border-b-2 ${active === i.href ? 'border-[var(--color-pink)] font-semibold' : 'border-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)]'}`}
             >
               {i.label}
+              {i.count ? (
+                <span className="ml-1.5 rounded-full bg-[var(--color-pink)] px-1.5 text-xs font-semibold leading-5 text-white" aria-label={`${i.count} new`}>
+                  {i.count}
+                </span>
+              ) : null}
             </Link>
           </li>
         ))}

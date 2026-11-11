@@ -112,3 +112,23 @@ node tests/e2e/sweep.mjs          # every sitemap page, contact-leak scan, 7-rol
 - **Which ad worked.** Each lead keeps its campaign name. Leads can be filtered by source, and *Where leads came from* shows leads, verified, opened and booked per source and campaign for 90 days.
 - **Picked or not.** A bride's request list shows *Vendors you picked* (shortlisted or asked for by name, with those yet to reply) apart from *Other vendors who wrote to you*.
 - **The call form.** The lead page's *Her details* holds her name, partner's name, sign-in email, two phone numbers, best time to call, WhatsApp consent, the main town with area and pincode, and team notes. Each function has its date, time of day, guests, its own town and a venue. A category is shown to vendors who work in any town its functions are in (`mkt.need_city_ids`). Each category takes a budget and a one-line *what she wants*, which vendors see on the lead; phone numbers and emails are refused there.
+
+## Notifications (November 2026)
+
+Every notice goes by email, and by WhatsApp too once its template is approved and switched on in Ops > WhatsApp. Each has a dedupe key, and an alert that fails never undoes the action behind it (`lib/alerts.ts`).
+
+| Who | When | Email template | WhatsApp event |
+|---|---|---|---|
+| Bride | Sends a request | `request_received` | `request_received` |
+| Bride | Request verified, new message, new quote | existing | existing |
+| Bride and vendor | Booking recorded | `booking_confirmed`, `booking_recorded_vendor` | `booking_recorded_bride`, `booking_recorded_vendor` |
+| Vendor | Profile live, sent back or paused; claim decided | `vendor_profile_*`, `claim_*` | `vendor_profile_live` |
+| Vendor | Payment in (with tax invoice); plan active | `payment_received`, `plan_started` | same names |
+| Vendor | Few enquiries left (weekly at most) | `credits_low` | `credits_low` |
+| Vendor | Plan behind on usage (every `plan_nudge_every_days`) | `plan_usage_low` | `plan_usage_low` |
+| Vendor | New review; dispute contacted, decided or expired | `review_received`, `dispute_update` | `review_received` |
+| Team | New request, bank transfer, profile or claim to review, plan waiting for contract, dispute, RM request | `staff_alert` | `staff_alert` |
+
+- **Plan usage.** A plan is behind when the share of enquiries used trails the share of time gone by more than `plan_nudge_gap_pct` points (and at least a fifth of the plan has passed). The vendor sees a notice on their dashboard, gets the nudge, and appears in Ops > Plan usage with a phone link so someone can call.
+- **Team alerts.** Set `STAFF_ALERT_EMAILS` and `STAFF_ALERT_PHONES`. Alerts raised between `staff_quiet_from_hour` and `staff_quiet_to_hour` (India time) are held until the quiet hours end. Requests the team types or pastes in themselves do not alert.
+- **Unread.** Conversations count messages from the other side since they were last opened; the count shows on the Conversations tab, the My wedding tab and each chat.

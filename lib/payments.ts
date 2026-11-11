@@ -87,6 +87,7 @@ export async function createOrder(
     insert into mkt.orders (vendor_id, profile_id, pack_id, amount_inr, gateway, buyer_gstin, coupon_code, discount_inr, list_price_inr)
     values (${input.vendorId}, ${input.profileId}, ${pack.id}, ${pack.price_inr - c.discount}, ${input.gateway}, ${gstin}, ${c.code}, ${c.discount}, ${pack.price_inr})
     returning *`;
+  if (order.gateway === 'manual') await (await import('./alerts')).staffAlert(db, 'transfer', `${pack.name}, ₹${order.amount_inr.toLocaleString('en-IN')}`, '/ops/payments', `transfer:${order.id}`);
   return { order, pack };
 }
 
@@ -104,6 +105,7 @@ export async function createWalletOrder(db: Db, input: { profileId: string; vend
     insert into mkt.orders (vendor_id, profile_id, wallet_topup_inr, amount_inr, gateway, buyer_gstin, coupon_code, discount_inr, list_price_inr)
     values (${input.vendorId}, ${input.profileId}, ${input.amountInr}, ${input.amountInr - c.discount}, ${input.gateway}, ${gstin}, ${c.code}, ${c.discount}, ${input.amountInr})
     returning *`;
+  if (order.gateway === 'manual') await (await import('./alerts')).staffAlert(db, 'transfer', `Ads wallet, ₹${order.amount_inr.toLocaleString('en-IN')}`, '/ops/payments', `transfer:${order.id}`);
   return order;
 }
 
@@ -140,6 +142,10 @@ export async function markOrderPaid(sql: Sql, orderId: string, paymentId: string
     // The tax invoice is numbered the moment the money is in, inside the same transaction.
     await ensureInvoice(tx, orderId, actor);
     await audit(tx, actor, 'order.paid', 'order', orderId, { paymentId });
+    const { alertOrderPaid, staffAlert } = await import('./alerts');
+    await alertOrderPaid(tx, orderId);
+    if (pack?.kind === 'plan' && pack.requires_contract) await staffAlert(tx, 'contract', pack.name, '/ops/payments', `contract:${orderId}`);
+    if (order.service_code) await staffAlert(tx, 'rm', 'A bride paid for a relationship manager', '/ops/rm', `rm:${orderId}`);
     return { order: paid, alreadyPaid: false };
   });
 }
@@ -157,6 +163,7 @@ async function activate(db: Db, subId: string, invoiceUrl: string | null, contra
       activated_by = ${actor}
     where id = ${subId}`;
   await grantCredits(db, sub.vendor_id, 'plan', sub.credits, 'purchase', sub.id, actor, sub.name);
+  await (await import('./alerts')).alertPlanStarted(db, subId);
 }
 
 /**

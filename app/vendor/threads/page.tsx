@@ -20,7 +20,10 @@ export default async function VendorThreads() {
             <li key={t.id}>
               <Link href={`/vendor/threads/${t.id}`} className="flex items-center justify-between gap-3 p-4 hover:bg-[var(--color-tint)]">
                 <div>
-                  <div className="font-semibold">{t.bride_name}</div>
+                  <div className="font-semibold">
+                    {t.bride_name}
+                    {t.unread_vendor ? <span className="ml-2 rounded-full bg-[var(--color-pink)] px-1.5 text-xs font-semibold leading-5 text-white">{t.unread_vendor} new</span> : null}
+                  </div>
                   <div className="hint">
                     {t.city_name} · {fmtDate(t.event_date, 'date not fixed')}
                   </div>

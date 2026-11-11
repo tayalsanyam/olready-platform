@@ -39,6 +39,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
               { href: '/ops/vendors', label: 'Vendors', count: c?.vendors },
               { href: '/ops/reviews', label: 'Reviews', count: c?.reviews },
               { href: '/ops/moderation', label: 'Moderation', count: c?.flagged },
+              { href: '/ops/usage', label: 'Plan usage' },
             ]
           : []),
         ...(rm ? [{ href: '/ops/rm', label: p.role === 'rm' ? 'My brides' : 'Relationship managers', count: c?.rm }] : []),

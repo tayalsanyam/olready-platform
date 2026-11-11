@@ -49,6 +49,18 @@ const GROUPS: { title: string; hint: string; keys: Record<string, Def> }[] = [
     },
   },
   {
+    title: 'Alerts',
+    hint: 'When vendors are nudged, and when the team is told something is waiting. Team alerts go to the addresses and numbers set by your developer.',
+    keys: {
+      low_credit_threshold: { label: 'Tell a vendor when enquiries left fall to', unit: 'enquiries' },
+      plan_nudge_gap_pct: { label: 'Nudge a vendor whose plan usage trails time gone by', unit: 'points' },
+      plan_nudge_every_days: { label: 'Send that nudge at most once every', unit: 'days' },
+      staff_alerts_on: { label: 'Alert the team when something is waiting', yesNo: true },
+      staff_quiet_from_hour: { label: 'Hold team alerts from (24-hour clock)', unit: "o'clock" },
+      staff_quiet_to_hour: { label: 'Send held alerts at', unit: "o'clock" },
+    },
+  },
+  {
     title: 'Search',
     hint: 'When a page is offered to Google.',
     keys: { min_vendors_to_index: { label: 'Vendors a listing page needs before Google may index it', unit: 'vendors' } },

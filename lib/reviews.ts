@@ -76,6 +76,7 @@ export async function writeReview(
       amount_spent_inr = excluded.amount_spent_inr, function_date = excluded.function_date,
       photos = case when cardinality(excluded.photos) > 0 then excluded.photos else mkt.reviews.photos end
     returning id`;
+  await (await import('./alerts')).alertReview(db, r.id);
   return r;
 }
 
@@ -103,6 +104,7 @@ export async function openDispute(sql: Sql, reviewId: string, vendorId: string, 
     // The review stays visible while the dispute runs, as on WedMeGood.
     await tx`update mkt.reviews set status = 'under_dispute' where id = ${reviewId}`;
     await audit(tx, actor, 'dispute.open', 'review', reviewId, { reason });
+    await (await import('./alerts')).staffAlert(tx, 'dispute', reason.trim().slice(0, 80), '/ops/reviews', `dispute:${d.id}`);
     return d;
   });
 }
@@ -116,6 +118,7 @@ export async function markContacted(db: Db, disputeId: string, actor: string) {
     where id = ${disputeId} and status = 'open' returning id`;
   if (!d) throw new DomainError('bad_state', 'This dispute is not waiting for contact');
   await audit(db, actor, 'dispute.contacted', 'dispute', disputeId);
+  await (await import('./alerts')).alertDispute(db, disputeId, 'contacted');
 }
 
 export async function submitProof(db: Db, disputeId: string, vendorId: string, proof: string) {
@@ -139,15 +142,17 @@ export async function decideDispute(sql: Sql, disputeId: string, uphold: boolean
       where id = ${disputeId}`;
     await tx`update mkt.reviews set status = ${uphold ? 'removed' : 'published'} where id = ${d.review_id}`;
     await audit(tx, actor, uphold ? 'dispute.upheld' : 'dispute.rejected', 'dispute', disputeId, { note });
+    await (await import('./alerts')).alertDispute(tx, disputeId, uphold ? 'upheld' : 'rejected');
   });
 }
 
 /** Closes disputes whose 7-day proof window ran out; the review stays published. */
 export async function expireDisputes(db: Db) {
-  const rows = await db<{ review_id: string }[]>`
+  const rows = await db<{ review_id: string; id: string }[]>`
     update mkt.review_disputes set status = 'expired', outcome_note = 'No proof within the deadline'
-    where status = 'awaiting_proof' and proof_due_at <= now() returning review_id`;
+    where status = 'awaiting_proof' and proof_due_at <= now() returning review_id, id`;
   for (const r of rows) {
+    await (await import('./alerts')).alertDispute(db, r.id, 'expired');
     await db`update mkt.reviews set status = 'published' where id = ${r.review_id} and status = 'under_dispute'`;
   }
   return rows.length;

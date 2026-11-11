@@ -272,5 +272,6 @@ export async function handleMetaLeadWebhook(sql: Sql, body: { entry?: { changes?
     rows.push(rowFromMetaFields(j.field_data ?? [], { id, campaign: j.campaign_name ?? j.ad_name ?? null }));
   }
   const res = await importLeads(sql, rows, defaults, null);
+  if (res.added) await (await import('./alerts')).staffAlert(sql, 'lead', `${res.added} from an Instagram or Facebook ad`, '/ops/leads?source=instagram', `metaleads:${ids[0]}`);
   return { added: res.added };
 }

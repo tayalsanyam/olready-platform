@@ -7,10 +7,12 @@ import { DomainError, audit } from './db';
 // on. Brides get messages only for requests where they ticked the opt-in themselves; vendors
 // only when they turned alerts on. A STOP reply opts the number out everywhere.
 
-export type WaEvent = 'request_verified' | 'quote_received' | 'bride_message' | 'vendor_new_lead' | 'vendor_message' | 'quote_accepted';
+export type WaEvent = 'request_verified' | 'quote_received' | 'bride_message' | 'vendor_new_lead' | 'vendor_message' | 'quote_accepted'
+  | 'request_received' | 'vendor_profile_live' | 'payment_received' | 'plan_started' | 'credits_low' | 'plan_usage_low'
+  | 'booking_recorded_bride' | 'booking_recorded_vendor' | 'review_received' | 'staff_alert';
 
 /** What each event says and the order of its template variables, for Ops setting up templates. */
-export const WA_EVENTS: Record<WaEvent, { who: 'bride' | 'vendor'; label: string; params: string[]; sample: string }> = {
+export const WA_EVENTS: Record<WaEvent, { who: 'bride' | 'vendor' | 'team'; label: string; params: string[]; sample: string }> = {
   request_verified: {
     who: 'bride',
     label: 'Request verified',
@@ -46,6 +48,66 @@ export const WA_EVENTS: Record<WaEvent, { who: 'bride' | 'vendor'; label: string
     label: 'Quote accepted',
     params: ['business', 'bride first name', 'amount', 'link'],
     sample: 'Good news, {{1}}: {{2}} accepted your quote of {{3}}. Talk next steps: {{4}}',
+  },
+  request_received: {
+    who: 'bride',
+    label: 'Request received',
+    params: ['first name', 'categories'],
+    sample: 'Hi {{1}}, OLReady has your request for {{2}}. Our team will call you to confirm the details before vendors see it.',
+  },
+  booking_recorded_bride: {
+    who: 'bride',
+    label: 'Booking recorded (bride)',
+    params: ['first name', 'vendor', 'category'],
+    sample: 'Hi {{1}}, your {{3}} booking with {{2}} is on record with OLReady.',
+  },
+  vendor_profile_live: {
+    who: 'vendor',
+    label: 'Profile live',
+    params: ['business', 'link'],
+    sample: '{{1}}, your OLReady profile is approved and live: {{2}}',
+  },
+  payment_received: {
+    who: 'vendor',
+    label: 'Payment received',
+    params: ['business', 'amount', 'item', 'invoice link'],
+    sample: '{{1}}, we received {{2}} for {{3}}. Your tax invoice: {{4}}',
+  },
+  plan_started: {
+    who: 'vendor',
+    label: 'Plan active',
+    params: ['business', 'plan', 'enquiries', 'valid until'],
+    sample: '{{1}}, your {{2}} plan is active with {{3}} verified enquiries, valid until {{4}}.',
+  },
+  credits_low: {
+    who: 'vendor',
+    label: 'Few enquiries left',
+    params: ['business', 'left', 'link'],
+    sample: '{{1}}, you have {{2}} enquiries left on OLReady. Top up so you do not miss the next request: {{3}}',
+  },
+  plan_usage_low: {
+    who: 'vendor',
+    label: 'Plan behind on usage',
+    params: ['business', 'used', 'total', 'days left', 'link'],
+    sample: '{{1}}, you have used {{2}} of {{3}} enquiries and your plan has {{4}} days left. See the requests open for you: {{5}}',
+  },
+  booking_recorded_vendor: {
+    who: 'vendor',
+    label: 'Booking recorded (vendor)',
+    params: ['business', 'bride first name', 'date'],
+    sample: '{{1}}, your booking with {{2}} for {{3}} is recorded and marked on your OLReady calendar.',
+  },
+  review_received: {
+    who: 'vendor',
+    label: 'New review',
+    params: ['business', 'bride first name', 'stars', 'link'],
+    sample: '{{1}}, {{2}} reviewed you on OLReady: {{3}} out of 5. Read and reply: {{4}}',
+  },
+  staff_alert: {
+    who: 'team',
+    label: 'Team alert',
+    params: ['what', 'detail', 'link'],
+    sample: 'OLReady: {{1}}. {{2}} {{3}}',
   },
 };
 
@@ -121,7 +183,7 @@ export async function flushWhatsApp(db: Db, limit = 30) {
     update mkt.whatsapp_outbox o set attempts = attempts + 1, updated_at = now()
     from mkt.whatsapp_templates t
     where t.event = o.event and o.id in (
-      select id from mkt.whatsapp_outbox where status = 'queued' and attempts < 3 order by created_at limit ${limit} for update skip locked)
+      select id from mkt.whatsapp_outbox where status = 'queued' and attempts < 3 and send_after <= now() order by created_at limit ${limit} for update skip locked)
     returning o.id, o.to_phone, o.params, t.template_name, t.language, t.enabled`;
   let sent = 0;
   let failed = 0;

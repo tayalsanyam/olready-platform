@@ -1,3 +1,4 @@
+import { plansBehind } from '@/lib/alerts';
 import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireStaff } from '@/lib/auth';
@@ -14,6 +15,7 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
   const q = await searchParams;
   const p = await requireStaff();
   const [calls, contacts] = await Promise.all([openCallbacks(sql), openContacts(sql)]);
+  const behind = (await plansBehind(sql)).length;
   const [c] = await sql<Record<string, number>[]>`
     select
       (select count(*) from mkt.leads where status in ('new','verifying'))::int as to_verify,
@@ -61,6 +63,7 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
     ['Profiles to review', c.vendors_pending, '/ops/vendors?status=pending_review'],
     ['Claims to approve', c.claims, '/ops/vendors'],
     ['Plans waiting for contract', c.contracts, '/ops/payments'],
+    ['Plans behind on usage', behind, '/ops/usage'],
     ['Bank transfers to confirm', c.transfers, '/ops/payments'],
     ['Disputes to contact', c.disputes_contact, '/ops/reviews', c.disputes_overdue ? `${c.disputes_overdue} past 48 hours` : undefined],
     ['Disputes to decide', c.disputes_decide, '/ops/reviews'],

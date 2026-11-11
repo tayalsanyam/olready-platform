@@ -15,11 +15,11 @@ const items = [
   { href: '/vendor/weddings', label: 'Real weddings' },
 ];
 
-export function VendorTabs() {
+export function VendorTabs({ unread = 0 }: { unread?: number }) {
   const path = usePathname();
   if (path === '/vendor/onboard') return null;
   const active = items
     .filter((i) => path === i.href || path.startsWith(i.href + '/'))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
-  return <Tabs items={items} active={active} />;
+  return <Tabs items={items.map((i) => (i.href === '/vendor/threads' ? { ...i, count: unread } : i))} active={active} />;
 }

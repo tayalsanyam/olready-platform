@@ -74,7 +74,7 @@ export default async function OpsWhatsApp({ searchParams }: P) {
               <li key={e} className="grid gap-3 py-4 lg:grid-cols-[1fr_420px]">
                 <div>
                   <p className="font-medium">
-                    {def.label} <Badge>{def.who === 'bride' ? 'To brides' : 'To vendors'}</Badge>{' '}
+                    {def.label} <Badge>{def.who === 'bride' ? 'To brides' : def.who === 'team' ? 'To the team' : 'To vendors'}</Badge>{' '}
                     {t?.enabled ? <Badge tone="ok">On</Badge> : <Badge>Off</Badge>}
                   </p>
                   <p className="mt-1 rounded-lg bg-[var(--color-tint)] p-2 text-sm">{def.sample}</p>

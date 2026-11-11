@@ -10,6 +10,7 @@ import { endExpiredEngagements } from '@/lib/rm';
 import { expirePlans } from '@/lib/payments';
 import { endFinishedBoosts } from '@/lib/promotion';
 import { queueBrideCheckins } from '@/lib/automations';
+import { queuePlanNudges } from '@/lib/alerts';
 
 /**
  * Daily jobs (Vercel Cron, Authorization: Bearer $CRON_SECRET):
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
   const rmEnded = await endExpiredEngagements(sql);
   const boostsEnded = await endFinishedBoosts(sql);
   const checkins = await queueBrideCheckins(sql);
+  const planNudges = await queuePlanNudges(sql);
   const mail = await flushOutbox(sql);
   const whatsapp = await flushWhatsApp(sql, 200);
   const chatsDeleted = await purgeOldChats(sql);
@@ -36,5 +38,5 @@ export async function GET(req: NextRequest) {
       from mkt.vendors v left join mkt.profiles p on p.id = v.owner_profile_id where v.id = ${vendorId} and coalesce(p.notify_email, true)`;
     if (v?.email) await queueEmail(sql, v.email, 'calendar_reminder', { business: v.business, ago: freshness(v.updated, 0).ago ?? 'never' }, `calendar:${vendorId}:${todayIst().slice(0, 7)}`);
   });
-  return NextResponse.json({ expiredDisputes: expired, feedbackQueued: feedback, expiredPlans: plans, rmEnded, boostsEnded, checkins, mail, whatsapp, chatsDeleted, calendars });
+  return NextResponse.json({ expiredDisputes: expired, feedbackQueued: feedback, expiredPlans: plans, rmEnded, boostsEnded, checkins, planNudges, mail, whatsapp, chatsDeleted, calendars });
 }

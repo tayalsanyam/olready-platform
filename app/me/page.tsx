@@ -194,6 +194,7 @@ export default async function MyWedding({ searchParams }: P) {
                           <Link href={`/me/threads/${t.id}`} className="btn btn-ghost btn-sm">
                             {t.vendor_name}
                             {t.status === 'quoted' ? ' · quote' : t.status === 'quote_accepted' ? ' · accepted' : ''}
+                            {t.unread_bride ? <span className="ml-1.5 rounded-full bg-[var(--color-pink)] px-1.5 text-xs font-semibold leading-5 text-white">{t.unread_bride} new</span> : null}
                           </Link>
                         </li>
                       );

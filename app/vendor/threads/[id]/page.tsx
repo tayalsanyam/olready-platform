@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { requireVendor } from '@/lib/vendorSession';
-import { getThread, threadMessages, threadQuotes } from '@/lib/threads';
+import { getThread, markThreadRead, threadMessages, threadQuotes } from '@/lib/threads';
 import { postMessageAction, sendQuoteAction } from '@/lib/actions/threads';
 import { vendorReportBooking } from '@/lib/actions/vendor';
 import { ThreadView } from '@/components/ThreadView';
@@ -18,6 +18,7 @@ export default async function VendorThread({ params, searchParams }: P) {
   const { profile, vendor } = await requireVendor(`/vendor/threads/${id}`);
   const t = /^[0-9a-f-]{36}$/.test(id) ? await getThread(sql, id) : null;
   if (!t || t.vendor_id !== vendor.id) notFound();
+  await markThreadRead(sql, id, 'vendor');
   const [messages, quotes] = await Promise.all([threadMessages(sql, id), threadQuotes(sql, id)]);
   return (
     <>

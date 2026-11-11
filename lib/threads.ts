@@ -13,6 +13,9 @@ export type ThreadRow = {
   vendor_slug: string;
   /** She shortlisted this vendor or asked for them by name. */
   picked: boolean;
+  /** Messages from the other side since each side last opened the conversation. */
+  unread_bride: number;
+  unread_vendor: number;
   category_name: string;
   bride_name: string;
   bride_phone: string;
@@ -33,6 +36,10 @@ export type ThreadRow = {
 const threadSelect = (db: Db) => db`
   select t.id, t.lead_need_id, l.id as lead_id, t.vendor_id, v.business_name as vendor_name, v.slug as vendor_slug,
          (t.vendor_id = any(ln.preferred_vendor_ids) or t.vendor_id is not distinct from ln.direct_vendor_id) as picked,
+         (select count(*) from mkt.messages m where m.thread_id = t.id and m.sender_profile_id is not distinct from v.owner_profile_id
+            and m.created_at > coalesce(t.bride_read_at, 'epoch'))::int as unread_bride,
+         (select count(*) from mkt.messages m where m.thread_id = t.id and m.sender_profile_id is distinct from v.owner_profile_id
+            and m.created_at > coalesce(t.vendor_read_at, 'epoch'))::int as unread_vendor,
          c.name as category_name, l.bride_name, l.phone as bride_phone, l.email as bride_email,
          to_char(l.event_date, 'YYYY-MM-DD') as event_date, ci.name as city_name, ln.budget_inr,
          bt.label as tier_label, ln.status as need_status, ln.brief, t.status,
@@ -58,6 +65,29 @@ export async function threadsForBride(db: Db, profileId: string) {
     where l.bride_profile_id = ${profileId}
        or exists (select 1 from mkt.wedding_members m where m.wedding_id = l.wedding_id and m.profile_id = ${profileId})
     order by t.created_at desc`;
+}
+
+/** Opening a conversation clears its unread count for that side. */
+export async function markThreadRead(db: Db, threadId: string, side: 'bride' | 'vendor') {
+  if (side === 'bride') await db`update mkt.threads set bride_read_at = now() where id = ${threadId}`;
+  else await db`update mkt.threads set vendor_read_at = now() where id = ${threadId}`;
+}
+
+/** Unread messages across all of a vendor's conversations, or a bride's. */
+export async function unreadCount(db: Db, who: { vendorId: string } | { brideProfileId: string }) {
+  if ('vendorId' in who) {
+    const [r] = await db<{ n: number }[]>`
+      select count(*)::int as n from mkt.messages m join mkt.threads t on t.id = m.thread_id join mkt.vendors v on v.id = t.vendor_id
+      where t.vendor_id = ${who.vendorId} and m.sender_profile_id is distinct from v.owner_profile_id and m.created_at > coalesce(t.vendor_read_at, 'epoch')`;
+    return r.n;
+  }
+  const [r] = await db<{ n: number }[]>`
+    select count(*)::int as n from mkt.messages m join mkt.threads t on t.id = m.thread_id join mkt.vendors v on v.id = t.vendor_id
+    join mkt.lead_needs ln on ln.id = t.lead_need_id join mkt.leads l on l.id = ln.lead_id
+    where (l.bride_profile_id = ${who.brideProfileId}
+        or exists (select 1 from mkt.wedding_members wm where wm.wedding_id = l.wedding_id and wm.profile_id = ${who.brideProfileId}))
+      and m.sender_profile_id is not distinct from v.owner_profile_id and m.created_at > coalesce(t.bride_read_at, 'epoch')`;
+  return r.n;
 }
 
 export type Access = { side: 'vendor' | 'bride' | 'staff' };
