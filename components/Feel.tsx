@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { reportError } from './reportError';
 
 /**
  * The feel of the site in one place: a progress line while a page or a form is loading,
@@ -52,6 +53,17 @@ export function Feel() {
     };
     // A wait that never ends (a download, a blocked request) should not leave the line running.
     const settle = () => setOn(false);
+    // Crashes in the browser are reported to the site's own error log, a few per visit at most.
+    let sent = 0;
+    const crashed = (ev: ErrorEvent | PromiseRejectionEvent) => {
+      if (sent >= 3) return;
+      const err = 'reason' in ev ? ev.reason : (ev.error ?? ev.message);
+      if (!err) return;
+      sent++;
+      reportError(err);
+    };
+    window.addEventListener('error', crashed);
+    window.addEventListener('unhandledrejection', crashed);
     document.addEventListener('click', click);
     document.addEventListener('submit', submit);
     window.addEventListener('pageshow', settle);
@@ -59,6 +71,8 @@ export function Feel() {
       document.removeEventListener('click', click);
       document.removeEventListener('submit', submit);
       window.removeEventListener('pageshow', settle);
+      window.removeEventListener('error', crashed);
+      window.removeEventListener('unhandledrejection', crashed);
     };
   }, []);
 

@@ -24,6 +24,10 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: '#ffffff', width: 'device-width', initialScale: 1 };
 
+// The header and footer read the database. Vercel prerenders pages that do not opt out,
+// and those queries are canceled during the build. Render this shell on the request.
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN">

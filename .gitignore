@@ -2,9 +2,16 @@ node_modules
 .next
 .env
 .env.local
+.env.vercel
+olready-production.env
 *.tsbuildinfo
 next-env.d.ts
 AGENTS.md
 public/uploads
 tests/eval/last-run.json
 walkthrough-shots/
+
+.deploy-sql/
+.pgdata/
+.env.supabase
+.claude-tmp/

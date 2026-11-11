@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
   const mail = await flushOutbox(sql);
   const whatsapp = await flushWhatsApp(sql, 200);
   const chatsDeleted = await purgeOldChats(sql);
+  await (await import('@/lib/errors')).purgeOldErrors(sql);
   const calendars = await calendarDaily(sql, async (vendorId) => {
     const [v] = await sql<{ email: string | null; business: string; updated: Date | null }[]>`
       select coalesce(p.email, v.email) as email, v.business_name as business, v.calendar_updated_at as updated

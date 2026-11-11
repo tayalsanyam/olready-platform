@@ -469,6 +469,22 @@ export async function opsTagVendor(fd: FormData) {
 }
 
 // ---------------------------------------------------------------- settings
+export async function opsResolveError(fd: FormData) {
+  await attempt('/ops/errors', async () => {
+    const p = await requireRole(OPS);
+    await (await import('../errors')).resolveError(sql, str(fd, 'id'), p.id);
+    return { ok: 'Marked fixed. It will come back here if it happens again.' };
+  });
+}
+
+export async function opsResolveAllErrors() {
+  await attempt('/ops/errors', async () => {
+    const p = await requireRole(OPS);
+    await (await import('../errors')).resolveAllErrors(sql, p.id);
+    return { ok: 'All marked fixed.' };
+  });
+}
+
 export async function opsSaveStaffRecipients(fd: FormData) {
   await attempt('/ops/settings#team-alerts', async () => {
     const p = await requireRole(ADMIN);

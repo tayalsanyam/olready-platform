@@ -537,7 +537,7 @@ async function callClaude(system: string, messages: ApiMessage[]) {
     res = await fetch(`${process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com'}/v1/messages`, {
       method: 'POST',
       headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      signal: AbortSignal.timeout(45000),
+      signal: AbortSignal.timeout(Number(process.env.ANTHROPIC_TIMEOUT_MS ?? 45000)),
       body: JSON.stringify({
         model: process.env.ANTHROPIC_BRIDE_MODEL ?? 'claude-sonnet-5-5',
         max_tokens: 1500,

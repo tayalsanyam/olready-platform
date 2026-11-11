@@ -140,3 +140,20 @@ Every notice goes by email, and by WhatsApp too once its template is approved an
 - **Dashboards open on a hero.** Bride: the couple's names, a countdown, and rings for vendors booked, checklist, guests replied and budget. Vendor: greeting, plan ring, profile strength with the next step. Ops: greeting, how many things are waiting, and 14-day lines for requests, unlocks and bookings.
 - **Loaders** are shimmer skeletons in the dashboards only. Public pages have no `loading.tsx` on purpose, so a missing page still answers 404 to Google.
 - **Team alert recipients** are edited in Ops > Settings > Who gets team alerts (admin), with a test button. The `STAFF_ALERT_*` environment values are only the starting list.
+
+## Error monitoring (November 2026)
+
+No outside service. Every crash is stored in `mkt.error_events`, grouped by what broke and where, and shown in Ops > Errors.
+
+- **Server:** `instrumentation.ts` (`onRequestError`) records anything thrown while showing a page, saving a form or answering a route.
+- **Browser:** `components/Feel.tsx` reports uncaught errors and failed promises (three a visit at most) to `/api/errors`; `app/error.tsx` and `app/global-error.tsx` report what they catch.
+- **Private by design:** query strings are dropped, ids and tokens in addresses are masked, and emails, phone numbers, database URLs and keys are removed from messages and stacks.
+- **Alerts:** the team alert list hears the first time a fault appears, and again if one marked fixed comes back.
+- **`/api/health`** answers 200 when the site can reach its database and 503 when it cannot. Point an uptime monitor at it.
+
+## Deployment notes (from the first Vercel and Supabase deploy)
+
+- `app/layout.tsx` is `force-dynamic`: the header and footer read the database, and Vercel cancels those queries if it tries to prerender.
+- `lib/db.ts` is set for Supabase's transaction pooler: no prepared statements, one query at a time per connection (`max_pipeline: 1`), no type fetch, three connections in production, SSL required.
+- `.vercelignore` keeps local data, env files and deploy scratch out of uploads.
+- **The bride's request form** lets her mark any function as being in a different town; vendors who work there see the request too.

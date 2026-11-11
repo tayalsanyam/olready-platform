@@ -128,3 +128,26 @@ describe('what the verification call records', () => {
     expect((await visibleNeeds(sql, inDelhi.id)).map((n) => n.need_id)).not.toContain(need.id);
   });
 });
+
+describe("a function in another town, from the bride's own request", () => {
+  it('reaches vendors there, and ignores a town that does not exist', async () => {
+    const { liveVendor } = await import('./helpers');
+    const { createEnquiry, advanceVerification, visibleNeeds } = await import('@/lib/leads');
+    const { leadFunctions } = await import('@/lib/functions');
+    const ops = await profile(sql, 'ops', 'Ops Four');
+    const chd = await cityId(sql, 'chandigarh');
+    const delhi = await cityId(sql, 'delhi');
+    const cats = await listCategories(sql, { activeOnly: true });
+    const decor = cats.find((c) => c.slug === 'decorators')!.id;
+    const owner = await profile(sql, 'vendor', 'Delhi Decor');
+    const v = await liveVendor(sql, owner.id, 'decorators', 'delhi', 'Delhi Decor');
+    const lead = await createEnquiry(sql, {
+      name: 'Meher', phone: '9876544444', cityId: chd, needs: [{ categoryId: decor }],
+      functions: [{ name: 'Wedding', date: '2027-04-10', guests: 250, cityId: chd }, { name: 'Reception', date: '2027-04-12', guests: 400, cityId: delhi }, { name: 'Sangeet', date: '2027-04-09', guests: 150, cityId: 99999999 }],
+    });
+    const fns = await leadFunctions(sql, lead.id);
+    expect(fns.map((f) => [f.name, f.town, f.city_id ?? null])).toEqual([['Sangeet', 'Chandigarh', null], ['Wedding', 'Chandigarh', null], ['Reception', 'Delhi', delhi]]);
+    for (const s of [1, 2, 3] as const) await advanceVerification(sql, lead.id, s, ops.id);
+    expect((await visibleNeeds(sql, v.id)).length).toBe(1);
+  });
+});

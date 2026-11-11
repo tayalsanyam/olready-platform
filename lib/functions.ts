@@ -25,10 +25,11 @@ export function functionsFromForm(fd: FormData) {
     const date = String(fd.get(`fn_date_${i}`) ?? '').trim();
     const guests = Number(String(fd.get(`fn_guests_${i}`) ?? '').replace(/[^\d]/g, ''));
     const place = String(fd.get(`fn_place_${i}`) ?? '').trim().replace(/\s+/g, ' ').slice(0, 80) || null;
+    const cityId = Number(fd.get(`fn_city_${i}`)) || null;
     if (!name) continue;
     if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new DomainError('bad_date', `Check the date for ${name}`);
     index[i] = fns.length;
-    fns.push({ name, date: date || null, guests: guests > 0 ? Math.min(guests, 20000) : null, place });
+    fns.push({ name, date: date || null, guests: guests > 0 ? Math.min(guests, 20000) : null, place, cityId: cityId && Number.isInteger(cityId) && cityId > 0 ? cityId : null });
   }
   const forCategory = (categoryId: number) => {
     const picked = fd.getAll(`fn_for_${categoryId}`).map(Number).filter((n) => Number.isInteger(n) && index[n] != null).map((n) => index[n]);
@@ -50,7 +51,8 @@ export async function saveLeadFunctions(db: Db, leadId: string, fns: FunctionInp
   const ids: string[] = [];
   for (const [i, f] of fns.entries()) {
     const [e] = await db<{ id: string }[]>`
-      insert into mkt.lead_events (lead_id, name, event_date, guests, place, city_id, time_of_day, sort) values (${leadId}, ${f.name}, ${f.date}, ${f.guests}, ${f.place ?? null}, ${f.cityId ?? null}, ${f.time ?? null}, ${i}) returning id`;
+      insert into mkt.lead_events (lead_id, name, event_date, guests, place, city_id, time_of_day, sort) values (${leadId}, ${f.name}, ${f.date}, ${f.guests}, ${f.place ?? null},
+        nullif((select c.id from mkt.cities c where c.id = ${f.cityId ?? null} and c.active), (select l.city_id from mkt.leads l where l.id = ${leadId})), ${f.time ?? null}, ${i}) returning id`;
     ids.push(e.id);
   }
   for (const n of needFunctions) for (const i of n.idx) if (ids[i]) await db`insert into mkt.need_events (need_id, event_id) values (${n.needId}, ${ids[i]}) on conflict do nothing`;

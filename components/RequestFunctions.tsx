@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { PlacePicker } from './PlacePicker';
 
 type Cat = { id: number; slug: string; plural_name: string; price_unit: string };
-type Row = { key: number; name: string; date: string; guests: string; place: string };
+type Row = { key: number; name: string; date: string; guests: string; place: string; elsewhere: boolean };
 type Fn = { name: string; date: string | null; guests: number | null; place?: string | null };
 
 const PRESETS = ['Roka', 'Sagan', 'Engagement', 'Mehendi', 'Haldi', 'Jaggo', 'Sangeet', 'Cocktail', 'Wedding', 'Anand Karaj', 'Reception'];
@@ -16,14 +17,14 @@ let nextKey = 1;
  */
 export function RequestFunctions(props: { cats: Cat[]; preCats: string[]; initial: Fn[]; single?: { id: number; name: string; budgetHint?: string } }) {
   const [rows, setRows] = useState<Row[]>(() =>
-    (props.initial.length ? props.initial : [{ name: 'Wedding', date: null, guests: null }]).map((f) => ({ key: nextKey++, name: f.name, date: f.date ?? '', guests: f.guests ? String(f.guests) : '', place: f.place ?? '' }))
+    (props.initial.length ? props.initial : [{ name: 'Wedding', date: null, guests: null }]).map((f) => ({ key: nextKey++, name: f.name, date: f.date ?? '', guests: f.guests ? String(f.guests) : '', place: f.place ?? '', elsewhere: false }))
   );
   const [picked, setPicked] = useState<Set<number>>(() => new Set(props.single ? [props.single.id] : props.cats.filter((c) => props.preCats.includes(c.slug)).map((c) => c.id)));
   // Per category, the row keys it is NOT needed for (so new rows are included by default).
   const [skip, setSkip] = useState<Record<number, number[]>>({});
 
   const update = (key: number, patch: Partial<Row>) => setRows((r) => r.map((x) => (x.key === key ? { ...x, ...patch } : x)));
-  const add = (name = '') => rows.length < MAX && setRows((r) => [...r, { key: nextKey++, name, date: '', guests: '', place: '' }]);
+  const add = (name = '') => rows.length < MAX && setRows((r) => [...r, { key: nextKey++, name, date: '', guests: '', place: '', elsewhere: false }]);
   const remove = (key: number) => setRows((r) => (r.length > 1 ? r.filter((x) => x.key !== key) : r));
   const named = rows.filter((r) => r.name.trim());
   const toggleFor = (catId: number, key: number) =>
@@ -82,7 +83,7 @@ export function RequestFunctions(props: { cats: Cat[]; preCats: string[]; initia
                 aria-label={`Function ${i + 1}`}
                 maxLength={40}
               />
-              <button type="button" onClick={() => remove(r.key)} disabled={rows.length === 1} className="btn btn-ghost btn-sm w-10 justify-center self-center px-0 sm:order-last" aria-label={`Remove ${r.name || `function ${i + 1}`}`}>
+              <button type="button" onClick={() => remove(r.key)} disabled={rows.length === 1} className="btn btn-ghost btn-sm w-10 justify-center self-center px-0 sm:col-start-4 sm:row-start-1" aria-label={`Remove ${r.name || `function ${i + 1}`}`}>
                 ×
               </button>
               <input name={`fn_date_${i}`} type="date" value={r.date} onChange={(e) => update(r.key, { date: e.target.value })} className="input min-w-0" aria-label={`Date of ${r.name || `function ${i + 1}`}`} />
@@ -104,6 +105,22 @@ export function RequestFunctions(props: { cats: Cat[]; preCats: string[]; initia
                 aria-label={`Where is ${r.name || `function ${i + 1}`}`}
                 maxLength={80}
               />
+              <div className="col-span-3 sm:col-span-4">
+                {r.elsewhere ? (
+                  <div className="flex items-end gap-2">
+                    <div className="min-w-0 flex-1">
+                      <PlacePicker label={`Town for ${r.name || `function ${i + 1}`}`} townHint="Vendors who work in this town will see it too." names={{ city: `fn_city_${i}` }} />
+                    </div>
+                    <button type="button" onClick={() => update(r.key, { elsewhere: false })} className="btn btn-ghost btn-sm mb-px">
+                      Same town
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => update(r.key, { elsewhere: true })} className="text-sm text-[var(--color-pink-deep)] underline underline-offset-2">
+                    {r.name.trim() || 'This function'} is in a different town
+                  </button>
+                )}
+              </div>
             </li>
           ))}
         </ul>
