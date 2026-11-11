@@ -97,7 +97,7 @@ export default async function Compare({ searchParams }: P) {
           })}
         </div>
       ) : (
-        <Empty title="No quotes yet">
+        <Empty art="letters" title="No quotes yet">
           Quotes appear here as vendors send them. <Link className="underline" href="/enquire">Send a request</Link> to get started.
         </Empty>
       )}

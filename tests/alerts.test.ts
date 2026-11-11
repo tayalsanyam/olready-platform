@@ -110,6 +110,22 @@ describe('who hears what, and when', () => {
     expect(review.payload).toMatchObject({ by: 'Simran', stars: 4.5 });
   });
 
+  it('lets an admin choose who gets team alerts', async () => {
+    const { saveStaffRecipients, staffRecipients, staffAlert } = await import('@/lib/alerts');
+    const admin = await profile(sql, 'admin', 'Admin Three');
+    expect((await staffRecipients(sql)).emails).toEqual(['team@olready.test']); // the environment, until a list is saved
+    await expect(saveStaffRecipients(sql, { emails: 'not-an-email', phones: '' }, admin.id)).rejects.toThrow(/"not-an-email" is not an email/);
+    await expect(saveStaffRecipients(sql, { emails: '', phones: '12345' }, admin.id)).rejects.toThrow(/not an Indian mobile/);
+    const saved = await saveStaffRecipients(sql, { emails: 'Ops@OLReady.test\nkanika@olready.test, ops@olready.test', phones: '98765 43210\n+91 98765 43210' }, admin.id);
+    expect(saved).toEqual({ emails: ['ops@olready.test', 'kanika@olready.test'], phones: ['+919876543210'] });
+    await staffAlert(sql, 'transfer', 'Only for the new list', '/ops/payments', 'transfer:test');
+    expect((await mail('kanika@olready.test')).map((m) => m.payload.what)).toEqual(['Bank transfer to confirm']);
+    expect(await mail('team@olready.test').then((m) => m.filter((x) => x.payload.detail === 'Only for the new list'))).toEqual([]);
+    // An empty saved list means nobody, not the environment's list again.
+    await saveStaffRecipients(sql, { emails: '', phones: '' }, admin.id);
+    expect(await staffRecipients(sql)).toEqual({ emails: [], phones: [] });
+  });
+
   it('warns a vendor when few enquiries are left, once a week', async () => {
     const chd = await cityId(sql, 'chandigarh');
     const cats = await listCategories(sql, { activeOnly: true });

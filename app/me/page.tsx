@@ -10,7 +10,9 @@ import { threadsForBride } from '@/lib/threads';
 import { weddingFor } from '@/lib/weddings';
 import { activatePerkAction, closeNeedAction, saveWeddingAction } from '@/lib/actions/bride';
 import { needFunctions } from '@/lib/functions';
-import { Badge, Card, Empty, Field, Notice, PageTitle } from '@/components/ui';
+import { Badge, Card, Empty, Field, Notice } from '@/components/ui';
+import { Marigold, Ring } from '@/components/Art';
+import { todayIst } from '@/lib/availability';
 import { fmtDate, fmtDateTime, fmtDay, fmtLongDate, plural } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
@@ -66,17 +68,75 @@ export default async function MyWedding({ searchParams }: P) {
     select count(*) > 0 as any, coalesce(bool_or(whatsapp_opt_in), false) as on from mkt.leads where bride_profile_id = ${p.id}`;
   const perks = await sql<{ id: string; perk: string; claim_by: Date; activated_at: Date | null; expires_at: Date | null }[]>`
     select id, perk, claim_by, activated_at, expires_at from mkt.bride_perks where profile_id = ${p.id} order by created_at desc`;
+  const [prog] = wedding
+    ? await sql<{ tasks: number; done: number; guests: number; replied: number; cats: number; booked: number; budget: number; committed: number }[]>`
+        select
+          (select count(*) from mkt.checklist_items where wedding_id = ${wedding.id})::int as tasks,
+          (select count(*) from mkt.checklist_items where wedding_id = ${wedding.id} and done)::int as done,
+          (select count(*) from mkt.guests where wedding_id = ${wedding.id})::int as guests,
+          (select count(distinct r.guest_id) from mkt.guest_rsvps r join mkt.guests g on g.id = r.guest_id where g.wedding_id = ${wedding.id} and r.response <> 'pending')::int as replied,
+          (select count(*) from mkt.lead_needs ln join mkt.leads l on l.id = ln.lead_id where (l.wedding_id = ${wedding.id} or l.bride_profile_id = ${p.id}) and ln.status <> 'removed')::int as cats,
+          (select count(*) from mkt.lead_needs ln join mkt.leads l on l.id = ln.lead_id where (l.wedding_id = ${wedding.id} or l.bride_profile_id = ${p.id}) and ln.status = 'closed_booked')::int as booked,
+          coalesce((select total_budget_inr from mkt.weddings where id = ${wedding.id}), 0)::float as budget,
+          coalesce((select sum(br.amount_inr) from (select max(b.amount_inr) as amount_inr from mkt.booking_reports b join mkt.lead_needs ln on ln.id = b.lead_need_id join mkt.leads l on l.id = ln.lead_id
+            where l.wedding_id = ${wedding.id} or l.bride_profile_id = ${p.id} group by b.lead_need_id) br), 0)::float as committed`
+    : [{ tasks: 0, done: 0, guests: 0, replied: 0, cats: 0, booked: 0, budget: 0, committed: 0 }];
+  const daysToGo = wedding?.wedding_date ? Math.round((Date.parse(`${wedding.wedding_date}T00:00:00Z`) - Date.parse(`${todayIst()}T00:00:00Z`)) / 864e5) : null;
   return (
     <>
-      <PageTitle
-        title={wedding ? wedding.title : 'Welcome to OLReady'}
-        sub={wedding ? [fmtDate(wedding.wedding_date), [area?.name, town?.name].filter(Boolean).join(', ')].filter(Boolean).join(' · ') : 'Tell us a little about your wedding to start planning.'}
-        action={
-          <Link href="/enquire" className="btn btn-pink btn-sm">
-            Get more quotes
-          </Link>
-        }
-      />
+      {wedding ? (
+        <section className="jaali arrive relative mb-6 overflow-hidden rounded-3xl bg-[var(--color-pink-soft)] p-5 sm:p-7">
+          <Marigold size={120} className="pointer-events-none absolute -right-8 -top-10 opacity-90" />
+          <div className="relative flex flex-wrap items-end justify-between gap-4">
+            <div className="min-w-0 pr-12 sm:pr-0">
+              <p className="text-sm font-medium text-[var(--color-pink-deep)]">{[area?.name, town?.name].filter(Boolean).join(', ') || 'Your wedding'}</p>
+              <h1 className="mt-1 text-4xl leading-tight sm:text-5xl" style={{ fontFamily: 'var(--font-serif)', fontWeight: 600, letterSpacing: '-0.01em' }}>
+                {wedding.title}
+              </h1>
+              <p className="mt-1 text-[var(--color-muted)]">{wedding.wedding_date ? fmtLongDate(wedding.wedding_date) : 'Add your date below to start the countdown'}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              {daysToGo != null ? (
+                <div className="rounded-2xl bg-white/90 px-5 py-3 text-center shadow-[0_10px_30px_-18px_rgb(166_0_72/.6)]">
+                  <div className="figure text-5xl leading-none text-[var(--color-pink)]">{Math.abs(daysToGo)}</div>
+                  <div className="mt-1 text-xs font-medium text-[var(--color-muted)]">{daysToGo > 0 ? plural(daysToGo, 'day').replace(/^\d+ /, '') + ' to go' : daysToGo === 0 ? 'It is today' : 'days married'}</div>
+                </div>
+              ) : null}
+              <Link href="/enquire" className="btn btn-pink btn-sm">
+                Get more quotes
+              </Link>
+            </div>
+          </div>
+          <ul className="relative mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { href: '#requests', v: prog.booked, t: prog.cats, label: 'Vendors booked', hint: prog.cats ? `${prog.booked} of ${plural(prog.cats, 'category', 'categories')}` : 'Send a request to begin', colour: 'var(--color-pink)' },
+              { href: '/me/checklist', v: prog.done, t: prog.tasks, label: 'Checklist', hint: prog.tasks ? `${prog.done} of ${prog.tasks} done` : 'Add your date to get one', colour: '#f6a700' },
+              { href: '/me/guests', v: prog.replied, t: prog.guests, label: 'Guests replied', hint: prog.guests ? `${prog.replied} of ${prog.guests}` : 'Add your guest list', colour: '#7a3fc2' },
+              { href: '/me/budget', v: prog.committed, t: prog.budget, label: 'Budget booked', hint: prog.budget ? `${formatInr(prog.committed)} of ${formatInr(prog.budget)}` : 'Set a total budget', colour: '#1f7a4d' },
+            ].map((r) => (
+              <li key={r.label}>
+                <Link href={r.href} className="card card-lift flex h-full items-center gap-3 bg-white/95 p-3">
+                  <Ring value={r.v} total={r.t} size={56} stroke={6} colour={r.colour} label={`${r.label}: ${r.hint}`}>
+                    <span className="figure text-base">{r.t ? `${Math.round((Math.min(r.v, r.t) / r.t) * 100)}%` : '–'}</span>
+                  </Ring>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">{r.label}</span>
+                    <span className="hint block">{r.hint}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <section className="jaali arrive relative mb-6 overflow-hidden rounded-3xl bg-[var(--color-pink-soft)] p-6 sm:p-8">
+          <Marigold size={120} className="pointer-events-none absolute -right-8 -top-10 opacity-90" />
+          <h1 className="relative text-4xl sm:text-5xl" style={{ fontFamily: 'var(--font-serif)', fontWeight: 600 }}>
+            Welcome to OLReady
+          </h1>
+          <p className="relative mt-2 max-w-xl text-[var(--color-muted)]">Tell us a little about your wedding. Your checklist, budget, guest list and invite all start from the date and the town.</p>
+        </section>
+      )}
       <Notice error={q.error} ok={q.ok} />
 
       <Link
@@ -155,7 +215,7 @@ export default async function MyWedding({ searchParams }: P) {
         </Card>
       ) : null}
 
-      <h2 className="mb-3 font-semibold text-xl">Your requests</h2>
+      <h2 id="requests" className="mb-3 scroll-mt-24 font-semibold text-xl">Your requests</h2>
       {needs.length ? (
         <ul className="space-y-3">
           {needs.map((n) => {
@@ -245,7 +305,7 @@ export default async function MyWedding({ searchParams }: P) {
           })}
         </ul>
       ) : (
-        <Empty title="No requests yet">
+        <Empty art="letters" title="No requests yet">
           <Link className="underline" href="/enquire">
             Tell us what you need
           </Link>{' '}

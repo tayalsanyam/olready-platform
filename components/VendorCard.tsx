@@ -50,7 +50,7 @@ export function VendorCard({
         prefetch={sponsored ? false : undefined}
         rel={sponsored ? 'sponsored nofollow' : undefined}
       >
-        <div className="relative aspect-[4/3] overflow-hidden rounded-[14px] bg-[var(--color-tint)]">
+        <div className="zoom-img relative aspect-[4/3] overflow-hidden rounded-[14px] bg-[var(--color-tint)]">
           <Cover url={v.cover_image_url} name={v.business_name} />
           {v.assured || v.verified_at ? (
             <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-xs font-semibold text-[var(--color-pink-deep)]">

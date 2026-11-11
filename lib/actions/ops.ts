@@ -469,6 +469,26 @@ export async function opsTagVendor(fd: FormData) {
 }
 
 // ---------------------------------------------------------------- settings
+export async function opsSaveStaffRecipients(fd: FormData) {
+  await attempt('/ops/settings#team-alerts', async () => {
+    const p = await requireRole(ADMIN);
+    const { saveStaffRecipients } = await import('../alerts');
+    const r = await saveStaffRecipients(sql, { emails: str(fd, 'emails'), phones: str(fd, 'phones') }, p.id);
+    return { ok: `Saved: ${r.emails.length} email${r.emails.length === 1 ? '' : 's'} and ${r.phones.length} WhatsApp number${r.phones.length === 1 ? '' : 's'} will get team alerts.` };
+  });
+}
+
+export async function opsSendTestAlert() {
+  await attempt('/ops/settings#team-alerts', async () => {
+    const p = await requireRole(ADMIN);
+    const { staffAlert, staffRecipients } = await import('../alerts');
+    const r = await staffRecipients(sql);
+    if (!r.emails.length && !r.phones.length) throw new DomainError('nobody', 'Add an email or a number first');
+    await staffAlert(sql, 'lead', `Test alert sent by ${p.full_name ?? 'an admin'}`, '/ops', `test:${Date.now()}`);
+    return { ok: 'Test alert queued. It arrives straight away, or when quiet hours end.' };
+  });
+}
+
 export async function opsSaveSetting(fd: FormData) {
   await attempt('/ops/settings', async () => {
     const p = await requireRole(ADMIN);

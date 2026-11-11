@@ -1,3 +1,5 @@
+import { Marigold, Spark } from '@/components/Art';
+import { fmtLongDate, greeting, plural } from '@/lib/dates';
 import { plansBehind } from '@/lib/alerts';
 import Link from 'next/link';
 import { sql } from '@/lib/db';
@@ -75,9 +77,44 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
     ['WhatsApp messages that failed', c.wa_failed, '/ops/whatsapp'],
     ['Ask OLReady answers to check', c.ai_flagged, '/ops/bride-ai'],
   ];
+  const waiting = queues.reduce((a, [, n]) => a + (n || 0), 0) + contacts.length + calls.length;
+  const trend = await sql<{ leads: number; unlocks: number; bookings: number }[]>`
+    select
+      (select count(*) from mkt.leads l where (l.created_at at time zone 'Asia/Kolkata')::date = d)::int as leads,
+      (select count(*) from mkt.unlocks u where (u.created_at at time zone 'Asia/Kolkata')::date = d and not u.refunded)::int as unlocks,
+      (select count(*) from mkt.booking_reports b where (b.created_at at time zone 'Asia/Kolkata')::date = d)::int as bookings
+    from generate_series((now() at time zone 'Asia/Kolkata')::date - 13, (now() at time zone 'Asia/Kolkata')::date, interval '1 day') as g(d) order by d`;
   return (
     <>
-      <PageTitle title={`Hello ${p.full_name || 'team'}`} sub="What needs a person today." />
+      <section className="jaali-dark arrive relative mb-5 overflow-hidden rounded-3xl bg-[var(--color-ink)] p-5 text-white sm:p-6">
+        <Marigold size={96} className="pointer-events-none absolute -right-7 -top-8 opacity-90" />
+        <div className="relative flex flex-wrap items-end justify-between gap-5">
+          <div>
+            <p className="text-sm text-white/70">{fmtLongDate(new Date())}</p>
+            <h1 className="mt-1 text-3xl sm:text-4xl" style={{ fontFamily: 'var(--font-serif)', fontWeight: 600 }}>
+              {greeting()}, {(p.full_name || 'team').split(' ')[0]}
+            </h1>
+            <p className="mt-1.5 text-white/85">{waiting ? `${plural(waiting, 'thing')} ${waiting === 1 ? 'is' : 'are'} waiting for a person.` : 'Nothing is waiting. Every queue is clear.'}</p>
+          </div>
+          <dl className="grid grid-cols-3 gap-4">
+            {[
+              ['Requests in', trend.map((t) => t.leads), '#ffc23d'],
+              ['Opened by vendors', trend.map((t) => t.unlocks), '#ff8fb8'],
+              ['Bookings', trend.map((t) => t.bookings), '#8fe3b5'],
+            ].map(([label, values, colour]) => (
+              <div key={label as string}>
+                <dt className="text-xs text-white/70">{label as string}, 14 days</dt>
+                <dd className="mt-0.5 flex items-end gap-2">
+                  <span className="figure text-3xl leading-none">{(values as number[]).reduce((a, b) => a + b, 0)}</span>
+                  <span className="hidden sm:block">
+                    <Spark values={values as number[]} width={84} height={30} colour={colour as string} label={`${label}, day by day`} />
+                  </span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
       <Notice error={q.error} ok={q.ok} />
       {contacts.length ? (
         <section className="mb-6">

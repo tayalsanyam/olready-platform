@@ -105,7 +105,7 @@ export default async function Moderation({ searchParams }: P) {
           ))}
         </ul>
       ) : (
-        <Empty title={view === 'flagged' ? 'Nothing to check' : 'Nothing here'} />
+        <Empty art="letters" title={view === 'flagged' ? 'Nothing to check' : 'Nothing here'} />
       )}
     </>
   );

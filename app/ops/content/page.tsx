@@ -73,7 +73,7 @@ export default async function Content({ searchParams }: P) {
           )}
         </ul>
       ) : (
-        <Empty title="Nothing to review" />
+        <Empty art="list" title="Nothing to review" />
       )}
     </>
   );

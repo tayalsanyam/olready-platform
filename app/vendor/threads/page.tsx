@@ -34,7 +34,7 @@ export default async function VendorThreads() {
           ))}
         </ul>
       ) : (
-        <Empty title="No conversations yet">
+        <Empty art="letters" title="No conversations yet">
           <Link href="/vendor" className="underline">
             Unlock a lead
           </Link>{' '}

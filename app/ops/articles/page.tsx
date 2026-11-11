@@ -54,7 +54,7 @@ export default async function Articles({ searchParams }: P) {
           </table>
         </Card>
       ) : (
-        <Empty title="No articles yet">Start with a guide brides ask your team about every week.</Empty>
+        <Empty art="list" title="No articles yet">Start with a guide brides ask your team about every week.</Empty>
       )}
     </>
   );

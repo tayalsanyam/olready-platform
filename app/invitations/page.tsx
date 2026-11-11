@@ -97,7 +97,7 @@ export default async function Invitations({ searchParams }: P) {
           ))}
         </ul>
       ) : (
-        <Empty title="No designs match">
+        <Empty art="search" title="No designs match">
           Try another culture or style, or <Link className="underline" href="/invitations">see all designs</Link>.
         </Empty>
       )}

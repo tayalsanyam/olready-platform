@@ -57,7 +57,7 @@ export default async function Emails({ searchParams }: P) {
               ))}
             </ul>
           ) : (
-            <Empty title="Nobody blocked" />
+            <Empty art="letters" title="Nobody blocked" />
           )}
         </Card>
         <div className="space-y-5">

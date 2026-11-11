@@ -132,3 +132,11 @@ Every notice goes by email, and by WhatsApp too once its template is approved an
 - **Plan usage.** A plan is behind when the share of enquiries used trails the share of time gone by more than `plan_nudge_gap_pct` points (and at least a fifth of the plan has passed). The vendor sees a notice on their dashboard, gets the nudge, and appears in Ops > Plan usage with a phone link so someone can call.
 - **Team alerts.** Set `STAFF_ALERT_EMAILS` and `STAFF_ALERT_PHONES`. Alerts raised between `staff_quiet_from_hour` and `staff_quiet_to_hour` (India time) are held until the quiet hours end. Requests the team types or pastes in themselves do not alert.
 - **Unread.** Conversations count messages from the other side since they were last opened; the count shows on the Conversations tab, the My wedding tab and each chat.
+
+## Look and feel (November 2026)
+
+- **`components/Feel.tsx`** gives every page a progress line while a link or form is loading, a spinner on the button that was pressed, and marigold petals on moments worth marking (request sent, booking recorded, payment in, profile live). It listens at the document, so no page or form needs changing. Honours reduced-motion.
+- **`components/Art.tsx`** holds OLReady's own drawings: the marigold, progress rings, sparklines, bars, small scenes for empty screens, and drawn cover art for vendors and weddings without a photo.
+- **Dashboards open on a hero.** Bride: the couple's names, a countdown, and rings for vendors booked, checklist, guests replied and budget. Vendor: greeting, plan ring, profile strength with the next step. Ops: greeting, how many things are waiting, and 14-day lines for requests, unlocks and bookings.
+- **Loaders** are shimmer skeletons in the dashboards only. Public pages have no `loading.tsx` on purpose, so a missing page still answers 404 to Google.
+- **Team alert recipients** are edited in Ops > Settings > Who gets team alerts (admin), with a test button. The `STAFF_ALERT_*` environment values are only the starting list.

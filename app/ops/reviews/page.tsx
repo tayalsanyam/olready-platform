@@ -73,7 +73,7 @@ export default async function Disputes({ searchParams }: P) {
           })}
         </ul>
       ) : (
-        <Empty title="No open disputes" />
+        <Empty art="stars" title="No open disputes" />
       )}
     </>
   );

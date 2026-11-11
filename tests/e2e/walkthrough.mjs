@@ -138,7 +138,7 @@ await step('anonymous multi-category enquiry', async () => {
   await shot('enquiry');
   await page.getByRole('button', { name: 'Send my request' }).click();
   await page.waitForURL('**/enquire/thanks');
-  await see('Request received');
+  await see('We have your request');
 });
 
 // ------------------------------------------------------------------ bride signs in
@@ -634,7 +634,7 @@ await step('a bride asks for three functions and says which ones the photographe
   await shot('enquiry-functions');
   await page.getByRole('button', { name: 'Send my request' }).click();
   await page.waitForURL('**/enquire/thanks');
-  await see('Request received');
+  await see('We have your request');
 });
 
 await step('ops sees the functions and the contact message, and verifies the request', async () => {

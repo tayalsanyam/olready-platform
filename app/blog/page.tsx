@@ -53,7 +53,7 @@ export default async function Blog({ searchParams }: P) {
           </div>
         </>
       ) : (
-        <Empty title="No guides yet">Our team is writing them. Meanwhile, browse ideas or real weddings.</Empty>
+        <Empty art="list" title="No guides yet">Our team is writing them. Meanwhile, browse ideas or real weddings.</Empty>
       )}
       {pages > 1 ? (
         <nav aria-label="Pages" className="mt-8 flex items-center justify-center gap-3 text-sm">

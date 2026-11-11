@@ -64,7 +64,7 @@ export default async function Coupons({ searchParams }: P) {
           </table>
         </Card>
       ) : (
-        <Empty title="No codes yet" />
+        <Empty art="coins" title="No codes yet" />
       )}
       {me.role === 'admin' ? (
         <Card className="mt-6">

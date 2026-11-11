@@ -1,7 +1,7 @@
-import { getSetting, type Db } from './db';
+import { audit, DomainError, getSetting, type Db } from './db';
 import { formatInr } from './catalog';
 import { queueEmail, type EmailTemplate } from './email';
-import { queueWhatsApp, type WaEvent } from './whatsapp';
+import { queueWhatsApp, waPhone, type WaEvent } from './whatsapp';
 import { siteUrl } from './seo';
 import { fmtDate } from './dates';
 
@@ -240,6 +240,39 @@ const STAFF_TEXT: Record<StaffAlertKind, string> = {
   contract: 'Plan paid, waiting for contract',
 };
 
+const list = (s: string | undefined) => (s ?? '').split(',').map((e) => e.trim()).filter(Boolean);
+
+/** Who team alerts go to: the lists an admin keeps in Settings, or the environment's until one is saved. */
+export async function staffRecipients(db: Db) {
+  const emails = await getSetting<string[] | null>(db, 'staff_alert_emails', null);
+  const phones = await getSetting<string[] | null>(db, 'staff_alert_phones', null);
+  return {
+    emails: (Array.isArray(emails) ? emails : list(process.env.STAFF_ALERT_EMAILS)).map((e) => e.toLowerCase()),
+    phones: Array.isArray(phones) ? phones : list(process.env.STAFF_ALERT_PHONES),
+  };
+}
+
+/** Saves the lists. Every entry is checked; a wrong one is named so it can be fixed. */
+export async function saveStaffRecipients(db: Db, input: { emails: string; phones: string }, actor: string) {
+  const split = (s: string) => s.split(/[\n,;]+/).map((x) => x.trim()).filter(Boolean);
+  const emails = [...new Set(split(input.emails).map((e) => e.toLowerCase()))];
+  const badEmail = emails.find((e) => !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e));
+  if (badEmail) throw new DomainError('bad_email', `"${badEmail}" is not an email address`);
+  const phones: string[] = [];
+  for (const raw of split(input.phones)) {
+    const n = waPhone(raw);
+    if (!n) throw new DomainError('bad_phone', `"${raw}" is not an Indian mobile number`);
+    if (!phones.includes(`+${n}`)) phones.push(`+${n}`);
+  }
+  if (emails.length > 20 || phones.length > 20) throw new DomainError('too_many', 'Keep each list to 20 or fewer');
+  for (const [key, value] of [['staff_alert_emails', emails], ['staff_alert_phones', phones]] as const) {
+    await db`insert into mkt.settings (key, value) values (${key}, ${db.json(value)})
+      on conflict (key) do update set value = excluded.value, updated_at = now()`;
+  }
+  await audit(db, actor, 'setting.staff_recipients', 'setting', 'staff_alert', { emails: emails.length, phones: phones.length });
+  return { emails, phones };
+}
+
 /** The next moment outside quiet hours (India time), or now. */
 export function afterQuietHours(now: Date, from: number, to: number) {
   if (from === to) return now;
@@ -256,8 +289,7 @@ export function afterQuietHours(now: Date, from: number, to: number) {
 export const staffAlert = (db: Db, kind: StaffAlertKind, detail: string, path: string, key: string) =>
   quiet(db, async (db) => {
     if (!(await getSetting(db, 'staff_alerts_on', 1))) return;
-    const emails = (process.env.STAFF_ALERT_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
-    const phones = (process.env.STAFF_ALERT_PHONES ?? '').split(',').map((e) => e.trim()).filter(Boolean);
+    const { emails, phones } = await staffRecipients(db);
     if (!emails.length && !phones.length) return;
     const when = afterQuietHours(new Date(), await getSetting(db, 'staff_quiet_from_hour', 21), await getSetting(db, 'staff_quiet_to_hour', 9));
     const link = `${siteUrl()}${path}`;

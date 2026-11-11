@@ -64,7 +64,7 @@ export default async function CappedNeeds({ searchParams }: P) {
           </table>
         </Card>
       ) : (
-        <Empty title="No capped leads" />
+        <Empty art="list" title="No capped leads" />
       )}
     </>
   );

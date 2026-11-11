@@ -55,7 +55,7 @@ export default async function PlanUsage() {
           </table>
         </Card>
       ) : (
-        <Empty title="Every active plan is on pace">Nobody needs a call right now.</Empty>
+        <Empty art="stars" title="Every active plan is on pace">Nobody needs a call right now.</Empty>
       )}
     </>
   );

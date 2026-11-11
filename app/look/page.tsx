@@ -115,7 +115,7 @@ export default async function Look({ searchParams }: P) {
                   ))}
                 </div>
               ) : (
-                <Empty title={`No ${topic.name.toLowerCase()} matched in ${city?.name} yet`}>
+                <Empty art="search" title={`No ${topic.name.toLowerCase()} matched in ${city?.name} yet`}>
                   Try fewer styles, or <Link className="underline" href={`/enquire?city=${city?.slug}`}>tell us what you want</Link> and our team will find vendors.
                 </Empty>
               )}
@@ -127,7 +127,7 @@ export default async function Look({ searchParams }: P) {
               ) : null}
             </>
           ) : (
-            <Empty title="Show us what you love">{lookEnabled() ? 'Upload a photo, or pick a few styles on the left.' : 'Pick a few styles on the left.'}</Empty>
+            <Empty art="search" title="Show us what you love">{lookEnabled() ? 'Upload a photo, or pick a few styles on the left.' : 'Pick a few styles on the left.'}</Empty>
           )}
         </div>
       </div>

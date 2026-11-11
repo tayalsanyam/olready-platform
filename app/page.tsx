@@ -163,7 +163,7 @@ export default async function Home() {
           {cats.map((c) => (
             <li key={c.slug} className="w-24 shrink-0 sm:w-auto">
               <Link href={`/vendors/${home?.slug}/${c.slug}`} className="group flex flex-col items-center gap-2 text-center text-sm">
-                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-pink-soft)] text-[var(--color-pink-deep)] transition-colors group-hover:bg-[var(--color-pink)] group-hover:text-white">
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-pink-soft)] text-[var(--color-pink-deep)] transition-[background,color,transform] duration-200 group-hover:-translate-y-1 group-hover:bg-[var(--color-pink)] group-hover:text-white group-hover:shadow-[0_10px_22px_-10px_rgb(226_0_94/.7)]">
                   <CategoryIcon slug={c.slug} />
                 </span>
                 {c.plural_name}
@@ -180,7 +180,7 @@ export default async function Home() {
       ) : null}
 
       {promoted.length ? (
-        <Container className="mt-12">
+        <Container className="reveal mt-12">
           <h2 className="text-xl font-semibold">Sponsored vendors</h2>
           <ul className="no-scrollbar -mx-4 mt-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2">
             {promoted.map((v, i) => (
@@ -194,7 +194,7 @@ export default async function Home() {
 
       {rows.map(({ c, fields, vendors }) =>
         vendors.length ? (
-          <Container key={c.slug} className="mt-12">
+          <Container key={c.slug} className="reveal mt-12">
             <div className="flex items-end justify-between gap-3">
               <h2 className="text-xl font-semibold">
                 {c.plural_name} in {home?.name}
@@ -214,8 +214,8 @@ export default async function Home() {
         ) : null
       )}
 
-      <section className="mt-14 bg-[var(--color-ink)] text-white">
-        <Container className="py-10 md:py-14">
+      <section className="jaali-dark mt-14 bg-[var(--color-ink)] text-white">
+        <Container className="reveal py-10 md:py-14">
           <h2 className="max-w-xl text-2xl font-semibold leading-tight md:text-3xl">One request, one short call, then quotes from vendors who want your wedding.</h2>
           <ol className="mt-8 grid gap-8 md:grid-cols-3">
             {[
@@ -239,7 +239,7 @@ export default async function Home() {
         </Container>
       </section>
 
-      <Container className="mt-14">
+      <Container className="reveal mt-14">
         <h2 className="text-xl font-semibold">Plan the rest of it here too</h2>
         <p className="mt-1 text-sm text-[var(--color-muted)]">Free with your OLReady account.</p>
         <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1.15fr] md:grid-rows-2">
@@ -279,7 +279,7 @@ export default async function Home() {
       </Container>
 
       {weddings.length ? (
-        <Container className="mt-12">
+        <Container className="reveal mt-12">
           <div className="flex items-end justify-between">
             <h2 className="text-xl font-semibold">Real weddings</h2>
             <Link href="/real-weddings" className="whitespace-nowrap text-sm font-semibold text-[var(--color-pink-deep)]">
@@ -303,7 +303,7 @@ export default async function Home() {
         </Container>
       ) : null}
 
-      <Container className="mt-12">
+      <Container className="reveal mt-12">
         <div className="flex flex-col items-start justify-between gap-4 rounded-[20px] bg-[var(--color-pink-soft)] p-6 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-xl font-semibold">Run a wedding business?</h2>

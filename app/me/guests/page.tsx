@@ -75,7 +75,7 @@ export default async function Guests({ searchParams }: P) {
               </tbody>
             </table>
           ) : (
-            <Empty title="No guests yet">Paste your list on the right.</Empty>
+            <Empty art="list" title="No guests yet">Paste your list on the right.</Empty>
           )}
         </Card>
         <div className="space-y-4">

@@ -84,7 +84,7 @@ export default async function RealWeddings({ searchParams }: P) {
           ))}
         </div>
       ) : (
-        <Empty title="No stories match">
+        <Empty art="search" title="No stories match">
           Try another city or culture, or <Link className="underline" href="/real-weddings">see all real weddings</Link>.
         </Empty>
       )}

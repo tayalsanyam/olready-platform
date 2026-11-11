@@ -19,7 +19,7 @@ export default async function Budget({ searchParams }: P) {
     return (
       <>
         <PageTitle title="Budget" />
-        <Empty title="The couple keeps the budget private">They can share it with family from this page.</Empty>
+        <Empty art="coins" title="The couple keeps the budget private">They can share it with family from this page.</Empty>
       </>
     );
   }

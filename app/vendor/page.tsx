@@ -1,3 +1,5 @@
+import { Bar, Marigold, Ring } from '@/components/Art';
+import { greeting } from '@/lib/dates';
 import { plansBehind } from '@/lib/alerts';
 import Link from 'next/link';
 import { sql } from '@/lib/db';
@@ -23,10 +25,70 @@ export default async function VendorHome({ searchParams }: P) {
   const [bal, needs, stats] = await Promise.all([balances(sql, vendor.id), visibleNeeds(sql, vendor.id), vendorStats(sql, vendor.id)]);
   const credits = (bal.planUsable ? bal.plan : 0) + bal.topup;
   const pace = (await plansBehind(sql)).find((r) => r.vendor_id === vendor.id);
+  const [plan] = await sql<{ name: string; credits: number; used: number; days_left: number }[]>`
+    select p.name, p.credits, greatest(0, p.credits - ${bal.plan})::int as used, greatest(0, ceil(extract(epoch from (s.ends_at - now())) / 86400))::int as days_left
+    from mkt.vendor_subscriptions s join mkt.packs p on p.id = s.pack_id
+    where s.vendor_id = ${vendor.id} and s.status = 'active' and s.ends_at > now() order by s.ends_at desc limit 1`;
+  const [prof] = await sql<{ photos: number; fresh: boolean; towns: number }[]>`
+    select (select count(*) from mkt.vendor_media where vendor_id = ${vendor.id})::int as photos,
+      coalesce((select calendar_updated_at > now() - interval '45 days' from mkt.vendors where id = ${vendor.id}), false) as fresh,
+      coalesce(cardinality((select service_city_ids from mkt.vendors where id = ${vendor.id})), 0)::int as towns`;
+  const steps = [
+    { ok: Boolean(vendor.cover_image_url), label: 'add a cover photo', href: '/vendor/profile' },
+    { ok: prof.photos >= 6, label: 'add at least 6 work photos', href: '/vendor/profile#photos' },
+    { ok: (vendor.about ?? '').trim().length >= 120, label: 'write a fuller About', href: '/vendor/profile' },
+    { ok: vendor.starting_price_inr != null, label: 'add your starting price', href: '/vendor/profile' },
+    { ok: prof.fresh, label: 'confirm your calendar', href: '/vendor/calendar' },
+    { ok: prof.towns > 1, label: 'add the towns you travel to', href: '/vendor/profile' },
+  ];
+  const strength = { steps, done: steps.filter((x) => x.ok).length, next: steps.find((x) => !x.ok) };
   const [fnsByNeed, clashes] = await Promise.all([needFunctions(sql, needs.map((n) => n.need_id)), clashesForNeeds(sql, vendor.id, needs.map((n) => n.need_id))]);
   return (
     <>
-      <PageTitle title="Verified leads" sub={`${vendor.category_name} · ${vendor.city_name}`} />
+      <section className="jaali-dark arrive relative mb-5 overflow-hidden rounded-3xl bg-[var(--color-ink)] p-5 text-white sm:p-7">
+        <Marigold size={110} className="pointer-events-none absolute -right-8 -top-9 opacity-90" />
+        <div className="relative flex flex-wrap items-center justify-between gap-5 pr-10 sm:pr-16">
+          <div className="min-w-0">
+            <p className="text-sm text-white/70">
+              {greeting()} · {vendor.category_name} · {vendor.city_name}
+            </p>
+            <h1 className="mt-1 text-3xl sm:text-4xl" style={{ fontFamily: 'var(--font-serif)', fontWeight: 600 }}>
+              {vendor.business_name}
+            </h1>
+            <p className="mt-2 text-white/80">
+              {needs.length ? `${plural(needs.length, 'verified request')} ${needs.length === 1 ? 'is' : 'are'} open for you right now.` : 'No open requests right now. New ones arrive here as soon as our team verifies them.'}
+            </p>
+          </div>
+          {plan ? (
+            <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-3 pr-5">
+              <Ring value={plan.used} total={plan.credits} size={72} stroke={7} colour="#ffc23d" label={`${plan.used} of ${plan.credits} plan enquiries used`}>
+                <span className="figure text-xl">{plan.used}</span>
+                <span className="text-[10px] text-white/70">of {plan.credits}</span>
+              </Ring>
+              <div className="text-sm">
+                <div className="font-semibold">{plan.name} plan</div>
+                <div className="text-white/75">{plural(plan.days_left, 'day')} left</div>
+                <Link href="/vendor/packs" className="text-white/90 underline">
+                  Credits and plans
+                </Link>
+              </div>
+            </div>
+          ) : null}
+        </div>
+        <div className="relative mt-5 rounded-2xl bg-white/10 p-3">
+          <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 text-sm">
+            <span className="font-semibold">Profile strength {strength.done} of {strength.steps.length}</span>
+            {strength.next ? (
+              <Link href={strength.next.href} className="text-white/90 underline">
+                Next: {strength.next.label}
+              </Link>
+            ) : (
+              <span className="text-white/80">Complete. Brides see everything they look for.</span>
+            )}
+          </div>
+          <Bar value={strength.done} total={strength.steps.length} colour="#ffc23d" label={`Profile strength ${strength.done} of ${strength.steps.length}`} />
+        </div>
+      </section>
       <Notice error={q.error} ok={q.ok} />
       {vendor.status !== 'live' ? (
         <div className="mb-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-pink-soft)] px-3 py-2 text-sm">

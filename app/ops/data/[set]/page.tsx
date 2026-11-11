@@ -184,7 +184,7 @@ export default async function OpsDataSet({ params, searchParams }: P) {
           </table>
         </div>
       ) : (
-        <Empty title="Nothing matches">Change the filters or clear them to see every row.</Empty>
+        <Empty art="search" title="Nothing matches">Change the filters or clear them to see every row.</Empty>
       )}
       {pages > 1 ? (
         <nav className="mt-4 flex items-center justify-between text-sm" aria-label="Pages">

@@ -51,9 +51,9 @@ export default async function Search({ searchParams }: P) {
         </div>
       ) : null}
       {q.length < 2 ? (
-        <Empty title="Type at least two letters">Try a vendor&apos;s name, “banquet”, “airbrush”, “lehenga” or “mehendi”.</Empty>
+        <Empty art="search" title="Type at least two letters">Try a vendor&apos;s name, “banquet”, “airbrush”, “lehenga” or “mehendi”.</Empty>
       ) : !total ? (
-        <Empty title={`Nothing found for “${q}”`}>
+        <Empty art="search" title={`Nothing found for “${q}”`}>
           Try a shorter word, another city, or <Link className="underline" href="/enquire">tell us what you need</Link> and our team will find verified vendors.
         </Empty>
       ) : (

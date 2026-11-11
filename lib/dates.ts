@@ -43,3 +43,9 @@ export function fmtTime(d: D, empty = '') {
 
 /** "1 view", "3 views" */
 export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString('en-IN')} ${n === 1 ? one : many}`;
+
+/** "Good morning" by the clock in India. */
+export function greeting(now = new Date()) {
+  const h = new Date(now.getTime() + 5.5 * 3600e3).getUTCHours();
+  return h < 5 ? 'Working late' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}

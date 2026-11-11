@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { HTMLAttributes, ReactNode } from 'react';
+import { CoverArt, Scene } from './Art';
 
 export function Container({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`mx-auto w-full max-w-6xl px-4 ${className}`}>{children}</div>;
@@ -41,6 +42,9 @@ export function Badge({ children, tone = 'plain' }: { children: ReactNode; tone?
   );
 }
 
+/** Moments worth petals: a request sent, a booking, a payment, a profile going live. */
+const CELEBRATE = /congratulations|booking recorded|payment (received|confirmed)|is live|plan is active|thank you for your review|welcome/i;
+
 /** Shows ?error= and ?ok= messages set by server actions. */
 export function Notice({ error, ok }: { error?: string | string[]; ok?: string | string[] }) {
   const e = Array.isArray(error) ? error[0] : error;
@@ -50,30 +54,39 @@ export function Notice({ error, ok }: { error?: string | string[]; ok?: string |
     <div
       role={e ? 'alert' : 'status'}
       data-notice={e ? 'error' : 'ok'}
-      className={`mb-4 rounded-lg border px-3 py-2 text-sm ${
+      data-celebrate={!e && o && CELEBRATE.test(o) ? '' : undefined}
+      className={`arrive mb-4 flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-sm ${
         e ? 'border-[#f5c2bd] bg-[#fde7e5] text-[var(--color-bad)]' : 'border-[#bfe3cd] bg-[#e3f4ea] text-[var(--color-ok)]'
       }`}
     >
-      {e ?? o}
+      <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden className="pop mt-px shrink-0">
+        <circle cx="10" cy="10" r="9" fill="currentColor" opacity=".15" />
+        {e ? <path d="M10 5.5v5.5M10 14.2v.3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /> : <path d="M6 10.4l2.7 2.7L14.2 7.6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+      </svg>
+      <span>{e ?? o}</span>
     </div>
   );
 }
 
-export function Empty({ title, children }: { title: string; children?: ReactNode }) {
+export function Empty({ title, children, art = 'garland' }: { title: string; children?: ReactNode; art?: Parameters<typeof Scene>[0]['kind'] | null }) {
   return (
-    <div className="rounded-xl border border-dashed border-[var(--color-line)] bg-white/60 p-6 text-center">
+    <div className="rounded-2xl border border-dashed border-[#e3d6dd] bg-[var(--color-tint)]/60 px-6 py-8 text-center">
+      {art ? <Scene kind={art} className="mx-auto mb-2" /> : null}
       <p className="font-semibold">{title}</p>
-      {children ? <div className="mt-1 text-sm text-[var(--color-muted)]">{children}</div> : null}
+      {children ? <div className="mx-auto mt-1 max-w-md text-sm text-[var(--color-muted)]">{children}</div> : null}
     </div>
   );
 }
 
-export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
+export function Stat({ label, value, hint, extra }: { label: string; value: ReactNode; hint?: string; extra?: ReactNode }) {
   return (
-    <div className="card p-3">
-      <div className="text-sm text-[var(--color-muted)]">{label}</div>
-      <div className="figure mt-0.5 text-3xl">{value}</div>
-      {hint ? <div className="hint mt-0.5">{hint}</div> : null}
+    <div className="card card-lift flex items-end justify-between gap-2 p-3">
+      <div className="min-w-0">
+        <div className="text-sm text-[var(--color-muted)]">{label}</div>
+        <div className="figure mt-0.5 text-3xl">{value}</div>
+        {hint ? <div className="hint mt-0.5">{hint}</div> : null}
+      </div>
+      {extra}
     </div>
   );
 }
@@ -90,22 +103,13 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
   );
 }
 
-/** Coloured placeholder when a vendor has no cover photo yet. */
+/** A vendor's cover photo, or drawn cover art when there is none yet. */
 export function Cover({ url, name, className = '' }: { url: string | null; name: string; className?: string }) {
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={url} alt={name} className={`h-full w-full object-cover ${className}`} loading="lazy" />;
   }
-  const hue = Array.from(name).reduce((a, c) => a + c.charCodeAt(0), 0) % 40;
-  return (
-    <div
-      aria-hidden
-      className={`flex h-full w-full items-center justify-center text-4xl font-semibold text-[var(--color-pink-deep)]/70 ${className}`}
-      style={{ background: `hsl(${325 + (hue % 20)} 60% ${93 - (hue % 6)}%)` }}
-    >
-      {name.slice(0, 1).toUpperCase()}
-    </div>
-  );
+  return <CoverArt name={name} className={className} />;
 }
 
 export function Stars({ value, count }: { value: number | null; count?: number }) {

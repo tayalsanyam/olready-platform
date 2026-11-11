@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+import { Feel } from '@/components/Feel';
 import { TableLabels } from '@/components/TableLabels';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
@@ -39,6 +41,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="pb-6 pt-6">{children}</main>
         <Footer />
         <TableLabels />
+        <Suspense fallback={null}>
+          <Feel />
+        </Suspense>
       </body>
     </html>
   );

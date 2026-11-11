@@ -83,7 +83,7 @@ export default async function VendorReviews({ searchParams }: P) {
           })}
         </ul>
       ) : (
-        <Empty title="No reviews yet">After an event, OLReady asks your brides to review you.</Empty>
+        <Empty art="stars" title="No reviews yet">After an event, OLReady asks your brides to review you.</Empty>
       )}
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2">

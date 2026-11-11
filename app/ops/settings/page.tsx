@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
-import { opsSaveSetting } from '@/lib/actions/ops';
+import { opsSaveStaffRecipients, opsSendTestAlert, opsSaveSetting } from '@/lib/actions/ops';
 import { Card, Notice, PageTitle } from '@/components/ui';
+import { staffRecipients } from '@/lib/alerts';
 
 export const metadata = { title: 'Settings' };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
@@ -50,7 +51,7 @@ const GROUPS: { title: string; hint: string; keys: Record<string, Def> }[] = [
   },
   {
     title: 'Alerts',
-    hint: 'When vendors are nudged, and when the team is told something is waiting. Team alerts go to the addresses and numbers set by your developer.',
+    hint: 'When vendors are nudged, and when the team is told something is waiting. Choose who gets team alerts further down this page.',
     keys: {
       low_credit_threshold: { label: 'Tell a vendor when enquiries left fall to', unit: 'enquiries' },
       plan_nudge_gap_pct: { label: 'Nudge a vendor whose plan usage trails time gone by', unit: 'points' },
@@ -94,7 +95,8 @@ export default async function Settings({ searchParams }: P) {
   const rows = await sql<{ key: string; value: number }[]>`select key, value from mkt.settings order by key`;
   const value = new Map(rows.map((r) => [r.key, r.value]));
   const known = new Set(GROUPS.flatMap((g) => Object.keys(g.keys)));
-  const other = rows.filter((r) => !known.has(r.key));
+  const other = rows.filter((r) => !known.has(r.key) && typeof r.value === 'number');
+  const team = await staffRecipients(sql);
   const groups = [...GROUPS, ...(other.length ? [{ title: 'Other', hint: '', keys: Object.fromEntries(other.map((r) => [r.key, { label: words(r.key) } as Def])) }] : [])];
   return (
     <>
@@ -135,6 +137,33 @@ export default async function Settings({ searchParams }: P) {
           </Card>
         ))}
       </div>
+      <Card className="mt-5 scroll-mt-24" id="team-alerts">
+        <h2 className="font-semibold">Who gets team alerts</h2>
+        <p className="hint">
+          These people hear when something is waiting in Ops: a new request, a bank transfer, a profile or claim to review, a plan waiting for its contract, a dispute,
+          or a relationship-manager request. One per line. WhatsApp alerts also need the &quot;Team alert&quot; message switched on under{' '}
+          <Link href="/ops/whatsapp" className="underline">
+            WhatsApp
+          </Link>
+          .
+        </p>
+        <form action={opsSaveStaffRecipients} className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="text-sm">
+            <span className="mb-1 block font-medium">Emails</span>
+            <textarea name="emails" rows={4} className="input" defaultValue={team.emails.join('\n')} placeholder={'ops@olready.in\nkanika@olready.in'} />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium">WhatsApp numbers</span>
+            <textarea name="phones" rows={4} className="input" defaultValue={team.phones.join('\n')} placeholder={'98765 43210'} inputMode="tel" />
+          </label>
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
+            <button className="btn btn-sm">Save who gets alerts</button>
+            <button formAction={opsSendTestAlert} formNoValidate className="btn btn-ghost btn-sm">
+              Send a test alert
+            </button>
+          </div>
+        </form>
+      </Card>
       <Card className="mt-5">
         <h2 className="font-semibold">Exports (admin only)</h2>
         <p className="hint">Staff roles can view but not download. Every list in Data can be filtered, then downloaded.</p>
