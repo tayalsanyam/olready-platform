@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { connection } from 'next/server';
 import { Feel } from '@/components/Feel';
 import { TableLabels } from '@/components/TableLabels';
 import type { Metadata, Viewport } from 'next';
@@ -25,19 +24,6 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: '#ffffff', width: 'device-width', initialScale: 1 };
 
-/** Header, page and footer all read the database. Wait for a real request before that work starts,
- *  or the production build sits on those queries until it times out. */
-async function LivePage({ children }: { children: React.ReactNode }) {
-  await connection();
-  return (
-    <>
-      <Header />
-      <main className="pb-6 pt-6">{children}</main>
-      <Footer />
-    </>
-  );
-}
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN">
@@ -51,9 +37,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen antialiased">
-        <Suspense fallback={<div className="h-16 border-b border-[var(--color-line)] bg-white" />}>
-          <LivePage>{children}</LivePage>
-        </Suspense>
+        <Header />
+        <main className="pb-6 pt-6">{children}</main>
+        <Footer />
         <TableLabels />
         <Suspense fallback={null}>
           <Feel />
