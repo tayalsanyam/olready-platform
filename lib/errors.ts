@@ -86,9 +86,14 @@ export async function listErrors(db: Db, view: 'open' | 'fixed' = 'open') {
     order by last_seen desc limit 200`;
 }
 
+/** Zero if the table is not there yet, so a deploy that lands before its migration cannot break Ops. */
 export async function openErrorCount(db: Db) {
-  const [r] = await db<{ n: number }[]>`select count(*)::int as n from mkt.error_events where resolved_at is null`;
-  return r.n;
+  try {
+    const [r] = await db<{ n: number }[]>`select count(*)::int as n from mkt.error_events where resolved_at is null`;
+    return r.n;
+  } catch {
+    return 0;
+  }
 }
 
 /** Marked fixed. If it happens again it reopens and the team hears. */

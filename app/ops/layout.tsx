@@ -1,3 +1,4 @@
+import { openErrorCount } from '@/lib/errors';
 import { requireStaff } from '@/lib/auth';
 import { sql } from '@/lib/db';
 import { OpsNav, type OpsGroup } from './OpsNav';
@@ -15,7 +16,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
   const admin = p.role === 'admin';
   // What is waiting, shown beside the menu items that clear it.
   const [c] = ops
-    ? await sql<{ leads: number; capped: number; vendors: number; transfers: number; flagged: number; reviews: number; banners: number; rm: number; weddings: number; errors: number }[]>`
+    ? await sql<{ leads: number; capped: number; vendors: number; transfers: number; flagged: number; reviews: number; banners: number; rm: number; weddings: number }[]>`
         select
           (select count(*) from mkt.leads where status in ('new','verifying'))::int as leads,
           (select count(*) from mkt.lead_needs where status = 'capped' and reopen_rounds < 2)::int as capped,
@@ -25,9 +26,9 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
           (select count(*) from mkt.reviews where status = 'pending')::int + (select count(*) from mkt.review_disputes where status in ('open','proof_submitted'))::int as reviews,
           (select count(*) from mkt.banners where status = 'pending')::int as banners,
           (select count(*) from mkt.rm_engagements where status = 'pending_approval')::int as rm,
-          (select count(*) from mkt.real_weddings where status = 'submitted')::int as weddings,
-          (select count(*) from mkt.error_events where resolved_at is null)::int as errors`
+          (select count(*) from mkt.real_weddings where status = 'submitted')::int as weddings`
     : [null];
+  const errors = ops ? await openErrorCount(sql) : 0;
   const groups: OpsGroup[] = [
     {
       title: 'Work',
@@ -92,7 +93,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
             items: [
               ...(admin ? [{ href: '/ops/catalog', label: 'Categories' }] : []),
               { href: '/ops/places', label: 'Places' },
-              ...(admin || p.role === 'ops' ? [{ href: '/ops/errors', label: 'Errors', count: c?.errors }] : []),
+              ...(admin || p.role === 'ops' ? [{ href: '/ops/errors', label: 'Errors', count: errors }] : []),
               ...(admin
                 ? [
                     { href: '/ops/staff', label: 'Staff' },
