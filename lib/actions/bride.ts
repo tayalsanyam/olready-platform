@@ -8,7 +8,7 @@ import { redirect } from 'next/navigation';
 import { sql, DomainError, getSetting } from '../db';
 import { buyRm, engagementFromPerk } from '../rm';
 import type { Gateway } from '../payments';
-import { requireProfile } from '../auth';
+import { currentProfile, requireProfile } from '../auth';
 import { activatePerk, closeNeedByBride, reportBooking } from '../leads';
 import { threadAccess } from '../threads';
 import {
@@ -79,6 +79,21 @@ export async function brideReportBooking(fd: FormData) {
     await reportBooking(sql, { needId: t.lead_need_id, vendorId: t.vendor_id, reporterProfileId: p.id, side: 'bride', amountInr: num(fd, 'amount_inr') });
     return { ok: 'Congratulations! Your relationship-manager perk is ready under My wedding.' };
   });
+}
+
+/** Vendors she hearted before signing in, sent from her browser once she is in. */
+export async function mergeSavedVendors(slugs: string[]) {
+  const p = await currentProfile();
+  if (!p || p.role !== 'bride') return { merged: 0, wait: false };
+  const wedding = await weddingFor(sql, p.id);
+  if (!wedding) return { merged: 0, wait: true };
+  const clean = [...new Set(slugs.filter((s) => typeof s === 'string' && /^[a-z0-9-]{2,80}$/.test(s)))].slice(0, 20);
+  if (!clean.length) return { merged: 0, wait: false };
+  const rows = await sql`
+    insert into mkt.shortlist (wedding_id, vendor_id, added_by)
+    select ${wedding.id}, v.id, ${p.id} from mkt.vendors v where v.slug = any(${clean}) and v.status = 'live'
+    on conflict do nothing returning vendor_id`;
+  return { merged: rows.length, wait: false };
 }
 
 export async function closeNeedAction(fd: FormData) {

@@ -1,3 +1,4 @@
+import { openCaptureCount } from '@/lib/captures';
 import { openErrorCount } from '@/lib/errors';
 import { Marigold, Spark } from '@/components/Art';
 import { fmtLongDate, greeting, plural } from '@/lib/dates';
@@ -20,6 +21,7 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
   const [calls, contacts] = await Promise.all([openCallbacks(sql), openContacts(sql)]);
   const behind = (await plansBehind(sql)).length;
   const errors = await openErrorCount(sql);
+  const captures = await openCaptureCount(sql);
   const [c] = await sql<Record<string, number>[]>`
     select
       (select count(*) from mkt.leads where status in ('new','verifying'))::int as to_verify,
@@ -68,6 +70,7 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
     ['Claims to approve', c.claims, '/ops/vendors'],
     ['Plans waiting for contract', c.contracts, '/ops/payments'],
     ['Plans behind on usage', behind, '/ops/usage'],
+    ['Numbers to call', captures, '/ops/captures'],
     ['Errors to look at', errors, '/ops/errors'],
     ['Bank transfers to confirm', c.transfers, '/ops/payments'],
     ['Disputes to contact', c.disputes_contact, '/ops/reviews', c.disputes_overdue ? `${c.disputes_overdue} past 48 hours` : undefined],

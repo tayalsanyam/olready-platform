@@ -229,9 +229,10 @@ export async function queuePlanNudges(db: Db) {
 
 // ---------------------------------------------------------------- staff
 
-export type StaffAlertKind = 'error' | 'lead' | 'transfer' | 'profile' | 'claim' | 'dispute' | 'rm' | 'contract';
+export type StaffAlertKind = 'error' | 'capture' | 'lead' | 'transfer' | 'profile' | 'claim' | 'dispute' | 'rm' | 'contract';
 const STAFF_TEXT: Record<StaffAlertKind, string> = {
   error: 'Something broke on the site',
+  capture: 'A visitor left a number to call',
   lead: 'New request to verify',
   transfer: 'Bank transfer to confirm',
   profile: 'Vendor profile to review',

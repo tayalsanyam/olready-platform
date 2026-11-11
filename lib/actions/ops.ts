@@ -469,6 +469,23 @@ export async function opsTagVendor(fd: FormData) {
 }
 
 // ---------------------------------------------------------------- settings
+export async function opsConvertCapture(fd: FormData) {
+  await attempt('/ops/captures', async () => {
+    const p = await requireRole([...OPS, 'rm']);
+    const { convertCapture } = await import('../captures');
+    const lead = await convertCapture(sql, str(fd, 'id'), { name: str(fd, 'name'), cityId: num(fd, 'city_id') ?? 0, categoryIds: fd.getAll('category_id').map(Number).filter(Boolean) }, p.id);
+    return { to: `/ops/leads/${lead.id}`, ok: 'Request started. Fill in the rest from the call.' };
+  });
+}
+
+export async function opsCloseCapture(fd: FormData) {
+  await attempt('/ops/captures', async () => {
+    const p = await requireRole([...OPS, 'rm']);
+    await (await import('../captures')).closeCapture(sql, str(fd, 'id'), str(fd, 'outcome'), p.id);
+    return { ok: 'Closed' };
+  });
+}
+
 export async function opsResolveError(fd: FormData) {
   await attempt('/ops/errors', async () => {
     const p = await requireRole(OPS);

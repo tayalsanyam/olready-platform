@@ -157,3 +157,15 @@ No outside service. Every crash is stored in `mkt.error_events`, grouped by what
 - `lib/db.ts` is set for Supabase's transaction pooler: no prepared statements, one query at a time per connection (`max_pipeline: 1`), no type fetch, three connections in production, SSL required.
 - `.vercelignore` keeps local data, env files and deploy scratch out of uploads.
 - **The bride's request form** lets her mark any function as being in a different town; vendors who work there see the request too.
+
+## Reaching visitors who are not signed in (November 2026)
+
+Everything ends in a mobile number in **Ops > Numbers to call** (`mkt.captures`), with the page she was on, the town and service it suggests, vendors she saved and her chat. The team alert list hears. After the call, *Start request* turns it into a normal request with her saved vendors as her picks; the lead's campaign records which prompt it came from.
+
+- **Chat helper** (`components/Capture.tsx`, `/api/public/ask`, `askVisitor`): Ask Olready with read-only lookups for anyone. After `visitor_ai_free` questions it asks for her number, then continues. Limits: `visitor_ai_per_day` per visitor, four times that per network, `visitor_ai_site_day` across the site. Chats are kept 30 days unless a number was left.
+- **WhatsApp button**: opens a chat with the team's number, with the page she is on in the message.
+- **Call-me card**: slides up once after `capture_prompt_seconds` on the site or `capture_prompt_views` vendor or listing pages.
+- **Leaving prompt**: desktop only, when the pointer leaves the top of the page.
+- **Saving before sign-in**: a heart is kept in her browser and she is asked for her number to keep the list. After she signs in and sets up her wedding, the saved vendors join her shortlist (`MergeSaved`).
+- **Manners**: one prompt per visit; the card not again for 7 days, the leaving prompt for 14; nothing for 30 days after she leaves a number or sends a request; nothing on dashboards, sign-in, the request form, or guests' invite and RSVP pages; all switchable in Settings.
+- **Cookies**: `olr_v` (a random code for the chat limit) joins the sign-in cookies and `olr_town`. No advertising or analytics cookies. The privacy page says so.

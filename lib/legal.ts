@@ -189,6 +189,7 @@ export const PRIVACY: Policy = {
         'Brides and families: name, email, phone, city, wedding date, functions and their dates, guest count, the vendor categories wanted, budgets, notes from our verification call, shortlist, checklist, budget, wedding wall, invitation details, guest names and phone numbers you add, RSVP replies, conversations and quotes, reviews and real-wedding submissions.',
         'Vendors: business and owner name, contact details, category, city and service towns, prices and details, photos and videos, billing name, address and GSTIN, plans, credits, unlocks, conversations, quotes, promotion settings and payments.',
         'Everyone: sign-in records, settings, support and callback requests, and the records needed for payments, invoices and refunds. Payment card, UPI and bank credentials are handled by the payment provider; we never ask for your card security code, UPI PIN or OTP.',
+        'Visitors who are not signed in: the mobile number and name you leave when you ask for a call, the page you were on, vendors you saved, and the questions you ask the chat helper. We use these to call you once about your wedding and to start your request if you ask us to.',
         'Provide only what is needed. If you add information about another person, such as a guest list, you must have their permission or another lawful basis to share it with us.',
       ],
     },
@@ -196,7 +197,7 @@ export const PRIVACY: Policy = {
       id: 'technology',
       heading: 'What we collect through technology',
       body: [
-        'Our servers and providers process technical information such as IP address, browser and device details, timestamps, error records and security events to deliver and protect the service. Essential cookies keep you signed in and protect staff sign-in. We do not use advertising pixels, remarketing or session replay.',
+        'Our servers and providers process technical information such as IP address, browser and device details, timestamps, error records and security events to deliver and protect the service. Essential cookies keep you signed in and protect staff sign-in. One cookie remembers the town you chose, and one gives your browser a random code so the chat helper can apply its daily limit; neither is linked to an account. Vendors you save before signing in, and a note that a prompt has already been shown, are kept in your own browser’s storage. We do not use advertising pixels, remarketing or session replay.',
         'To show vendors how many people saw their profile, we count visits on our own servers using a code made from the visitor’s IP address and browser with a secret that changes every day. The code cannot be turned back into the IP address and is not linked to an account. We do not use third-party analytics.',
       ],
     },

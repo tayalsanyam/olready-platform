@@ -50,6 +50,19 @@ const GROUPS: { title: string; hint: string; keys: Record<string, Def> }[] = [
     },
   },
   {
+    title: 'Visitors who are not signed in',
+    hint: 'The chat helper, the call-me card and the leaving prompt on public pages. Every number left lands in Numbers to call.',
+    keys: {
+      capture_prompts_on: { label: 'Show the call-me card and the leaving prompt', yesNo: true },
+      capture_prompt_seconds: { label: 'Show the call-me card after', unit: 'seconds on the site' },
+      capture_prompt_views: { label: 'Or after she has opened', unit: 'vendor or listing pages' },
+      visitor_ai_on: { label: 'Chat helper for visitors', yesNo: true },
+      visitor_ai_free: { label: 'Questions before the chat asks for her number', unit: 'questions' },
+      visitor_ai_per_day: { label: 'Questions a visitor can ask in a day', unit: 'questions' },
+      visitor_ai_site_day: { label: 'Visitor questions across the whole site in a day', unit: 'questions' },
+    },
+  },
+  {
     title: 'Alerts',
     hint: 'When vendors are nudged, and when the team is told something is waiting. Choose who gets team alerts further down this page.',
     keys: {

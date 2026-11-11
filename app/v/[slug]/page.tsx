@@ -38,9 +38,9 @@ export async function generateMetadata({ params }: P) {
   };
 }
 
-function ShortlistButton({ slug, on, compact = false }: { slug: string; on: boolean; compact?: boolean }) {
+function ShortlistButton({ slug, name, on, compact = false }: { slug: string; name: string; on: boolean; compact?: boolean }) {
   return (
-    <form action={shortlistAction} className={compact ? '' : 'flex-1'}>
+    <form action={shortlistAction} className={compact ? '' : 'flex-1'} data-save={slug} data-save-name={name}>
       <input type="hidden" name="slug" value={slug} />
       <button
         aria-pressed={on}
@@ -48,7 +48,7 @@ function ShortlistButton({ slug, on, compact = false }: { slug: string; on: bool
         className={`btn btn-ghost ${compact ? 'h-12 w-12 !px-0' : 'w-full'} ${on ? 'text-[var(--color-pink)]' : ''}`}
       >
         <IconHeart size={18} filled={on} />
-        {compact ? null : on ? 'Shortlisted' : 'Shortlist'}
+        {compact ? null : <span data-save-label>{on ? 'Shortlisted' : 'Shortlist'}</span>}
       </button>
     </form>
   );
@@ -464,7 +464,7 @@ export default async function VendorPage({ params, searchParams }: P) {
                 Request a quote
               </Link>
               <div className="mt-2 flex">
-                <ShortlistButton slug={v.slug} on={on} />
+                <ShortlistButton slug={v.slug} name={v.business_name} on={on} />
               </div>
               <Link href={`/me/assistant?vendor=${v.slug}`} className="mt-3 block text-center text-sm font-semibold text-[var(--color-pink-deep)] underline-offset-4 hover:underline">
                 Ask Olready about {v.business_name}
@@ -483,7 +483,7 @@ export default async function VendorPage({ params, searchParams }: P) {
           <Link href={quoteHref} className="btn btn-pink h-12 flex-1">
             Request a quote
           </Link>
-          <ShortlistButton slug={v.slug} on={on} compact />
+          <ShortlistButton slug={v.slug} name={v.business_name} on={on} compact />
         </div>
       </div>
     </>

@@ -93,7 +93,7 @@ export function VendorCard({
           ) : null}
         </div>
       </Link>
-      <form action={shortlistAction} className="absolute right-2 top-2">
+      <form action={shortlistAction} className="absolute right-2 top-2" data-save={v.slug} data-save-name={v.business_name}>
         <input type="hidden" name="slug" value={v.slug} />
         {backPath ? <input type="hidden" name="_back" value={backPath} /> : null}
         <button

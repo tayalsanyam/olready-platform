@@ -199,3 +199,8 @@ a:hover .zoom-img img, a:hover .zoom-img .cover-art { transform: scale(1.045); }
 
 /* A spinning marigold for full-screen waits. */
 .marigold-spin { animation: spin 2.4s linear infinite; transform-origin: 50% 50%; }
+
+/* The contact dock sits above a page's own bottom bar (the quote bar on a vendor's page on phones). */
+@media (max-width: 767px) { body:has([data-cta-bar]) { --dock-bottom: 5.25rem; } }
+dialog::backdrop { background: rgb(17 16 20 / .45); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

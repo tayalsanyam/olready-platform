@@ -1,3 +1,4 @@
+import { openCaptureCount } from '@/lib/captures';
 import { openErrorCount } from '@/lib/errors';
 import { requireStaff } from '@/lib/auth';
 import { sql } from '@/lib/db';
@@ -29,6 +30,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
           (select count(*) from mkt.real_weddings where status = 'submitted')::int as weddings`
     : [null];
   const errors = ops ? await openErrorCount(sql) : 0;
+  const captures = await openCaptureCount(sql);
   const groups: OpsGroup[] = [
     {
       title: 'Work',
@@ -41,6 +43,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
               { href: '/ops/vendors', label: 'Vendors', count: c?.vendors },
               { href: '/ops/reviews', label: 'Reviews', count: c?.reviews },
               { href: '/ops/moderation', label: 'Moderation', count: c?.flagged },
+              { href: '/ops/captures', label: 'Numbers to call', count: captures },
               { href: '/ops/usage', label: 'Plan usage' },
             ]
           : []),

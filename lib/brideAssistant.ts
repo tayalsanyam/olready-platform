@@ -528,10 +528,10 @@ Rules:
 - If asked about anything unrelated to her wedding, say briefly that you can only help with wedding planning on Olready.`;
 }
 
-async function callClaude(system: string, messages: ApiMessage[]) {
+async function callClaude(system: string, messages: ApiMessage[], toolset: readonly (typeof TOOLS)[number][] = TOOLS) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new DomainError('off', `${ASSISTANT_NAME} is not switched on yet.`);
-  const tools = TOOLS.map((t, i) => (i === TOOLS.length - 1 ? { ...t, cache_control: { type: 'ephemeral' } } : t));
+  const tools = toolset.map((t, i) => (i === toolset.length - 1 ? { ...t, cache_control: { type: 'ephemeral' } } : t));
   let res: Response;
   try {
     res = await fetch(`${process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com'}/v1/messages`, {
@@ -657,6 +657,90 @@ export async function ask(db: Db, profile: Profile, input: { threadId?: string |
 
 // ---------------------------------------------------------------- confirm cards, feedback, history
 
+// ---------------------------------------------------------------- visitors who are not signed in
+
+const VISITOR_TOOLS = TOOLS.filter((t) => ['search_vendors', 'vendor_details', 'price_guide', 'find_ideas', 'find_articles'].includes(t.name));
+const VISITOR_RULES = `
+
+This person is browsing Olready and is NOT signed in. Extra rules for this chat:
+- You can look up vendors, prices, ideas and guides. You cannot see or change a wedding plan, shortlist, budget or quotes; do not offer to.
+- To get quotes, tell her to tap "Get quotes" at the top of the page, or to leave her number in this chat so the Olready team calls her. Never ask her to type a phone number or email into a message, and never repeat one.
+- Keep it to a few lines and at most 4 vendors. End with one short next step.`;
+
+export type VisitorTurn = { chatId: string; text: string; needPhone: boolean; left: number };
+type StoredTurn = { role: 'user' | 'assistant'; text: string };
+
+/** How many questions this visitor may still ask today, and whether a number is needed first. */
+export async function visitorAllowance(db: Db, visitor: string, ipKey: string | null) {
+  const [on, free, perDay, siteDay] = await Promise.all([
+    getSetting<number>(db, 'visitor_ai_on', 1), getSetting<number>(db, 'visitor_ai_free', 2),
+    getSetting<number>(db, 'visitor_ai_per_day', 8), getSetting<number>(db, 'visitor_ai_site_day', 1500),
+  ]);
+  const [u] = await db<{ mine: number; ip: number; all: number; known: boolean }[]>`
+    select coalesce(sum(questions) filter (where visitor = ${visitor}), 0)::int as mine,
+      coalesce(sum(questions) filter (where ip_key = ${ipKey}), 0)::int as ip,
+      coalesce(sum(questions), 0)::int as all,
+      exists (select 1 from mkt.captures c where c.visitor = ${visitor}) as known
+    from mkt.visitor_chats where created_at >= (${today()}::date)::timestamp at time zone 'Asia/Kolkata'`;
+  // One network (an office, a college) may hold several people, so its ceiling is higher than one visitor's.
+  const left = Math.max(0, Math.min(perDay - u.mine, perDay * 4 - u.ip, siteDay - u.all));
+  return { on: Boolean(on) && aiEnabled(), left, needPhone: !u.known && u.mine >= free, known: u.known };
+}
+
+/** One question from a visitor. Read-only lookups, the same answer checks, and a transcript the team can read. */
+export async function askVisitor(db: Db, input: { visitor: string; ipKey: string | null; chatId?: string | null; text: string; page?: string | null }): Promise<VisitorTurn> {
+  const text = input.text.trim().slice(0, 600);
+  if (!text) throw new DomainError('empty', 'Type a question');
+  const a = await visitorAllowance(db, input.visitor, input.ipKey);
+  if (!a.on) throw new DomainError('off', `${ASSISTANT_NAME} is resting right now. Leave your number and our team will call you.`);
+  let [chat] = input.chatId && /^[0-9a-f-]{36}$/i.test(input.chatId)
+    ? await db<{ id: string; messages: StoredTurn[]; slugs: string[] }[]>`select id, messages, slugs from mkt.visitor_chats where id = ${input.chatId} and visitor = ${input.visitor}`
+    : [];
+  if (a.needPhone) return { chatId: chat?.id ?? '', text: '', needPhone: true, left: a.left };
+  if (a.left <= 0) throw new DomainError('limit', 'That is all the questions for today. Leave your number and our team will help you from here.');
+  if (!chat) {
+    [chat] = await db<{ id: string; messages: StoredTurn[]; slugs: string[] }[]>`
+      insert into mkt.visitor_chats (visitor, ip_key, page) values (${input.visitor}, ${input.ipKey}, ${input.page?.slice(0, 200) ?? null}) returning id, messages, slugs`;
+  }
+  // Count the question before the model is called, so a failed or abandoned call still uses the allowance.
+  await db`update mkt.visitor_chats set questions = questions + 1, updated_at = now() where id = ${chat.id}`;
+  const past = (chat.messages ?? []).slice(-10);
+  const messages: ApiMessage[] = [...past.map((m) => ({ role: m.role, content: m.text })), { role: 'user' as const, content: text }];
+  const ctx: Ctx = { db, profile: { id: '00000000-0000-0000-0000-000000000000', role: 'visitor', full_name: null } as unknown as Profile, wedding: null, threadId: chat.id, slugs: new Set(chat.slugs ?? []), actions: [] };
+  const system = (await systemPrompt(db)) + VISITOR_RULES;
+  const allowed = new Set<string>(VISITOR_TOOLS.map((t) => t.name));
+  let finalText = '';
+  let used = 0;
+  for (let step = 0; step < 4; step++) {
+    const res = await callClaude(system, messages, VISITOR_TOOLS);
+    const calls = res.content.filter((b): b is Extract<Block, { type: 'tool_use' }> => b.type === 'tool_use');
+    const said = res.content.filter((b): b is Extract<Block, { type: 'text' }> => b.type === 'text').map((b) => b.text).join('\n').trim();
+    if (!calls.length || step === 3) {
+      finalText = said || 'Sorry, I could not finish that. Could you ask it a little more simply?';
+      break;
+    }
+    messages.push({ role: 'assistant', content: res.content });
+    const results: Block[] = [];
+    for (const c of calls) {
+      used++;
+      let out: unknown;
+      try {
+        out = allowed.has(c.name) ? await runTool(ctx, c.name, c.input ?? {}) : { error: 'Not available before signing in.' };
+      } catch (e) {
+        out = { error: e instanceof DomainError ? e.message : 'That lookup failed.' };
+      }
+      results.push({ type: 'tool_result', tool_use_id: c.id, content: JSON.stringify(out), ...(out && typeof out === 'object' && 'error' in out ? { is_error: true } : {}) });
+    }
+    messages.push({ role: 'user', content: results });
+  }
+  for (const s of slugsIn(messages)) ctx.slugs.add(s);
+  const checked = await checkAnswer(db, finalText, ctx.slugs, used > 0 || ctx.slugs.size > 0);
+  const turns: StoredTurn[] = [...past, { role: 'user' as const, text }, { role: 'assistant' as const, text: checked.text }].slice(-24);
+  await db`update mkt.visitor_chats set messages = ${db.json(turns as never)}, slugs = ${[...ctx.slugs].slice(-60)}, updated_at = now() where id = ${chat.id}`;
+  const after = await visitorAllowance(db, input.visitor, input.ipKey);
+  return { chatId: chat.id, text: checked.text, needPhone: false, left: after.left };
+}
+
 export async function decideAction(db: Db, actionId: string, profile: Profile, confirm: boolean) {
   const [a] = await db<{ id: string; kind: string; payload: Record<string, unknown>; status: string; profile_id: string }[]>`
     select a.id, a.kind, a.payload, a.status, t.profile_id from mkt.assistant_actions a join mkt.assistant_threads t on t.id = a.thread_id
@@ -727,5 +811,7 @@ export async function deleteThread(db: Db, threadId: string, profileId: string) 
 export async function purgeOldChats(db: Db) {
   const days = await getSetting<number>(db, 'bride_assistant_keep_days', 90);
   const r = await db`delete from mkt.assistant_threads where updated_at < now() - make_interval(days => ${days}) returning 1`;
+  // Visitors' chats are kept for a month, unless a number was left with one.
+  await db`delete from mkt.visitor_chats vc where vc.updated_at < now() - interval '30 days' and not exists (select 1 from mkt.captures c where c.chat_id = vc.id)`.catch(() => {});
   return r.length;
 }

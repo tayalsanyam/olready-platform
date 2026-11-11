@@ -1,3 +1,8 @@
+import { Capture } from '@/components/Capture';
+import { captureConfig } from '@/lib/captures';
+import { currentProfile } from '@/lib/auth';
+import { sql } from '@/lib/db';
+import { OPERATOR } from '@/lib/legal';
 import { Suspense } from 'react';
 import { Feel } from '@/components/Feel';
 import { TableLabels } from '@/components/TableLabels';
@@ -28,7 +33,9 @@ export const viewport: Viewport = { themeColor: '#ffffff', width: 'device-width'
 // and those queries are canceled during the build. Render this shell on the request.
 export const dynamic = 'force-dynamic';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Who is looking decides which prompts she sees. A failure here must never take the page down.
+  const [viewer, cap] = await Promise.all([currentProfile().catch(() => null), captureConfig(sql).catch(() => ({ prompts: false, seconds: 45, views: 3, ai: false, free: 2 }))]);
   return (
     <html lang="en-IN">
       <head>
@@ -47,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TableLabels />
         <Suspense fallback={null}>
           <Feel />
+          <Capture signedIn={Boolean(viewer)} role={viewer?.role ?? null} whatsapp={OPERATOR.whatsapp} ai={cap.ai} prompts={cap.prompts} seconds={cap.seconds} views={cap.views} />
         </Suspense>
       </body>
     </html>

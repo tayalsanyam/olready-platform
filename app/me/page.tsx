@@ -1,3 +1,4 @@
+import { MergeSaved } from '@/components/MergeSaved';
 import { CallbackForm } from '@/components/CallbackForm';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -138,6 +139,7 @@ export default async function MyWedding({ searchParams }: P) {
         </section>
       )}
       <Notice error={q.error} ok={q.ok} />
+      <MergeSaved />
 
       <Link
         href="/me/assistant"
