@@ -65,7 +65,7 @@ export async function writeReview(
       and (l.bride_profile_id = ${input.profileId}
            or exists (select 1 from mkt.wedding_members m where m.wedding_id = l.wedding_id and m.profile_id = ${input.profileId}))
     order by booked desc nulls last limit 1`;
-  if (!link) throw new DomainError('no_contact', 'You can review vendors you have talked to through OLReady');
+  if (!link) throw new DomainError('no_contact', 'You can review vendors you have talked to through Olready');
   const [r] = await db<{ id: string }[]>`
     insert into mkt.reviews (vendor_id, author_profile_id, lead_need_id, rating_artist, rating_service, body, verified_booking,
       amount_spent_inr, function_date, photos)

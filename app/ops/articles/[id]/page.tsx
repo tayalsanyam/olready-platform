@@ -59,7 +59,7 @@ export default async function EditArticle({ params, searchParams }: P) {
               <input name="slug" defaultValue={a?.slug} className="input" placeholder="how-to-choose-a-venue" />
             </Field>
             <Field label="Author">
-              <input name="author_name" defaultValue={a?.author_name ?? me.full_name ?? 'OLReady team'} className="input" />
+              <input name="author_name" defaultValue={a?.author_name ?? me.full_name ?? 'Olready team'} className="input" />
             </Field>
           </div>
           <Field label="One-line summary *" hint="Shown on cards and in Google results">

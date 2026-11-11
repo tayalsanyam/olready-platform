@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react';
 
-/** Small line icons drawn for OLReady; 24px grid, 1.6 stroke, inherit colour. */
+/** Small line icons drawn for Olready; 24px grid, 1.6 stroke, inherit colour. */
 type P = SVGProps<SVGSVGElement> & { size?: number };
 const base = ({ size = 20, ...p }: P) => ({
   width: size,

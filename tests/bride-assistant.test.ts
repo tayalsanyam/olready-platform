@@ -42,7 +42,7 @@ function claude(...replies: ({ text: string } | { tool: string; input: Record<st
   return spy;
 }
 
-describe('Ask OLReady tools', () => {
+describe('Ask Olready tools', () => {
   it('finds vendors by guests, price and keyword, never with contact details', async () => {
     const bride = await profile(sql, 'bride', 'Simran Kaur');
     const ctx = { db: sql, profile: bride, wedding: null, threadId: '', slugs: new Set<string>(), actions: [] as string[] };

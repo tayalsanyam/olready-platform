@@ -54,7 +54,7 @@ export default async function Receipt({ params }: P) {
         <table className="data stack">
           <tbody>
             <tr>
-              <td>OLReady {o.product}</td>
+              <td>Olready {o.product}</td>
               <td className="text-right">{formatInr(o.amount_inr)}</td>
             </tr>
             <tr>

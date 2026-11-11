@@ -3,7 +3,7 @@ import { getSetting } from './db';
 import { type Category, type City, displayValue, fieldsFor, formatInr, getCityBySlug, listCategories } from './catalog';
 
 // Price guides: "How much does a wedding photographer cost in India?" and "...in Jaipur?" answered
-// from live OLReady listings and real quotes. A guide is indexed only when enough vendors list a price.
+// from live Olready listings and real quotes. A guide is indexed only when enough vendors list a price.
 
 export type CostGuide = {
   category: Category;
@@ -95,10 +95,10 @@ export function costFaq(g: CostGuide) {
   const faq: { q: string; a: string }[] = [
     {
       q: `How much does a ${noun(g.category)} cost in ${where}?`,
-      a: `On OLReady, ${g.category.plural_name.toLowerCase()} in ${where} start from ${formatInr(g.min)} ${unit}. Most start between ${formatInr(g.low)} and ${formatInr(g.high)}, and the middle is about ${formatInr(g.mid)}. These are starting prices from ${g.priced} listed vendors; full quotes depend on your date, functions and guests.`,
+      a: `On Olready, ${g.category.plural_name.toLowerCase()} in ${where} start from ${formatInr(g.min)} ${unit}. Most start between ${formatInr(g.low)} and ${formatInr(g.high)}, and the middle is about ${formatInr(g.mid)}. These are starting prices from ${g.priced} listed vendors; full quotes depend on your date, functions and guests.`,
     },
   ];
-  if (g.quoteMid) faq.push({ q: `What do brides actually get quoted?`, a: `Across ${g.quotes} quotes sent on OLReady in the last year, the middle quote was ${formatInr(g.quoteMid)}. Quotes are usually higher than starting prices because they cover the full package.` });
+  if (g.quoteMid) faq.push({ q: `What do brides actually get quoted?`, a: `Across ${g.quotes} quotes sent on Olready in the last year, the middle quote was ${formatInr(g.quoteMid)}. Quotes are usually higher than starting prices because they cover the full package.` });
   if (g.breakdown.length >= 2)
     faq.push({
       q: `Which kind costs more?`,
@@ -106,7 +106,7 @@ export function costFaq(g: CostGuide) {
     });
   faq.push({
     q: `How do I get exact prices?`,
-    a: `Send one request with your functions, dates and guests. Our team confirms it on a short call, then verified ${g.category.plural_name.toLowerCase()} in ${where} quote you on OLReady, and you compare them side by side.`,
+    a: `Send one request with your functions, dates and guests. Our team confirms it on a short call, then verified ${g.category.plural_name.toLowerCase()} in ${where} quote you on Olready, and you compare them side by side.`,
   });
   return faq;
 }

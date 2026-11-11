@@ -24,7 +24,7 @@ export default async function Enquire({ searchParams }: P) {
   const vendor = sp(q.vendor) ? await getVendorBySlug(sql, sp(q.vendor)!) : null;
   if (vendor?.status === 'live' && (await visitorKey())) after(() => bump(sql, [vendor.id], 'quote_starts').catch(() => undefined));
   const wedding = profile ? await weddingFor(sql, profile.id) : null;
-  // One category or several (from Ask OLReady: ?category=venues,caterers&guests=400).
+  // One category or several (from Ask Olready: ?category=venues,caterers&guests=400).
   const preCats = new Set((sp(q.category) ?? '').split(',').filter(Boolean));
   const preGuests = Number(sp(q.guests)) > 0 ? Math.min(20000, Math.round(Number(sp(q.guests)))) : undefined;
   const preTown =

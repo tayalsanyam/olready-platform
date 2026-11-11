@@ -1,4 +1,4 @@
--- Vendor tools: review requests for clients booked outside OLReady, files in chat, callback requests.
+-- Vendor tools: review requests for clients booked outside Olready, files in chat, callback requests.
 
 -- Reviews from invited clients wait for Ops before they show.
 alter table mkt.reviews drop constraint if exists reviews_status_check;

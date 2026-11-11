@@ -10,7 +10,7 @@ try {
     const [cat] = a.category ? await sql`select id from mkt.categories where slug = ${a.category}` : [null];
     const r = await sql`
       insert into mkt.articles (slug, title, excerpt, body, section, category_id, status, author_name)
-      values (${a.slug}, ${a.title}, ${a.excerpt}, ${a.body}, ${a.section}, ${cat?.id ?? null}, 'draft', 'OLReady team')
+      values (${a.slug}, ${a.title}, ${a.excerpt}, ${a.body}, ${a.section}, ${cat?.id ?? null}, 'draft', 'Olready team')
       on conflict (slug) do nothing returning id`;
     added += r.length;
   }

@@ -59,167 +59,167 @@ function render(template: EmailTemplate, p: Record<string, string>) {
     case 'post_event_feedback':
       return {
         subject: `How was ${p.vendor} at your wedding?`,
-        text: `Hi ${p.name},\n\nWe hope the wedding went beautifully. Tell other brides how ${p.vendor} did: rate the artist and the service.\n\n${site()}/me/reviews?vendor=${p.vendorSlug}\n\nIf anything went wrong, reply to this email and our support team will help.\n\nOLReady`,
+        text: `Hi ${p.name},\n\nWe hope the wedding went beautifully. Tell other brides how ${p.vendor} did: rate the artist and the service.\n\n${site()}/me/reviews?vendor=${p.vendorSlug}\n\nIf anything went wrong, reply to this email and our support team will help.\n\nOlready`,
       };
     case 'lead_verified':
       return {
         subject: 'Your enquiry is verified',
-        text: `Hi ${p.name},\n\nThanks for confirming your details. Verified vendors can now reach out. To chat with them and compare quotes, sign in with this email address (we send a code, there is no password):\n\n${site()}/login\n\nOLReady`,
+        text: `Hi ${p.name},\n\nThanks for confirming your details. Verified vendors can now reach out. To chat with them and compare quotes, sign in with this email address (we send a code, there is no password):\n\n${site()}/login\n\nOlready`,
       };
     case 'claim_invite':
       return {
-        subject: `Claim your ${p.business} profile on OLReady`,
-        text: `Hello,\n\nWe have prepared a profile for ${p.business} on OLReady. It stays private until you claim it and check the details:\n\n${site()}/claim/${p.token}\n\nOLReady`,
+        subject: `Claim your ${p.business} profile on Olready`,
+        text: `Hello,\n\nWe have prepared a profile for ${p.business} on Olready. It stays private until you claim it and check the details:\n\n${site()}/claim/${p.token}\n\nOlready`,
       };
     case 'calendar_reminder':
       return {
-        subject: `Is your OLReady calendar up to date, ${p.business}?`,
-        text: `Hello ${p.business},\n\nBrides on OLReady can check your dates before they send a request. Your calendar was last updated ${p.ago}, so brides now see "not marked" instead of "free".\n\nMark the days you are booked, or tap "My calendar is up to date":\n${site()}/vendor/calendar\n\nYou can also connect your Google Calendar so this happens on its own.\n\nOLReady`,
+        subject: `Is your Olready calendar up to date, ${p.business}?`,
+        text: `Hello ${p.business},\n\nBrides on Olready can check your dates before they send a request. Your calendar was last updated ${p.ago}, so brides now see "not marked" instead of "free".\n\nMark the days you are booked, or tap "My calendar is up to date":\n${site()}/vendor/calendar\n\nYou can also connect your Google Calendar so this happens on its own.\n\nOlready`,
       };
     case 'vendor_new_lead':
       return {
         subject: `New verified ${p.category} lead in ${p.city}`,
-        text: `Hello ${p.business},\n\nA verified bride in ${p.city} needs a ${p.category}${p.date ? ` for ${p.date}` : ''}. It is shared with a limited number of vendors.\n\nSee it and unlock it here:\n${site()}/vendor\n\nOLReady`,
+        text: `Hello ${p.business},\n\nA verified bride in ${p.city} needs a ${p.category}${p.date ? ` for ${p.date}` : ''}. It is shared with a limited number of vendors.\n\nSee it and unlock it here:\n${site()}/vendor\n\nOlready`,
       };
     case 'new_message':
       return {
         subject: `New message from ${p.from}`,
-        text: `Hi ${p.name},\n\n${p.from} sent you a message on OLReady:\n\n"${p.preview}"\n\nReply here: ${site()}${p.path}\n\nOLReady`,
+        text: `Hi ${p.name},\n\n${p.from} sent you a message on Olready:\n\n"${p.preview}"\n\nReply here: ${site()}${p.path}\n\nOlready`,
       };
     case 'quote_received':
       return {
         subject: `${p.vendor} sent you a quote`,
-        text: `Hi ${p.name},\n\n${p.vendor} quoted ${p.amount} for your ${p.category}. Compare and accept it here:\n\n${site()}${p.path}\n\nOLReady`,
+        text: `Hi ${p.name},\n\n${p.vendor} quoted ${p.amount} for your ${p.category}. Compare and accept it here:\n\n${site()}${p.path}\n\nOlready`,
       };
     case 'quote_accepted':
       return {
         subject: `${p.bride} accepted your quote`,
-        text: `Hello ${p.business},\n\n${p.bride} accepted your quote of ${p.amount}. Confirm the details with her, and report the booking on OLReady to get your bonus credit:\n\n${site()}${p.path}\n\nOLReady`,
+        text: `Hello ${p.business},\n\n${p.bride} accepted your quote of ${p.amount}. Confirm the details with her, and report the booking on Olready to get your bonus credit:\n\n${site()}${p.path}\n\nOlready`,
       };
     case 'rm_assigned':
       return {
-        subject: 'Your OLReady relationship manager',
-        text: `Hi ${p.name},\n\n${p.rm} is your relationship manager and will call you within one working day. Details are here:\n\n${site()}/me/rm\n\nOLReady`,
+        subject: 'Your Olready relationship manager',
+        text: `Hi ${p.name},\n\n${p.rm} is your relationship manager and will call you within one working day. Details are here:\n\n${site()}/me/rm\n\nOlready`,
       };
     case 'review_request':
       return {
         subject: `${p.vendor} asked for your review`,
-        text: `Hi ${p.name},\n\n${p.vendor} would love to hear how your wedding went. It takes a minute: rate the work and the service, and add a line if you like.\n\n${site()}/review/${p.token}\n\nYou sign in with a code sent to this email, so only you can use this link. If you did not book ${p.vendor}, ignore this email.\n\nOLReady`,
+        text: `Hi ${p.name},\n\n${p.vendor} would love to hear how your wedding went. It takes a minute: rate the work and the service, and add a line if you like.\n\n${site()}/review/${p.token}\n\nYou sign in with a code sent to this email, so only you can use this link. If you did not book ${p.vendor}, ignore this email.\n\nOlready`,
       };
     case 'banner_approved':
       return {
         subject: 'Your banner is approved',
-        text: `Hi ${p.name},\n\nYour OLReady banner is approved and will show for the month you booked.\n\n${site()}/vendor/promote\n\nOLReady`,
+        text: `Hi ${p.name},\n\nYour Olready banner is approved and will show for the month you booked.\n\n${site()}/vendor/promote\n\nOlready`,
       };
     case 'banner_rejected':
       return {
         subject: 'Your banner needs changes',
-        text: `Hi ${p.name},\n\nWe could not approve your banner: ${p.reason}\n\nThe full amount is back in your ads wallet. You can book again with a new image or headline:\n\n${site()}/vendor/promote\n\nOLReady`,
+        text: `Hi ${p.name},\n\nWe could not approve your banner: ${p.reason}\n\nThe full amount is back in your ads wallet. You can book again with a new image or headline:\n\n${site()}/vendor/promote\n\nOlready`,
       };
     case 'event_eve_bride':
       return {
         subject: `Tomorrow: ${p.events}`,
-        text: `Hi ${p.name},\n\nTomorrow is a big day: ${p.events}.\n\n${p.details}\n\nYour booked vendors:\n${p.vendors}\n\nEverything is in one place here:\n${site()}/me\n\nWishing you the happiest day.\nOLReady`,
+        text: `Hi ${p.name},\n\nTomorrow is a big day: ${p.events}.\n\n${p.details}\n\nYour booked vendors:\n${p.vendors}\n\nEverything is in one place here:\n${site()}/me\n\nWishing you the happiest day.\nOlready`,
       };
     case 'event_eve_vendor':
       return {
         subject: `Tomorrow: ${p.bride}'s ${p.events}`,
-        text: `Hi ${p.name},\n\nA reminder for your booking with ${p.bride} tomorrow:\n\n${p.details}\n\nPhone: ${p.phone}\n\nThe conversation is here:\n${site()}/vendor/threads\n\nOLReady`,
+        text: `Hi ${p.name},\n\nA reminder for your booking with ${p.bride} tomorrow:\n\n${p.details}\n\nPhone: ${p.phone}\n\nThe conversation is here:\n${site()}/vendor/threads\n\nOlready`,
       };
     case 'checkin_7':
       return {
         subject: 'How are your quotes looking?',
-        text: `Hi ${p.name},\n\nIt has been a week since we verified your request. Compare the quotes you have side by side, and ask vendors anything before you decide:\n\n${site()}/me/compare\n\nIf you want more options, reply to this email and our team will help.\n\nOLReady`,
+        text: `Hi ${p.name},\n\nIt has been a week since we verified your request. Compare the quotes you have side by side, and ask vendors anything before you decide:\n\n${site()}/me/compare\n\nIf you want more options, reply to this email and our team will help.\n\nOlready`,
       };
     case 'still_looking_15':
       return {
         subject: 'Still looking for the right vendors?',
-        text: `Hi ${p.name},\n\nWe have not heard from you in a while. If you are still looking, tell us what is missing and we will ask more verified vendors to quote. If you have booked, tell us so we stop sending requests:\n\n${site()}/me\n\nOLReady`,
+        text: `Hi ${p.name},\n\nWe have not heard from you in a while. If you are still looking, tell us what is missing and we will ask more verified vendors to quote. If you have booked, tell us so we stop sending requests:\n\n${site()}/me\n\nOlready`,
       };
     case 'refund_issued':
       return {
         subject: `Refund of ₹${p.amount} for order ${p.order}`,
-        text: `Hi ${p.name},\n\nWe have refunded ₹${p.amount} for order ${p.order}. Card and UPI refunds usually reach you in 5 to 7 working days, depending on your bank.\n\nQuestions? Reply to this email.\n\nOLReady`,
+        text: `Hi ${p.name},\n\nWe have refunded ₹${p.amount} for order ${p.order}. Card and UPI refunds usually reach you in 5 to 7 working days, depending on your bank.\n\nQuestions? Reply to this email.\n\nOlready`,
       };
     case 'callback_booked':
       return {
         subject: 'We will call you',
-        text: `Hi ${p.name},\n\nThanks. Someone from OLReady will call you on ${p.phone}${p.when ? ` (${p.when})` : ''} about ${p.topic}. Support hours are Monday to Saturday, 10:00 to 18:30.\n\nOLReady`,
+        text: `Hi ${p.name},\n\nThanks. Someone from Olready will call you on ${p.phone}${p.when ? ` (${p.when})` : ''} about ${p.topic}. Support hours are Monday to Saturday, 10:00 to 18:30.\n\nOlready`,
       };
     case 'contact_received':
       return {
         subject: `Contact form: ${p.topic} from ${p.name}`,
-        text: `A message came in on the OLReady contact page.\n\nFrom: ${p.name}\nEmail: ${p.email || '-'}\nPhone: ${p.phone || '-'}\nAbout: ${p.topic}\n\n${p.message}\n\nReply and mark it done in Ops: ${site()}/ops\n`,
+        text: `A message came in on the Olready contact page.\n\nFrom: ${p.name}\nEmail: ${p.email || '-'}\nPhone: ${p.phone || '-'}\nAbout: ${p.topic}\n\n${p.message}\n\nReply and mark it done in Ops: ${site()}/ops\n`,
       };
     case 'newsletter_welcome':
       return {
-        subject: 'Wedding ideas from OLReady',
-        text: `Thanks for signing up. We will send you new ideas, real weddings and planning guides now and then.\n\nStart here: ${site()}/blog\n\nTo stop these emails: ${site()}/unsubscribe/${p.token}\n\nOLReady`,
+        subject: 'Wedding ideas from Olready',
+        text: `Thanks for signing up. We will send you new ideas, real weddings and planning guides now and then.\n\nStart here: ${site()}/blog\n\nTo stop these emails: ${site()}/unsubscribe/${p.token}\n\nOlready`,
       };
     case 'booking_confirmed':
       return {
         subject: `Your booking with ${p.vendor} is on record`,
-        text: `Hi ${p.name},\n\nYour ${p.category || 'wedding'} booking with ${p.vendor} is recorded on OLReady, and their calendar now shows your dates as taken.\n\nIf you were the one who told us, your thank-you perk is in your account: ${site()}/me\n\nIf this is not right, reply to this email.\n\nOLReady`,
+        text: `Hi ${p.name},\n\nYour ${p.category || 'wedding'} booking with ${p.vendor} is recorded on Olready, and their calendar now shows your dates as taken.\n\nIf you were the one who told us, your thank-you perk is in your account: ${site()}/me\n\nIf this is not right, reply to this email.\n\nOlready`,
       };
     case 'request_received':
       return {
         subject: 'We have your request',
-        text: `Hi ${p.name},\n\nThanks for your request for ${p.cats}. Our team will call you to confirm the details, usually within one working day. Vendors see your request only after that call.\n\nYou can add functions, dates and budgets any time: ${site()}/me\n\nOLReady`,
+        text: `Hi ${p.name},\n\nThanks for your request for ${p.cats}. Our team will call you to confirm the details, usually within one working day. Vendors see your request only after that call.\n\nYou can add functions, dates and budgets any time: ${site()}/me\n\nOlready`,
       };
     case 'booking_recorded_vendor':
       return {
         subject: `Booking recorded: ${p.bride}`,
-        text: `Hi ${p.business},\n\nYour ${p.category} booking with ${p.bride} (${p.when}) is recorded. The dates are marked booked on your calendar, so check it is right: ${site()}/vendor/calendar\n\nOLReady`,
+        text: `Hi ${p.business},\n\nYour ${p.category} booking with ${p.bride} (${p.when}) is recorded. The dates are marked booked on your calendar, so check it is right: ${site()}/vendor/calendar\n\nOlready`,
       };
     case 'vendor_profile_live':
       return {
-        subject: 'Your OLReady profile is live',
-        text: `Hi ${p.business},\n\nYour profile is approved and live: ${p.link}\n\nThree things bring more enquiries: keep your calendar up to date, add recent work photos, and reply to requests the same day.\n\nVerified requests in your category and towns appear here: ${site()}/vendor\n\nOLReady`,
+        subject: 'Your Olready profile is live',
+        text: `Hi ${p.business},\n\nYour profile is approved and live: ${p.link}\n\nThree things bring more enquiries: keep your calendar up to date, add recent work photos, and reply to requests the same day.\n\nVerified requests in your category and towns appear here: ${site()}/vendor\n\nOlready`,
       };
     case 'vendor_profile_back':
       return {
-        subject: 'Your OLReady profile needs a few changes',
-        text: `Hi ${p.business},\n\nWe reviewed your profile and it needs changes before it can go live. Open it to see what is missing, then send it for review again: ${site()}/vendor/profile\n\nReply to this email if you want help.\n\nOLReady`,
+        subject: 'Your Olready profile needs a few changes',
+        text: `Hi ${p.business},\n\nWe reviewed your profile and it needs changes before it can go live. Open it to see what is missing, then send it for review again: ${site()}/vendor/profile\n\nReply to this email if you want help.\n\nOlready`,
       };
     case 'vendor_profile_paused':
       return {
-        subject: 'Your OLReady profile is paused',
-        text: `Hi ${p.business},\n\nYour profile is paused and is not shown to brides for now. Reply to this email and our team will tell you what is needed to bring it back.\n\nOLReady`,
+        subject: 'Your Olready profile is paused',
+        text: `Hi ${p.business},\n\nYour profile is paused and is not shown to brides for now. Reply to this email and our team will tell you what is needed to bring it back.\n\nOlready`,
       };
     case 'claim_approved':
       return {
-        subject: `${p.business} is now yours on OLReady`,
-        text: `Hi,\n\nYour claim on ${p.business} is approved. Sign in to finish the profile and send it for review: ${site()}/vendor/profile\n\nOLReady`,
+        subject: `${p.business} is now yours on Olready`,
+        text: `Hi,\n\nYour claim on ${p.business} is approved. Sign in to finish the profile and send it for review: ${site()}/vendor/profile\n\nOlready`,
       };
     case 'claim_rejected':
       return {
         subject: `About your claim on ${p.business}`,
-        text: `Hi,\n\nWe could not approve your claim on ${p.business}. If you run this business, reply to this email with a document or link that shows it and we will look again.\n\nOLReady`,
+        text: `Hi,\n\nWe could not approve your claim on ${p.business}. If you run this business, reply to this email with a document or link that shows it and we will look again.\n\nOlready`,
       };
     case 'payment_received':
       return {
         subject: `Payment received: ${p.amount}`,
-        text: `Hi ${p.business},\n\nWe received ${p.amount} for ${p.what}.\n\n${p.next}\n\n${p.invoiceNo ? `Tax invoice ${p.invoiceNo}` : 'Receipt'}: ${p.invoice}\n\nOLReady`,
+        text: `Hi ${p.business},\n\nWe received ${p.amount} for ${p.what}.\n\n${p.next}\n\n${p.invoiceNo ? `Tax invoice ${p.invoiceNo}` : 'Receipt'}: ${p.invoice}\n\nOlready`,
       };
     case 'plan_started':
       return {
         subject: `Your ${p.plan} plan is active`,
-        text: `Hi ${p.business},\n\nYour ${p.plan} plan is active with ${p.credits} verified enquiries, valid until ${p.until}.\n\nTo get results from it:\n1. Open new requests the day they arrive. Each one closes after a set number of vendors.\n2. Keep your calendar current, so you are shown as free on the right dates.\n3. Send a clear quote for each function.\n\nOpen requests: ${site()}/vendor\n\nOLReady`,
+        text: `Hi ${p.business},\n\nYour ${p.plan} plan is active with ${p.credits} verified enquiries, valid until ${p.until}.\n\nTo get results from it:\n1. Open new requests the day they arrive. Each one closes after a set number of vendors.\n2. Keep your calendar current, so you are shown as free on the right dates.\n3. Send a clear quote for each function.\n\nOpen requests: ${site()}/vendor\n\nOlready`,
       };
     case 'credits_low':
       return {
         subject: `${p.left} ${String(p.left) === '1' ? 'enquiry' : 'enquiries'} left`,
-        text: `Hi ${p.business},\n\nYou have ${p.left} ${String(p.left) === '1' ? 'enquiry' : 'enquiries'} left. Top up so you do not miss the next request: ${site()}/vendor/packs\n\nOLReady`,
+        text: `Hi ${p.business},\n\nYou have ${p.left} ${String(p.left) === '1' ? 'enquiry' : 'enquiries'} left. Top up so you do not miss the next request: ${site()}/vendor/packs\n\nOlready`,
       };
     case 'plan_usage_low':
       return {
         subject: `You have used ${p.used} of ${p.credits} enquiries`,
-        text: `Hi ${p.business},\n\nYour ${p.plan} plan has ${p.daysLeft} days left and you have used ${p.used} of ${p.credits} enquiries. Unused enquiries end with the plan.\n\n${Number(p.openLeads) > 0 ? `${p.openLeads} verified ${String(p.openLeads) === '1' ? 'request is' : 'requests are'} open for you right now` : 'New verified requests arrive most days'}: ${site()}/vendor\n\nWhat usually helps:\n1. Check requests daily and open the ones that fit before they close.\n2. Update your calendar, so brides searching by date find you.\n3. Add the towns you travel to, so you see requests from them.\n\nWant us to go through it with you? Reply to this email and your OLReady contact will call.\n\nOLReady`,
+        text: `Hi ${p.business},\n\nYour ${p.plan} plan has ${p.daysLeft} days left and you have used ${p.used} of ${p.credits} enquiries. Unused enquiries end with the plan.\n\n${Number(p.openLeads) > 0 ? `${p.openLeads} verified ${String(p.openLeads) === '1' ? 'request is' : 'requests are'} open for you right now` : 'New verified requests arrive most days'}: ${site()}/vendor\n\nWhat usually helps:\n1. Check requests daily and open the ones that fit before they close.\n2. Update your calendar, so brides searching by date find you.\n3. Add the towns you travel to, so you see requests from them.\n\nWant us to go through it with you? Reply to this email and your Olready contact will call.\n\nOlready`,
       };
     case 'review_received':
       return {
         subject: `New review from ${p.by}`,
-        text: `Hi ${p.business},\n\n${p.by} reviewed you: ${p.stars} out of 5. Read it and reply: ${site()}/vendor/reviews\n\nOLReady`,
+        text: `Hi ${p.business},\n\n${p.by} reviewed you: ${p.stars} out of 5. Read it and reply: ${site()}/vendor/reviews\n\nOlready`,
       };
     case 'dispute_update':
       return {
@@ -232,10 +232,10 @@ function render(template: EmailTemplate, p: Record<string, string>) {
               : p.stage === 'rejected'
                 ? 'We looked at your proof and the review stays published. You can still reply to it publicly.'
                 : 'The time to send proof has passed, so the review stays published.'
-        }\n\n${site()}/vendor/reviews\n\nOLReady`,
+        }\n\n${site()}/vendor/reviews\n\nOlready`,
       };
     case 'staff_alert':
-      return { subject: `OLReady: ${p.what}`, text: `${p.what}\n${p.detail}\n\n${p.link}` };
+      return { subject: `Olready: ${p.what}`, text: `${p.what}\n${p.detail}\n\n${p.link}` };
   }
 }
 
@@ -262,10 +262,10 @@ export async function flushOutbox(db: Db, limit = 50) {
         method: 'POST',
         headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from: process.env.EMAIL_FROM ?? 'OLReady <care@olready.in>',
+          from: process.env.EMAIL_FROM ?? 'Olready <care@olready.in>',
           to: m.to_email,
           subject,
-          text: `${text}\n\n--\nStop emails from OLReady: ${unsub}`,
+          text: `${text}\n\n--\nStop emails from Olready: ${unsub}`,
           headers: { 'List-Unsubscribe': `<${unsub.replace('/unsubscribe/email', '/api/unsubscribe')}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
         }),
       });

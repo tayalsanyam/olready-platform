@@ -129,7 +129,7 @@ export default async function CalendarPage({ searchParams }: P) {
                     <b>{e.status === 'closed' ? 'Closed' : 'Booked'}</b> · {SLOT_LABEL[e.slot]}
                     {e.space ? ` · ${e.space}` : ''}
                     {e.note ? <span className="block text-[var(--color-muted)]">{e.note}</span> : null}
-                    {e.source === 'olready' ? <Badge tone="ok">OLReady booking</Badge> : e.source === 'import' ? <Badge>From your calendar</Badge> : e.source === 'ops' ? <Badge>Added by OLReady team</Badge> : null}
+                    {e.source === 'olready' ? <Badge tone="ok">Olready booking</Badge> : e.source === 'import' ? <Badge>From your calendar</Badge> : e.source === 'ops' ? <Badge>Added by Olready team</Badge> : null}
                   </span>
                   {e.source !== 'import' ? (
                     <form action={calendarRemoveAction}>
@@ -244,9 +244,9 @@ export default async function CalendarPage({ searchParams }: P) {
               {vendor.calendar_import_error ? `Last try failed: ${vendor.calendar_import_error}` : vendor.calendar_imported_at ? `Last read ${new Date(vendor.calendar_imported_at).toLocaleString('en-IN')}` : 'Not read yet'}. Clear the box and save to disconnect.
             </p>
           ) : null}
-          <h2 className="mt-5 font-semibold">See OLReady dates in your own calendar</h2>
+          <h2 className="mt-5 font-semibold">See Olready dates in your own calendar</h2>
           <p className="hint mt-1">Add this address in Google Calendar (Other calendars, From URL) or on your phone. Keep it private: anyone with it can see your booked dates.</p>
-          <input readOnly value={feed} className="input mt-2 text-xs" aria-label="Your OLReady calendar feed" />
+          <input readOnly value={feed} className="input mt-2 text-xs" aria-label="Your Olready calendar feed" />
         </Card>
       </div>
     </>

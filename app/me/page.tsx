@@ -132,7 +132,7 @@ export default async function MyWedding({ searchParams }: P) {
         <section className="jaali arrive relative mb-6 overflow-hidden rounded-3xl bg-[var(--color-pink-soft)] p-6 sm:p-8">
           <Marigold size={120} className="pointer-events-none absolute -right-8 -top-10 opacity-90" />
           <h1 className="relative text-4xl sm:text-5xl" style={{ fontFamily: 'var(--font-serif)', fontWeight: 600 }}>
-            Welcome to OLReady
+            Welcome to Olready
           </h1>
           <p className="relative mt-2 max-w-xl text-[var(--color-muted)]">Tell us a little about your wedding. Your checklist, budget, guest list and invite all start from the date and the town.</p>
         </section>
@@ -144,7 +144,7 @@ export default async function MyWedding({ searchParams }: P) {
         className="mb-6 flex items-center justify-between gap-3 rounded-2xl bg-[var(--color-pink-soft)] px-4 py-3 hover:bg-[var(--color-tint)]"
       >
         <span>
-          <span className="block font-semibold">Ask OLReady</span>
+          <span className="block font-semibold">Ask Olready</span>
           <span className="block text-sm text-[var(--color-muted)]">Find vendors, plan your budget, compare quotes: ask in your own words.</span>
         </span>
         <span aria-hidden className="text-xl text-[var(--color-pink-deep)]">›</span>

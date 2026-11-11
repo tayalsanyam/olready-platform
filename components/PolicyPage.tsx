@@ -13,10 +13,10 @@ export function PolicyPage({ p }: { p: Policy }) {
         data={{
           '@context': 'https://schema.org',
           '@type': 'WebPage',
-          name: `${p.title} | OLReady`,
+          name: `${p.title} | Olready`,
           url: `${siteUrl()}/${p.slug}`,
           dateModified: LEGAL_EFFECTIVE,
-          publisher: { '@type': 'Organization', name: 'OLReady', url: siteUrl() },
+          publisher: { '@type': 'Organization', name: 'Olready', url: siteUrl() },
         }}
       />
       <p className="text-sm text-[var(--color-muted)]">

@@ -1,4 +1,4 @@
--- Ask OLReady: the brides' planning helper.
+-- Ask Olready: the brides' planning helper.
 
 create table mkt.assistant_threads (
   id uuid primary key default gen_random_uuid(),

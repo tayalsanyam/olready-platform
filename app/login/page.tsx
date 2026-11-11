@@ -24,7 +24,7 @@ export default async function Login({ searchParams }: P) {
   const door = (k: 'bride' | 'vendor') => `/login?as=${k}${next && !(k === 'bride' && next.startsWith('/vendor')) ? `&next=${encodeURIComponent(next)}` : ''}`;
   return (
     <Container className="max-w-md">
-      <h1 className="text-center text-2xl font-semibold">{p ? 'You are signed in' : as === 'vendor' ? 'Your business on OLReady' : 'Plan your wedding on OLReady'}</h1>
+      <h1 className="text-center text-2xl font-semibold">{p ? 'You are signed in' : as === 'vendor' ? 'Your business on Olready' : 'Plan your wedding on Olready'}</h1>
       <p className="mt-1 text-center text-sm text-[var(--color-muted)]">
         {p ? p.email : 'No password. We email you a code; a new email creates your account.'}
       </p>
@@ -99,7 +99,7 @@ export default async function Login({ searchParams }: P) {
             <>
               <p>New here? After the code you will add your business: category, city and prices. Our team checks it before it goes live.</p>
               <p>
-                Want to know more first? <Link href="/for-vendors" className="font-semibold text-[var(--color-pink-deep)] underline-offset-4 hover:underline">See how OLReady works for vendors</Link>
+                Want to know more first? <Link href="/for-vendors" className="font-semibold text-[var(--color-pink-deep)] underline-offset-4 hover:underline">See how Olready works for vendors</Link>
               </p>
             </>
           ) : (

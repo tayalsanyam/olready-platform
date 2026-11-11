@@ -6,9 +6,9 @@ import { Container } from '@/components/ui';
 import { Toran } from '@/components/Toran';
 
 export const metadata = {
-  title: 'About OLReady',
+  title: 'About Olready',
   description:
-    'OLReady is a wedding marketplace for India: venues, caterers, makeup artists, photographers and more, with every enquiry verified on a call. It started in Chandigarh, Mohali and Panchkula.',
+    'Olready is a wedding marketplace for India: venues, caterers, makeup artists, photographers and more, with every enquiry verified on a call. It started in Chandigarh, Mohali and Panchkula.',
   alternates: { canonical: '/about' },
 };
 
@@ -27,7 +27,7 @@ export default async function About() {
         <Container className="max-w-3xl pb-12 pt-4">
           <h1 className="text-4xl leading-tight sm:text-5xl">A wedding marketplace that picks up the phone.</h1>
           <p className="mt-4 text-lg text-[var(--color-muted)]">
-            OLReady began in Chandigarh as a marketplace for bridal makeup artists. It now covers the whole wedding, from the venue and caterer to the
+            Olready began in Chandigarh as a marketplace for bridal makeup artists. It now covers the whole wedding, from the venue and caterer to the
             mehendi and the dhol, for weddings anywhere in India, with the same promise: real enquiries, honest prices and reviews from people who were
             there.
           </p>
@@ -41,7 +41,7 @@ export default async function About() {
             their time on weddings that are real, and brides hear from vendors who want their wedding.
           </p>
           <p>
-            <b>Numbers stay private.</b> Vendors message and quote on OLReady first. A bride decides when to share her number, and vendors’ own contact
+            <b>Numbers stay private.</b> Vendors message and quote on Olready first. A bride decides when to share her number, and vendors’ own contact
             details are never published.
           </p>
           <p>
@@ -57,9 +57,9 @@ export default async function About() {
           Today: {n.vendors} checked businesses in {cats.length} categories in {cities.length} {cities.length === 1 ? 'town' : 'towns'}, led by {cities.slice(0, 6).map((c) => c.name).join(', ')}
           {n.weddings ? `, and ${n.weddings} real weddings shared by couples` : ''}.
         </p>
-        <h2 className="mt-12 text-2xl font-semibold">Who runs OLReady</h2>
+        <h2 className="mt-12 text-2xl font-semibold">Who runs Olready</h2>
         <p className="mt-3 text-[15px] leading-relaxed">
-          OLReady is operated by Katalyst Infomedia from Sector 17, Chandigarh. Katalyst Infomedia took over the OLReady brand, its clients and running
+          Olready is operated by Katalyst Infomedia from Sector 17, Chandigarh. Katalyst Infomedia took over the Olready brand, its clients and running
           plans from KSM Beauty Pvt Ltd, and runs both the marketplace and the vendor plans.
         </p>
         <p className="mt-6 text-xs text-[var(--color-muted)]">

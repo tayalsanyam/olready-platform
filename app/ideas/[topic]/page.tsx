@@ -20,7 +20,7 @@ export async function generateMetadata({ params, searchParams }: P) {
   const filtered = Boolean(sp(q.tag) || sp(q.page));
   return {
     title: `${t.name}: photos and ideas`,
-    description: `${t.description} Browse photos from OLReady vendors, save your favourites and get quotes.`,
+    description: `${t.description} Browse photos from Olready vendors, save your favourites and get quotes.`,
     alternates: { canonical: `/ideas/${t.slug}` },
     robots: filtered ? { index: false, follow: true } : undefined,
   };

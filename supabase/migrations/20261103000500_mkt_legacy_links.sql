@@ -1,4 +1,4 @@
--- Links to the older OLReady systems: plans carried over from the Laravel merchant site,
+-- Links to the older Olready systems: plans carried over from the Laravel merchant site,
 -- and staff whose access is managed in the sales-site admin.
 
 -- Re-running the plan import updates the same row instead of creating a second plan.

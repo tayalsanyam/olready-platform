@@ -48,5 +48,5 @@ export function verifyCode(secret: string, code: string, now = Date.now()) {
 }
 
 export function otpauthUri(secret: string, account: string) {
-  return `otpauth://totp/OLReady%20Ops:${encodeURIComponent(account)}?secret=${secret}&issuer=OLReady%20Ops&digits=6&period=30`;
+  return `otpauth://totp/Olready%20Ops:${encodeURIComponent(account)}?secret=${secret}&issuer=Olready%20Ops&digits=6&period=30`;
 }

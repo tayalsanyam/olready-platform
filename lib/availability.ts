@@ -145,7 +145,7 @@ export async function setBookingsPerDay(db: Db, vendorId: string, n: number, act
 }
 
 /**
- * A booking made through OLReady fills the vendor's calendar for the functions it covers (or the
+ * A booking made through Olready fills the vendor's calendar for the functions it covers (or the
  * request's date). Runs inside the booking transaction; repeats are ignored.
  */
 export async function blockForBooking(db: Db, needId: string, vendorId: string, actor: string | null) {
@@ -162,7 +162,7 @@ export async function blockForBooking(db: Db, needId: string, vendorId: string, 
     if (r.day < today) continue;
     const added = await db`
       insert into mkt.vendor_calendar (vendor_id, day, slot, status, note, source, lead_need_id, created_by)
-      values (${vendorId}, ${r.day}::date, 'full', 'booked', ${`OLReady booking: ${r.name}`.slice(0, 120)}, 'olready', ${needId}, ${actor})
+      values (${vendorId}, ${r.day}::date, 'full', 'booked', ${`Olready booking: ${r.name}`.slice(0, 120)}, 'olready', ${needId}, ${actor})
       on conflict do nothing returning id`;
     n += added.length;
   }
@@ -188,7 +188,7 @@ const icsDate = (d: string) => d.replace(/-/g, '');
 
 /** The vendor's calendar as an iCal feed, for Google Calendar, Apple Calendar or Outlook. */
 export function buildIcs(business: string, entries: CalendarEntry[]) {
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//OLReady//Vendor calendar//EN', 'CALSCALE:GREGORIAN', `X-WR-CALNAME:${icsEscape(`${business} on OLReady`)}`];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Olready//Vendor calendar//EN', 'CALSCALE:GREGORIAN', `X-WR-CALNAME:${icsEscape(`${business} on Olready`)}`];
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
   for (const e of entries) {
     const what = e.status === 'closed' ? 'Closed' : 'Booked';

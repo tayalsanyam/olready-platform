@@ -28,7 +28,7 @@ export function RazorpayButton(p: Props) {
       order_id: p.gatewayOrderId,
       amount: p.amountPaise,
       currency: 'INR',
-      name: 'OLReady',
+      name: 'Olready',
       description: p.name,
       prefill: { email: p.email },
       theme: { color: '#C48000' },

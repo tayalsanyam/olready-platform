@@ -33,7 +33,7 @@ export default async function Invite({ params }: P) {
           </p>
         ) : null}
         <p className="mt-8 text-center text-xs opacity-70" style={{ color: t.ink }}>
-          Made with OLReady.{' '}
+          Made with Olready.{' '}
           <Link href="/invitations" className="underline">
             Make your own invite, free
           </Link>

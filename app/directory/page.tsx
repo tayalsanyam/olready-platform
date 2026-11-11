@@ -11,7 +11,7 @@ import { Container } from '@/components/ui';
 export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'All wedding vendor pages',
-  description: 'Every OLReady page for wedding vendors, prices and ideas across India, in one place.',
+  description: 'Every Olready page for wedding vendors, prices and ideas across India, in one place.',
   alternates: { canonical: '/directory' },
 };
 
@@ -27,7 +27,7 @@ export default async function Directory() {
   return (
     <Container className="max-w-6xl">
       <h1 className="text-3xl font-semibold">All wedding vendor pages</h1>
-      <p className="mt-2 max-w-2xl text-[var(--color-muted)]">Every town, category and price guide on OLReady. Pages appear here once enough vendors are listed to make them useful.</p>
+      <p className="mt-2 max-w-2xl text-[var(--color-muted)]">Every town, category and price guide on Olready. Pages appear here once enough vendors are listed to make them useful.</p>
 
       {national.length ? (
         <section className="mt-8">
@@ -158,7 +158,7 @@ export default async function Directory() {
               ['/invitations', 'Wedding invitation designs'],
               ['/look', 'Search by photo'],
               ['/for-vendors', 'List your business'],
-              ['/about', 'About OLReady'],
+              ['/about', 'About Olready'],
               ['/contact', 'Contact'],
             ].map(([href, label]) => (
               <li key={href}>

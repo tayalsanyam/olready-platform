@@ -1,4 +1,4 @@
-// HTTP sweep of a running OLReady (default http://localhost:3000, dev sign-in on):
+// HTTP sweep of a running Olready (default http://localhost:3000, dev sign-in on):
 //   1. every URL in the sitemap answers 200, with valid JSON-LD
 //   2. no vendor phone number or email appears in any public page or a bride's pages
 //   3. each role reaches the routes it should and is turned away from the rest

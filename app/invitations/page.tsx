@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'Free wedding invitation cards, save-the-dates and video invites',
   description:
-    'Make a wedding e-invite in minutes: designs for Hindu, Sikh, Punjabi, Muslim, Christian and more. Share on WhatsApp, download as a video or image, collect RSVPs. Free on OLReady.',
+    'Make a wedding e-invite in minutes: designs for Hindu, Sikh, Punjabi, Muslim, Christian and more. Share on WhatsApp, download as a video or image, collect RSVPs. Free on Olready.',
   alternates: { canonical: '/invitations' },
 };
 type P = { searchParams: Promise<Record<string, string | string[]>> };

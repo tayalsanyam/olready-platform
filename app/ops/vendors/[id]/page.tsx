@@ -172,7 +172,7 @@ export default async function OpsVendor({ params, searchParams }: P) {
                 <li key={e.id} className="chip py-0.5">
                   {shortDate(e.day)} {e.status === 'closed' ? 'closed' : 'booked'}
                   {e.slot !== 'full' ? ` (${e.slot})` : ''}
-                  {e.source === 'olready' ? ' · OLReady' : e.source === 'import' ? ' · imported' : ''}
+                  {e.source === 'olready' ? ' · Olready' : e.source === 'import' ? ' · imported' : ''}
                 </li>
               ))}
             </ul>

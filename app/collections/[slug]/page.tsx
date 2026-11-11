@@ -28,7 +28,7 @@ export default async function CollectionPage({ params }: P) {
       <JsonLd data={[itemListLd(vendors), breadcrumbLd([{ name: 'Collections', path: `/collections/${c.slug}` }, { name: c.title, path: `/collections/${c.slug}` }])]} />
       <PageTitle
         title={c.title}
-        sub={`${vendors.length} hand-picked by the OLReady team${c.city_name ? ` in ${c.city_name}` : ''}.`}
+        sub={`${vendors.length} hand-picked by the Olready team${c.city_name ? ` in ${c.city_name}` : ''}.`}
         action={
           <Link href="/enquire" className="btn btn-pink">
             Get verified quotes

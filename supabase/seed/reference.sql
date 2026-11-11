@@ -126,7 +126,7 @@ insert into mkt.packs (code, name, kind, credits, price_inr, validity_days, cate
   ('privy', 'Privy', 'plan', 120, 50000, 180, null, true, 3, 'Invite only. 120 verified enquiries over 6 months, with dedicated support.'),
   ('topup-10', 'Top-up 10', 'topup', 10, 4999, null, null, false, 4, '10 credits, no contract needed.'),
   ('topup-25', 'Top-up 25', 'topup', 25, 10000, null, null, false, 5, '25 credits, no contract needed.'),
-  ('starter-5', 'Starter 5', 'topup', 5, 2500, null, null, false, 6, '5 credits to try OLReady in a new category.')
+  ('starter-5', 'Starter 5', 'topup', 5, 2500, null, null, false, 6, '5 credits to try Olready in a new category.')
 on conflict (code) do nothing;
 
 -- ---------------------------------------------------------------- checklist templates

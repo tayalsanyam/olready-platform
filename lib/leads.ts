@@ -433,7 +433,7 @@ export async function brideCanAccessLead(db: Db, leadId: string, profileId: stri
   return Boolean(row);
 }
 
-/** Bride switches a category off: booked outside OLReady, or no longer needed. */
+/** Bride switches a category off: booked outside Olready, or no longer needed. */
 export async function closeNeedByBride(
   db: Db,
   needId: string,

@@ -19,7 +19,7 @@ describe('sales-admin staff sync', () => {
     const rm = await profile(sql, 'rm', 'Tanya');
     const vendor = await profile(sql, 'vendor', 'Kirti');
     const rows = [
-      { email: 'Sanyam@OLReady.in', role: 'admin', active: true, name: 'Sanyam' },
+      { email: 'Sanyam@Olready.in', role: 'admin', active: true, name: 'Sanyam' },
       { email: 'kanika@olready.in', role: 'editor', active: true },
       { email: 'deals@olready.in', role: 'commercial', active: true },
       { email: rm.email, role: 'sales', active: true },

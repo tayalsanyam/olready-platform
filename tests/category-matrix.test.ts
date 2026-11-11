@@ -242,7 +242,7 @@ describe('every category, every flow', async () => {
     await step('Conversation and moderation', async () => {
       await postMessage(sql, threadId, owner, 'Namaste! Happy to help with your wedding.');
       await postMessage(sql, threadId, bride, 'Thanks, what is included?');
-      // Phone sharing is allowed once a conversation starts; paying outside OLReady is flagged.
+      // Phone sharing is allowed once a conversation starts; paying outside Olready is flagged.
       await postMessage(sql, threadId, owner, 'Call me on 98765 00000, and pay the advance directly to my GPay');
       const [m] = await sql<{ id: number; flags: string[] }[]>`select id, flags from mkt.messages where thread_id = ${threadId} order by id desc limit 1`;
       expect(m.flags.length).toBeGreaterThan(0);

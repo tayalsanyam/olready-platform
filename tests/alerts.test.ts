@@ -116,7 +116,7 @@ describe('who hears what, and when', () => {
     expect((await staffRecipients(sql)).emails).toEqual(['team@olready.test']); // the environment, until a list is saved
     await expect(saveStaffRecipients(sql, { emails: 'not-an-email', phones: '' }, admin.id)).rejects.toThrow(/"not-an-email" is not an email/);
     await expect(saveStaffRecipients(sql, { emails: '', phones: '12345' }, admin.id)).rejects.toThrow(/not an Indian mobile/);
-    const saved = await saveStaffRecipients(sql, { emails: 'Ops@OLReady.test\nkanika@olready.test, ops@olready.test', phones: '98765 43210\n+91 98765 43210' }, admin.id);
+    const saved = await saveStaffRecipients(sql, { emails: 'Ops@Olready.test\nkanika@olready.test, ops@olready.test', phones: '98765 43210\n+91 98765 43210' }, admin.id);
     expect(saved).toEqual({ emails: ['ops@olready.test', 'kanika@olready.test'], phones: ['+919876543210'] });
     await staffAlert(sql, 'transfer', 'Only for the new list', '/ops/payments', 'transfer:test');
     expect((await mail('kanika@olready.test')).map((m) => m.payload.what)).toEqual(['Bank transfer to confirm']);

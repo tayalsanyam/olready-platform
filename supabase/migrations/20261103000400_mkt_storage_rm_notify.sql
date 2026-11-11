@@ -18,7 +18,7 @@ create table mkt.services (
   active boolean not null default true
 );
 insert into mkt.services (code, name, description, price_inr, length_days) values
-  ('rm_30d', 'Relationship manager', 'An OLReady relationship manager shortlists vendors, negotiates, and coordinates for 30 days or until your wedding, whichever comes first.', 4999, 30);
+  ('rm_30d', 'Relationship manager', 'An Olready relationship manager shortlists vendors, negotiates, and coordinates for 30 days or until your wedding, whichever comes first.', 4999, 30);
 
 alter table mkt.orders add column service_code text references mkt.services(code);
 alter table mkt.orders add constraint orders_one_product check ((pack_id is null) <> (service_code is null));

@@ -5,7 +5,7 @@ import { aiEnabled } from '@/lib/ai';
 import { getSetting } from '@/lib/db';
 import { Badge, Card, PageTitle, Stat, sp } from '@/components/ui';
 
-export const metadata = { title: 'Ask OLReady' };
+export const metadata = { title: 'Ask Olready' };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
 
 const FLAG_LABEL: Record<string, string> = {
@@ -47,7 +47,7 @@ export default async function BrideAi({ searchParams }: P) {
   return (
     <>
       <PageTitle
-        title="Ask OLReady"
+        title="Ask Olready"
         sub="The brides' planning helper. Answers are checked automatically; anything caught is listed here."
         action={
           <Link href="/ops/settings" className="btn btn-ghost btn-sm">

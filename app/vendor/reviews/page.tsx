@@ -22,7 +22,7 @@ export default async function VendorReviews({ searchParams }: P) {
     select id, review_id, status, proof_due_at, contact_due_at from mkt.review_disputes where vendor_id = ${vendor.id}
     order by created_at desc`;
   const requests = await reviewRequestsFor(sql, vendor.id);
-  const widget = `<iframe src="${siteUrl()}/widget/${vendor.slug}" title="${vendor.business_name} reviews on OLReady" width="100%" height="320" style="border:0;max-width:420px" loading="lazy"></iframe>`;
+  const widget = `<iframe src="${siteUrl()}/widget/${vendor.slug}" title="${vendor.business_name} reviews on Olready" width="100%" height="320" style="border:0;max-width:420px" loading="lazy"></iframe>`;
   return (
     <>
       <PageTitle title="Reviews" sub="Brides rate the artist and the service separately. Reply publicly, or dispute a review you think is false." />
@@ -39,7 +39,7 @@ export default async function VendorReviews({ searchParams }: P) {
                     <span>
                       Artist {r.rating_artist}/5 · Service {r.rating_service}/5
                     </span>
-                    {r.verified_booking ? <Badge tone="ok">Booked via OLReady</Badge> : null}
+                    {r.verified_booking ? <Badge tone="ok">Booked via Olready</Badge> : null}
                     {r.status === 'under_dispute' ? <Badge tone="warn">Under dispute</Badge> : null}
                   </div>
                   {r.body ? <p className="mt-2 text-sm">{r.body}</p> : null}
@@ -83,15 +83,15 @@ export default async function VendorReviews({ searchParams }: P) {
           })}
         </ul>
       ) : (
-        <Empty art="stars" title="No reviews yet">After an event, OLReady asks your brides to review you.</Empty>
+        <Empty art="stars" title="No reviews yet">After an event, Olready asks your brides to review you.</Empty>
       )}
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <Card>
           <h2 className="font-semibold">Ask a client for a review</h2>
           <p className="hint mt-1">
-            For clients who booked you outside OLReady. They get a link, sign in with that email and rate you. Our team checks each one
-            before it shows, and it is not marked &ldquo;Booked via OLReady&rdquo;.
+            For clients who booked you outside Olready. They get a link, sign in with that email and rate you. Our team checks each one
+            before it shows, and it is not marked &ldquo;Booked via Olready&rdquo;.
           </p>
           <form action={vendorRequestReview} className="mt-3 space-y-3">
             <Field label="Client's name">
@@ -116,7 +116,7 @@ export default async function VendorReviews({ searchParams }: P) {
           ) : null}
         </Card>
         <Card>
-          <h2 className="font-semibold">Show your OLReady reviews on your website</h2>
+          <h2 className="font-semibold">Show your Olready reviews on your website</h2>
           <p className="hint mt-1">Paste this where you want your rating and latest reviews. It updates by itself.</p>
           <textarea readOnly rows={5} className="input mt-3 font-mono text-xs" value={widget} aria-label="Review widget code" />
           <p className="hint mt-2">

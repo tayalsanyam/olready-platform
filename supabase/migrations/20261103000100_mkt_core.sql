@@ -1,4 +1,4 @@
--- OLReady multi-category marketplace: core schema.
+-- Olready multi-category marketplace: core schema.
 -- Add-on only: everything lives in the `mkt` schema, so the existing
 -- sales-site tables in `public` and the legacy Laravel data are untouched.
 -- RLS is enabled on every table with NO policies: the anon/authenticated

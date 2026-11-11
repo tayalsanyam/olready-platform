@@ -53,7 +53,7 @@ export default async function Promotions({ searchParams }: P) {
                 <div className="min-w-0 flex-1 text-sm">
                   <p className="text-base font-semibold">{b.headline}</p>
                   <p className="text-[var(--color-muted)]">
-                    {b.vendor_name ?? 'OLReady'} · {b.placement === 'home' ? 'Home page' : b.city_name} · {monthLabel(b.month)} · {inr(b.price_inr)} paid
+                    {b.vendor_name ?? 'Olready'} · {b.placement === 'home' ? 'Home page' : b.city_name} · {monthLabel(b.month)} · {inr(b.price_inr)} paid
                   </p>
                   <div className="mt-3 flex flex-wrap items-start gap-2">
                     <form action={opsDecideBanner}>
@@ -96,7 +96,7 @@ export default async function Promotions({ searchParams }: P) {
                     <td>{b.headline}</td>
                     <td>{b.placement === 'home' ? 'Home' : b.city_name}</td>
                     <td>{monthLabel(b.month)}</td>
-                    <td>{b.vendor_name ?? 'OLReady'}</td>
+                    <td>{b.vendor_name ?? 'Olready'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -156,7 +156,7 @@ export default async function Promotions({ searchParams }: P) {
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <Card>
           <h2 className="font-semibold">Place a banner (free, approved at once)</h2>
-          <p className="hint">For OLReady campaigns, or a slot sold offline.</p>
+          <p className="hint">For Olready campaigns, or a slot sold offline.</p>
           <form action={opsTeamBanner} className="mt-3 grid gap-3 sm:grid-cols-2">
             <Field label="Where">
               <select name="placement" className="input">

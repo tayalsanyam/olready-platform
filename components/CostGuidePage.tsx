@@ -14,7 +14,7 @@ export function CostGuidePage({ g, otherCities }: { g: CostGuide; otherCities: {
   const at = (x: number) => `${Math.round(((x - g.min) / span) * 100)}%`;
   const listing = g.city ? landingPath(g.city, g.category) : `/vendors`;
   const crumbs = [
-    { name: 'OLReady', path: '/' },
+    { name: 'Olready', path: '/' },
     { name: 'Wedding costs', path: '/directory#costs' },
     { name: g.category.plural_name, path: costPath(g.category.slug) },
     ...(g.city ? [{ name: g.city.name, path: costPath(g.category.slug, g.city.slug) }] : []),
@@ -43,7 +43,7 @@ export function CostGuidePage({ g, otherCities }: { g: CostGuide; otherCities: {
 
       <figure className="mt-8 rounded-[22px] border border-[var(--color-line)] p-5">
         <figcaption className="text-sm text-[var(--color-muted)]">
-          Starting prices of {g.priced} {g.category.plural_name.toLowerCase()} listed on OLReady, {g.category.price_unit}
+          Starting prices of {g.priced} {g.category.plural_name.toLowerCase()} listed on Olready, {g.category.price_unit}
         </figcaption>
         <div className="relative mt-10 h-3 rounded-full bg-[var(--color-tint)]" role="img" aria-label={`From ${formatInr(g.min)} to ${formatInr(g.max)}; most between ${formatInr(g.low)} and ${formatInr(g.high)}; middle ${formatInr(g.mid)}`}>
           <div className="absolute inset-y-0 rounded-full bg-[var(--color-pink-soft)] ring-1 ring-[var(--color-pink)]" style={{ left: at(g.low), right: `calc(100% - ${at(g.high)})` }} />
@@ -59,7 +59,7 @@ export function CostGuidePage({ g, otherCities }: { g: CostGuide; otherCities: {
         </div>
         {g.quoteMid ? (
           <p className="mt-4 text-sm">
-            Real quotes run higher: the middle of {g.quotes} quotes brides received on OLReady this year was <b>{formatInr(g.quoteMid)}</b>.
+            Real quotes run higher: the middle of {g.quotes} quotes brides received on Olready this year was <b>{formatInr(g.quoteMid)}</b>.
           </p>
         ) : null}
       </figure>
@@ -164,7 +164,7 @@ export function CostGuidePage({ g, otherCities }: { g: CostGuide; otherCities: {
           </ul>
         </nav>
       ) : null}
-      <p className="mt-8 text-xs text-[var(--color-muted)]">Figures update automatically from live OLReady listings and quotes. Starting prices are each vendor’s lowest package.</p>
+      <p className="mt-8 text-xs text-[var(--color-muted)]">Figures update automatically from live Olready listings and quotes. Starting prices are each vendor’s lowest package.</p>
     </Container>
   );
 }

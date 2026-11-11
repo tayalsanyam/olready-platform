@@ -16,11 +16,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     .map(
       (r) => `<li><div class="row"><b>${esc(r.author_name || 'A bride')}</b><span class="s">${stars((r.rating_artist + r.rating_service) / 2)}</span></div>${
         r.body ? `<p>${esc(r.body.length > 160 ? r.body.slice(0, 157) + '…' : r.body)}</p>` : ''
-      }${r.verified_booking ? '<span class="tag">Booked via OLReady</span>' : ''}</li>`
+      }${r.verified_booking ? '<span class="tag">Booked via Olready</span>' : ''}</li>`
     )
     .join('');
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(v.business_name)} reviews on OLReady</title><meta name="robots" content="noindex">
+<title>${esc(v.business_name)} reviews on Olready</title><meta name="robots" content="noindex">
 <style>
 *{box-sizing:border-box}body{margin:0;font:14px/1.45 "DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#111014;background:#fff}
 .w{border:1px solid #e7e3e7;border-radius:14px;padding:14px}
@@ -35,8 +35,8 @@ a.cta{display:block;margin-top:10px;text-align:center;color:#a60048;font-weight:
 </style></head><body><div class="w">
 <div class="top"><div><h1>${esc(v.business_name)}</h1><small>${esc(v.category_name)}, ${esc(v.city_name)}</small></div>
 ${v.review_count ? `<span class="r">★ ${(v.rating ?? 0).toFixed(1)}</span>` : ''}</div>
-${v.review_count ? `<small>${v.review_count} review${v.review_count === 1 ? '' : 's'} on <span class="brand">OLREADY</span></small><ul>${items}</ul>` : '<p>Reviews from OLReady brides will appear here.</p>'}
-<a class="cta" href="${esc(profile)}" target="_blank" rel="noopener">See all reviews on OLReady</a></div></body></html>`;
+${v.review_count ? `<small>${v.review_count} review${v.review_count === 1 ? '' : 's'} on <span class="brand">OLREADY</span></small><ul>${items}</ul>` : '<p>Reviews from Olready brides will appear here.</p>'}
+<a class="cta" href="${esc(profile)}" target="_blank" rel="noopener">See all reviews on Olready</a></div></body></html>`;
   return new Response(html, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',

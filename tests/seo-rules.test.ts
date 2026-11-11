@@ -45,7 +45,7 @@ describe('redirect messages', async () => {
 describe('first admin', async () => {
   const { listedAdmin } = await import('@/lib/auth');
   it('only emails in ADMIN_EMAILS, case-insensitive', () => {
-    process.env.ADMIN_EMAILS = 'Owner@OLReady.in, ops-lead@olready.in';
+    process.env.ADMIN_EMAILS = 'Owner@Olready.in, ops-lead@olready.in';
     expect(listedAdmin('owner@olready.in')).toBe(true);
     expect(listedAdmin('OPS-LEAD@olready.in')).toBe(true);
     expect(listedAdmin('someone@olready.in')).toBe(false);

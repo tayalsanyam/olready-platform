@@ -5,13 +5,13 @@ export const FLAG_LABELS: Record<string, string> = {
   otp: 'Mentions an OTP or PIN',
   card: 'Looks like card or bank details',
   abuse: 'Abusive language',
-  off_platform: 'Asks to pay or move outside OLReady',
+  off_platform: 'Asks to pay or move outside Olready',
   link: 'Link to an unfamiliar site',
 };
 export const REPORT_REASONS: Record<string, string> = {
   spam: 'Spam',
   abuse: 'Rude or abusive',
-  payment_outside: 'Asked me to pay outside OLReady',
+  payment_outside: 'Asked me to pay outside Olready',
   fake: 'Fake or misleading',
   other: 'Something else',
 };

@@ -19,7 +19,7 @@ export async function nationalMetadata(categorySlug?: string): Promise<Metadata>
   if (!categorySlug) {
     return {
       title: 'Wedding vendors across India',
-      description: 'Verified wedding venues, caterers, makeup artists, photographers, decorators and more in towns across India. Compare prices and get quotes on OLReady.',
+      description: 'Verified wedding venues, caterers, makeup artists, photographers, decorators and more in towns across India. Compare prices and get quotes on Olready.',
       alternates: { canonical: '/vendors/india' },
     };
   }
@@ -28,7 +28,7 @@ export async function nationalMetadata(categorySlug?: string): Promise<Metadata>
   const total = await countVendors(sql, { categoryId: cat.id });
   return {
     title: `${cat.plural_name} in India with prices, photos and reviews`,
-    description: `Compare ${total} verified ${cat.plural_name.toLowerCase()} across India on OLReady. See starting prices and reviews by town, then get quotes.`,
+    description: `Compare ${total} verified ${cat.plural_name.toLowerCase()} across India on Olready. See starting prices and reviews by town, then get quotes.`,
     alternates: { canonical: `/vendors/india/${cat.slug}` },
     robots: (await indexable(sql, total)) ? undefined : { index: false, follow: true },
   };
@@ -49,9 +49,9 @@ export async function NationalCategory({ categorySlug }: { categorySlug: string 
   const byState = new Map<string, Town[]>();
   for (const t of towns) byState.set(t.state, [...(byState.get(t.state) ?? []), t]);
   const faq = [
-    { q: `Where can I find ${cat.plural_name.toLowerCase()} on OLReady?`, a: `${total} verified ${cat.plural_name.toLowerCase()} are listed across ${towns.length} towns. Pick your town to compare prices, photos and reviews.` },
-    ...(guide ? [{ q: `How much do ${cat.plural_name.toLowerCase()} cost in India?`, a: `Starting prices on OLReady begin at ${formatInr(guide.min)} ${cat.price_unit}; most start between ${formatInr(guide.low)} and ${formatInr(guide.high)}.` }] : []),
-    { q: 'How do I get quotes?', a: 'Send one request with your functions, dates and town. Our team confirms it on a short call, then verified vendors quote you on OLReady.' },
+    { q: `Where can I find ${cat.plural_name.toLowerCase()} on Olready?`, a: `${total} verified ${cat.plural_name.toLowerCase()} are listed across ${towns.length} towns. Pick your town to compare prices, photos and reviews.` },
+    ...(guide ? [{ q: `How much do ${cat.plural_name.toLowerCase()} cost in India?`, a: `Starting prices on Olready begin at ${formatInr(guide.min)} ${cat.price_unit}; most start between ${formatInr(guide.low)} and ${formatInr(guide.high)}.` }] : []),
+    { q: 'How do I get quotes?', a: 'Send one request with your functions, dates and town. Our team confirms it on a short call, then verified vendors quote you on Olready.' },
   ];
   return (
     <Container>

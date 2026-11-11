@@ -1,4 +1,4 @@
--- GST tax invoices and credit notes, issued by OLReady itself, and the WhatsApp channel.
+-- GST tax invoices and credit notes, issued by Olready itself, and the WhatsApp channel.
 
 -- One running number per document kind per financial year (April to March).
 create table mkt.invoice_counters (

@@ -1,6 +1,6 @@
-# OLReady platform
+# Olready platform
 
-Multi-category wedding vendor marketplace built on OLReady's verified-lead model. Brides send one enquiry, Ops verifies it on a call, and verified vendors in each category unlock it with credits, chat, quote and report bookings.
+Multi-category wedding vendor marketplace built on Olready's verified-lead model. Brides send one enquiry, Ops verifies it on a call, and verified vendors in each category unlock it with credits, chat, quote and report bookings.
 
 Stack: Next.js 16 (App Router, server actions) · Postgres on Supabase (Mumbai) · Supabase Auth email codes · Tailwind 4 · Vercel (`bom1`).
 
@@ -20,13 +20,13 @@ Stack: Next.js 16 (App Router, server actions) · Postgres on Supabase (Mumbai) 
 
 Ops console: role-based (`ops`, `content`, `rm`, `admin`). Employees see queues but cannot download; only admins export CSV, and every export is logged. Every state change writes to `mkt.audit_log`.
 
-## Decisions from the OLReady spec that this build follows
+## Decisions from the Olready spec that this build follows
 
 - Add-on schema only: everything lives in the `mkt` schema. The sales site's tables and the legacy Laravel data are untouched. RLS is on for every `mkt` table with no policies, and the schema is revoked from `anon`/`authenticated`, so the public API keys read nothing.
 - Leads are verified, not exclusive. A lead reaching its cap waits for Ops to decide on reopening.
 - Vendor phone, email and Instagram never reach the bride's browser. Phone sharing is not blocked once a conversation starts.
 - A booking reported by either side counts. The reward goes only to the reporter: a bonus credit for vendors, 7 days of RM help within 60 days for brides.
-- Plans (Pro, Phoenix, Privy) activate once Ops adds the signed-contract link; OLReady issues the GST tax invoice itself on payment. Top-ups activate on payment. Pack changes apply to new purchases only.
+- Plans (Pro, Phoenix, Privy) activate once Ops adds the signed-contract link; Olready issues the GST tax invoice itself on payment. Top-ups activate on payment. Pack changes apply to new purchases only.
 - Top-up credits unlock any budget tier; plan credits follow the plan's tiers (tiers are infrastructure, not used by the default plans).
 - Ops-built profiles stay private until the vendor claims them.
 - Unverified migrated artists stay visible without the verified tag.
@@ -74,13 +74,13 @@ node tests/e2e/sweep.mjs          # every sitemap page, contact-leak scan, 7-rol
 - **Quote reader**: each quote is read once (`ANTHROPIC_QUOTE_MODEL`) into Included / Charged extra / Worth asking, shown on Compare quotes and in conversations.
 - **Tax invoices**: issued when an order is paid, with a credit note per refund. Numbering is gap-free per financial year, the split is CGST+SGST/UTGST or IGST by place of supply, and every document is a PDF at `/invoices/[id]`. Configure with `SELLER_*`, `INVOICE_PREFIX` and `INVOICE_SAC*`; have your accountant confirm the SAC codes.
 - **WhatsApp** (`/ops/whatsapp`): Meta Cloud API or Wati, set through `WHATSAPP_*` and `WATI_API_URL`. Nothing is sent until an approved template is mapped and switched on. Brides only receive messages for requests where they ticked the box, and vendors only if they turned alerts on. STOP replies go to the webhook at `/api/whatsapp`.
-- **Ask OLReady** (`/me/assistant`): the brides' planning helper, built on Claude with tools over OLReady's own data (`ANTHROPIC_BRIDE_MODEL`). It covers vendor search (by guests, price, style and rating), vendor details, the bride's own plan, her quotes, a Tricity price guide, ideas and guides. It changes the shortlist, checklist and category budgets only through Confirm cards, and prepares quote requests that she sends herself. Every answer is checked before it is shown: vendor links not found by a lookup in that chat are removed, phone numbers and emails are stripped, and prices given without a lookup are flagged. Ops review flagged and unhelpful answers at `/ops/bride-ai`. Limits, the on/off switch and how long chats are kept (90 days) are in Settings. Run the live 50-question evaluation with `RUN_EVAL=1 ANTHROPIC_API_KEY=… EVAL_DATABASE_URL=… npm run eval:assistant`.
+- **Ask Olready** (`/me/assistant`): the brides' planning helper, built on Claude with tools over Olready's own data (`ANTHROPIC_BRIDE_MODEL`). It covers vendor search (by guests, price, style and rating), vendor details, the bride's own plan, her quotes, a Tricity price guide, ideas and guides. It changes the shortlist, checklist and category budgets only through Confirm cards, and prepares quote requests that she sends herself. Every answer is checked before it is shown: vendor links not found by a lookup in that chat are removed, phone numbers and emails are stripped, and prices given without a lookup are flagged. Ops review flagged and unhelpful answers at `/ops/bride-ai`. Limits, the on/off switch and how long chats are kept (90 days) are in Settings. Run the live 50-question evaluation with `RUN_EVAL=1 ANTHROPIC_API_KEY=… EVAL_DATABASE_URL=… npm run eval:assistant`.
 
 ## Sign-up, vendor landing and admin (November 2026)
 
 - **Signing up is signing in.** `/login` has two doors, "Planning a wedding" and "Wedding business". There is no password: a new email gets a code and creates the account, with the name typed on the first step. Brides land in My wedding, where any request sent earlier with the same email is waiting. Vendors land in their dashboard, or in onboarding if they have no business yet. Staff land in Ops. Sending a request at `/enquire` needs no account at all.
 - **For vendors** (`/for-vendors`): the landing page for businesses. It covers what a verified lead looks like, how it works, the categories, live prices from the price list, FAQs and sign-in. The header, footer and home page link here.
-- **Admin:** the Ops home shows admins this month's billing after refunds, GST to pay, new plans and unspent ads-wallet balances, all from tax documents. Its queues now include banners to approve, failed WhatsApp messages and Ask OLReady answers to check. Categories → *Cities and towns* adds, renames, reorders or switches off towns (the state sets the invoice place of supply).
+- **Admin:** the Ops home shows admins this month's billing after refunds, GST to pay, new plans and unspent ads-wallet balances, all from tax documents. Its queues now include banners to approve, failed WhatsApp messages and Ask Olready answers to check. Categories → *Cities and towns* adds, renames, reorders or switches off towns (the state sets the invoice place of supply).
 
 ## Big days, policies and search (November 2026)
 
@@ -92,16 +92,16 @@ node tests/e2e/sweep.mjs          # every sitemap page, contact-leak scan, 7-rol
 
 ## Pan-India places and vendor calendars (November 2026)
 
-- **Towns across India.** Every district is a town (`data/towns.csv`, 614 towns), named the way people search (Gurugram, Noida, Kochi, Ooty) with old names kept as aliases (Gurgaon, Gautam Buddha Nagar, Ernakulam). The Tricity towns (Mohali, Zirakpur, Kharar, New Chandigarh, Dera Bassi) are carved out of the Mohali district by pincode. Every town is launched. Menus, quick picks, the footer and Ask OLReady's prompt show a short ranked list (the Tricity, then the big wedding cities, then towns with the most vendors); every town works in forms, search and listings. Ops > Places searches, renames, switches off or un-launches towns.
+- **Towns across India.** Every district is a town (`data/towns.csv`, 614 towns), named the way people search (Gurugram, Noida, Kochi, Ooty) with old names kept as aliases (Gurgaon, Gautam Buddha Nagar, Ernakulam). The Tricity towns (Mohali, Zirakpur, Kharar, New Chandigarh, Dera Bassi) are carved out of the Mohali district by pincode. Every town is launched. Menus, quick picks, the footer and Ask Olready's prompt show a short ranked list (the Tricity, then the big wedding cities, then towns with the most vendors); every town works in forms, search and listings. Ops > Places searches, renames, switches off or un-launches towns.
 - **Pincodes.** `data/pincodes.csv.gz` holds all 19,097 pincodes from the All India Pincode Directory (Department of Posts, data.gov.in, Government Open Data License – India; credited on /about). Each maps to one town. Ops can move a pincode to another town, and later reloads keep that choice. `npm run db:migrate` loads both files when they change; the first load takes about 15 seconds. Tests load only North India (`MKT_PLACE_STATES`).
 - **Areas.** 268 hand-made Tricity areas (Chandigarh sectors with their India Post pincodes, Mohali phases and sectors, Panchkula sectors and MDC, Zirakpur VIP Road and Patiala Road, and so on), and 18,712 elsewhere from each pincode's main post office. Ops adds, renames or switches off areas per town.
 - **One place box.** Requests, the wedding setup, vendor onboarding and the vendor profile use one type-ahead: a town, an old name or a pincode. A pincode fills in the town and the area. Requests also take a place per function (home, venue, area), shared with the wedding plan.
 - **Vendor addresses.** Area, street address, pincode, Google Maps link (coordinates read from it) and the towns served. The street address, map and coordinates reach the browser only when the vendor ticks "show my full address" (venues by default); billing details never do. Vendor JSON-LD carries postal code, street address and geo when public.
 - **Search pages.** Area pages (`/vendors/chandigarh/venues/sector-35`, "Wedding venues in Sector 35, Chandigarh") and India-wide pages (`/vendors/india/photographers`) are indexed once they have enough vendors. Price guides are India-wide and per town. The directory groups towns by state.
 - **GST.** GSTINs are checked with their check digit. A billing pincode sets the invoice state when there is no GSTIN. Place of supply: GSTIN state, then billing state, then the vendor's town's state.
-- **Vendor calendars** (`/vendor/calendar`). Vendors mark days booked or closed (whole day, day or evening; per hall for venues) and set how many bookings they take a day. A booking reported on OLReady fills its function dates in on its own. A day is *free*, *some bookings*, *booked* or *closed*. Brides are told "free" only when the calendar was updated in the last 45 days (`calendar_fresh_days`); otherwise "not marked, your request will ask". "My calendar is up to date" confirms it. Vendors who have not updated in 30 days get a monthly reminder email.
-- **Google Calendar.** Vendors paste their calendar's secret iCal address and the daily job reads it, replacing the earlier import. OLReady dates are also published as a private iCal feed (`/api/calendar/<token>.ics`) they can add to their phone.
-- **Where brides see it.** A "Check a date" box on every vendor page (her own function dates are checked when she is signed in), a "Free on" date filter on listings with a "Free on 14 Feb" badge, her shortlist against her dates, and Ask OLReady (`search_vendors` takes a date; `vendor_details` checks her dates). Vendors see a warning on a lead whose dates they have marked booked, and are left out of new-lead alerts when booked on every date. Ops can mark dates for a vendor on the phone.
+- **Vendor calendars** (`/vendor/calendar`). Vendors mark days booked or closed (whole day, day or evening; per hall for venues) and set how many bookings they take a day. A booking reported on Olready fills its function dates in on its own. A day is *free*, *some bookings*, *booked* or *closed*. Brides are told "free" only when the calendar was updated in the last 45 days (`calendar_fresh_days`); otherwise "not marked, your request will ask". "My calendar is up to date" confirms it. Vendors who have not updated in 30 days get a monthly reminder email.
+- **Google Calendar.** Vendors paste their calendar's secret iCal address and the daily job reads it, replacing the earlier import. Olready dates are also published as a private iCal feed (`/api/calendar/<token>.ics`) they can add to their phone.
+- **Where brides see it.** A "Check a date" box on every vendor page (her own function dates are checked when she is signed in), a "Free on" date filter on listings with a "Free on 14 Feb" badge, her shortlist against her dates, and Ask Olready (`search_vendors` takes a date; `vendor_details` checks her dates). Vendors see a warning on a lead whose dates they have marked booked, and are left out of new-lead alerts when booked on every date. Ops can mark dates for a vendor on the phone.
 
 ## Brides from ads (November 2026)
 
@@ -136,7 +136,7 @@ Every notice goes by email, and by WhatsApp too once its template is approved an
 ## Look and feel (November 2026)
 
 - **`components/Feel.tsx`** gives every page a progress line while a link or form is loading, a spinner on the button that was pressed, and marigold petals on moments worth marking (request sent, booking recorded, payment in, profile live). It listens at the document, so no page or form needs changing. Honours reduced-motion.
-- **`components/Art.tsx`** holds OLReady's own drawings: the marigold, progress rings, sparklines, bars, small scenes for empty screens, and drawn cover art for vendors and weddings without a photo.
+- **`components/Art.tsx`** holds Olready's own drawings: the marigold, progress rings, sparklines, bars, small scenes for empty screens, and drawn cover art for vendors and weddings without a photo.
 - **Dashboards open on a hero.** Bride: the couple's names, a countdown, and rings for vendors booked, checklist, guests replied and budget. Vendor: greeting, plan ring, profile strength with the next step. Ops: greeting, how many things are waiting, and 14-day lines for requests, unlocks and bookings.
 - **Loaders** are shimmer skeletons in the dashboards only. Public pages have no `loading.tsx` on purpose, so a missing page still answers 404 to Google.
 - **Team alert recipients** are edited in Ops > Settings > Who gets team alerts (admin), with a test button. The `STAFF_ALERT_*` environment values are only the starting list.

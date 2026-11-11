@@ -12,11 +12,11 @@ import { reviewsForVendor } from './reviews';
 import { ideaPhotos, ideaTopics } from './ideas';
 import { searchArticles } from './search';
 
-// Ask OLReady: a planning helper for brides and their family. Claude answers through tools
-// over OLReady's own data and the bride's own wedding. It never sees vendor contact details,
+// Ask Olready: a planning helper for brides and their family. Claude answers through tools
+// over Olready's own data and the bride's own wedding. It never sees vendor contact details,
 // never names a vendor that did not come from a tool, and changes nothing without a confirm.
 
-export const ASSISTANT_NAME = 'Ask OLReady';
+export const ASSISTANT_NAME = 'Ask Olready';
 const MAX_STEPS = 6;
 const MAX_VENDORS = 8;
 
@@ -40,7 +40,7 @@ export const TOOLS = [
   {
     name: 'search_vendors',
     description:
-      'Find live OLReady vendors in one category. Use for any request to suggest, find or shortlist vendors. Returns at most 8, best first, each with a link. Never suggest a vendor that is not in a result.',
+      'Find live Olready vendors in one category. Use for any request to suggest, find or shortlist vendors. Returns at most 8, best first, each with a link. Never suggest a vendor that is not in a result.',
     input_schema: {
       type: 'object',
       properties: {
@@ -77,17 +77,17 @@ export const TOOLS = [
   },
   {
     name: 'price_guide',
-    description: 'Typical prices for a category from live OLReady vendors (starting prices) and recent quotes. Use before suggesting any budget figure.',
+    description: 'Typical prices for a category from live Olready vendors (starting prices) and recent quotes. Use before suggesting any budget figure.',
     input_schema: { type: 'object', properties: { category: { type: 'string' }, city: { type: 'string' } }, required: ['category'] },
   },
   {
     name: 'find_ideas',
-    description: 'Photos from the OLReady ideas gallery. Without a topic, lists the topics and their styles.',
+    description: 'Photos from the Olready ideas gallery. Without a topic, lists the topics and their styles.',
     input_schema: { type: 'object', properties: { topic: { type: 'string' }, style: { type: 'string' } } },
   },
   {
     name: 'find_articles',
-    description: 'OLReady guide articles on planning, budgets and choosing vendors.',
+    description: 'Olready guide articles on planning, budgets and choosing vendors.',
     input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
   },
   {
@@ -202,7 +202,7 @@ async function searchTool(ctx: Ctx, i: Record<string, unknown>) {
       city: r.city,
       starting_price: r.starting_price_inr != null ? `${formatInr(r.starting_price_inr)} ${cat.price_unit}` : 'on request',
       rating: r.rating ? `${r.rating} from ${r.n} review${r.n === 1 ? '' : 's'}` : 'no reviews yet',
-      checked: r.assured ? 'OLReady Assured' : r.verified ? 'Verified' : 'Not yet verified',
+      checked: r.assured ? 'Olready Assured' : r.verified ? 'Verified' : 'Not yet verified',
       tagline: clip(r.tagline, 120),
       facts: cardFields.map((f) => ({ f, v: displayValue(f, r.attributes[f.key]) })).filter((x) => x.v != null).map((x) => `${x.f.label}: ${x.v}`),
       ...(date
@@ -244,7 +244,7 @@ async function detailsTool(ctx: Ctx, i: Record<string, unknown>) {
     city: v.city,
     starting_price: v.starting_price_inr != null ? `${formatInr(v.starting_price_inr)} ${v.price_unit}` : 'on request',
     years_experience: v.years_experience,
-    checked: v.assured ? 'OLReady Assured' : v.verified ? 'Verified' : 'Not yet verified',
+    checked: v.assured ? 'Olready Assured' : v.verified ? 'Verified' : 'Not yet verified',
     tagline: v.tagline,
     about: clip(v.about, 900),
     facts: fields.map((f) => ({ f, val: displayValue(f, v.attributes[f.key]) })).filter((x) => x.val != null).map((x) => `${x.f.label}: ${x.val}`),
@@ -256,7 +256,7 @@ async function detailsTool(ctx: Ctx, i: Record<string, unknown>) {
       latest: reviews.slice(0, 4).map((r) => ({ by: (r.author_name ?? '').split(' ')[0] || 'A bride', work: r.rating_artist, service: r.rating_service, booked_here: r.verified_booking, said: clip(r.body, 300) })),
     },
     availability: dates.map((d) => d.text),
-    how_to_contact: 'Send a request through OLReady; the vendor replies in her OLReady inbox.',
+    how_to_contact: 'Send a request through Olready; the vendor replies in her Olready inbox.',
   };
 }
 
@@ -437,7 +437,7 @@ async function draftRequest(ctx: Ctx, i: Record<string, unknown>) {
   return {
     link: `/enquire?${p}`,
     for: found.map((c) => c.plural_name),
-    note: 'She checks the form and sends it herself. Our team confirms the details on a short call, then verified vendors send quotes to her OLReady inbox.',
+    note: 'She checks the form and sends it herself. Our team confirms the details on a short call, then verified vendors send quotes to her Olready inbox.',
   };
 }
 
@@ -510,9 +510,9 @@ export async function checkAnswer(db: Db, text: string, known: Set<string>, used
 
 async function systemPrompt(db: Db) {
   const [cats, cities] = await Promise.all([listCategories(db, { activeOnly: true }), listCities(db)]);
-  return `You are ${ASSISTANT_NAME}, the planning helper inside OLReady, a wedding marketplace for India (it started in Chandigarh, Mohali and Panchkula). You help a bride (or her family) plan: choosing vendors, budgets, timelines, ideas and comparing quotes. Today is ${today()} (India).
+  return `You are ${ASSISTANT_NAME}, the planning helper inside Olready, a wedding marketplace for India (it started in Chandigarh, Mohali and Panchkula). You help a bride (or her family) plan: choosing vendors, budgets, timelines, ideas and comparing quotes. Today is ${today()} (India).
 
-How OLReady works: vendors list for free. A bride sends one request for any categories; our team confirms it on a short call; verified vendors then message and quote inside OLReady. Vendor phone numbers are private until she chooses to share hers. You cannot see vendor contact details and must never give any. Vendors keep calendars on OLReady: say a vendor is free on a date only when a tool says so, and say it is "as per their calendar" with when it was updated; if a tool says the calendar is not up to date, say a request will confirm. Booked or closed means booked.
+How Olready works: vendors list for free. A bride sends one request for any categories; our team confirms it on a short call; verified vendors then message and quote inside Olready. Vendor phone numbers are private until she chooses to share hers. You cannot see vendor contact details and must never give any. Vendors keep calendars on Olready: say a vendor is free on a date only when a tool says so, and say it is "as per their calendar" with when it was updated; if a tool says the calendar is not up to date, say a request will confirm. Booked or closed means booked.
 
 Categories (slug: name, price unit): ${cats.map((c) => `${c.slug}: ${c.plural_name}, ${c.price_unit}`).join('; ')}.
 Launched towns (slug: name): ${cities.map((c) => `${c.slug}: ${c.name}`).join('; ')}. Any other town in India works too: pass its name or pincode as city.
@@ -525,7 +525,7 @@ Rules:
 - Reply in the language she writes in: English, Hindi or Hinglish.
 - Keep replies short and easy on a phone: a line or two, then at most 5 bullets. Ask one question when something important is missing (city, date, guests, budget). No headings.
 - For money, health or legal questions, keep it general and suggest asking a professional.
-- If asked about anything unrelated to her wedding, say briefly that you can only help with wedding planning on OLReady.`;
+- If asked about anything unrelated to her wedding, say briefly that you can only help with wedding planning on Olready.`;
 }
 
 async function callClaude(system: string, messages: ApiMessage[]) {
@@ -599,7 +599,7 @@ export async function ask(db: Db, profile: Profile, input: { threadId?: string |
   const text = input.text.trim().slice(0, 2000);
   if (!text) throw new DomainError('empty', 'Type a question');
   const a = await allowance(db, profile.id);
-  if (!a.on) throw new DomainError('off', `${ASSISTANT_NAME} is resting right now. Everything else on OLReady works as usual.`);
+  if (!a.on) throw new DomainError('off', `${ASSISTANT_NAME} is resting right now. Everything else on Olready works as usual.`);
   if (a.left <= 0) throw new DomainError('limit', `You have used today's ${a.perDay} questions. Ask again tomorrow.`);
   const wedding = await weddingFor(db, profile.id);
   let threadId = input.threadId && (await ownThread(db, input.threadId, profile.id)) ? input.threadId : null;

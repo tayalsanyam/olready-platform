@@ -74,7 +74,7 @@ try {
         starting_price_inr, years_experience, attributes, phone, email, status, claim_status, verified_at, assured)
       values (${owner}, ${await cat(c)}, ${cityId}, ${[chd, moh, pkl]}, ${slug}, ${name},
         ${'Tricity weddings since ' + (2012 + (i % 8))},
-        ${`${name} is a fictional demo vendor used to walk through the OLReady platform.`},
+        ${`${name} is a fictional demo vendor used to walk through the Olready platform.`},
         ${price}, ${3 + (i % 9)}, ${sql.json(attrs)}, ${'+9198000000' + String(i).padStart(2, '0')}, ${`owner${i}@demo.in`},
         'live', 'claimed', ${verified ? sql`now()` : null}, ${assured})
       returning id`);
@@ -115,7 +115,7 @@ try {
     await sql`
       insert into mkt.articles (slug, title, excerpt, body, section, category_id, cover_url, status, author_name, published_at)
       values (${a.slug}, ${a.title}, ${a.excerpt}, ${a.body}, ${a.section}, ${cat}, ${`/demo/demo-${(art++ % 12) + 1}.jpg`}, 'published',
-        'OLReady team', now() - ${`${art} days`}::interval)`;
+        'Olready team', now() - ${`${art} days`}::interval)`;
   }
 
   // Halls and lawns inside the demo venues.

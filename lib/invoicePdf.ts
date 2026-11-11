@@ -41,7 +41,7 @@ export async function invoicePdf(d: TaxDocument) {
   const title = credit ? 'Credit note' : registered ? 'Tax invoice' : 'Invoice';
   pdf.setTitle(`${title} ${d.number}`);
   pdf.setAuthor(d.seller.name);
-  pdf.setCreator('OLReady');
+  pdf.setCreator('Olready');
   const page: PDFPage = pdf.addPage([595.28, 841.89]);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -65,7 +65,7 @@ export async function invoicePdf(d: TaxDocument) {
     const h = 22;
     page.drawImage(logo, { x: M, y: y - h, width: (logo.width / logo.height) * h, height: h });
   } catch {
-    text('OLReady', M, y - 18, { size: 18, f: bold });
+    text('Olready', M, y - 18, { size: 18, f: bold });
   }
   text(title, W - M, y - 16, { size: 18, f: bold, color: credit ? PINK : INK, right: true });
   y -= 44;

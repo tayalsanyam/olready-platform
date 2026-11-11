@@ -86,7 +86,7 @@ describe('tax invoices', () => {
     expect(pdf2.length).toBeGreaterThan(2000);
   });
 
-  it('lets a plan activate with the OLReady invoice when no link is given', async () => {
+  it('lets a plan activate with the Olready invoice when no link is given', async () => {
     const admin = await profile(sql, 'admin');
     const o = await profile(sql, 'vendor', 'Plan Studio');
     const v = await liveVendor(sql, o.id, 'photographers', 'chandigarh', 'Plan Studio');

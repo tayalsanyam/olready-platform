@@ -27,7 +27,7 @@ export default async function Mfa({ searchParams }: P) {
           <Notice error={sp(q.error)} ok={sp(q.ok)} />
         </div>
         {row.totp_enabled ? (
-          <p className="mt-2 text-[var(--color-muted)]">Open your authenticator app and enter the 6-digit code for OLReady Ops. You stay signed in for 12 hours.</p>
+          <p className="mt-2 text-[var(--color-muted)]">Open your authenticator app and enter the 6-digit code for Olready Ops. You stay signed in for 12 hours.</p>
         ) : setup ? (
           <>
             <p className="mt-2 text-[var(--color-muted)]">Scan this with Google Authenticator, Authy or Microsoft Authenticator, then enter the code it shows.</p>

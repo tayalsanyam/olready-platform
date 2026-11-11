@@ -49,7 +49,7 @@ export default async function AssistantPage({ searchParams }: P) {
 
   return (
     <>
-      <PageTitle title={ASSISTANT_NAME} sub="Your planning helper. It knows OLReady's vendors and prices and your own plan, and never shares your number." />
+      <PageTitle title={ASSISTANT_NAME} sub="Your planning helper. It knows Olready's vendors and prices and your own plan, and never shares your number." />
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
         <aside className="order-2 lg:order-1">
           <details className="rounded-2xl border border-[var(--color-line)] bg-white p-3 lg:open:block" open={threads.length > 0 && threads.length < 6}>

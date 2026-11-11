@@ -11,7 +11,7 @@ create table mkt.articles (
   city_id int references mkt.cities(id),
   status text not null default 'draft' check (status in ('draft','published','archived')),
   author_profile_id uuid references mkt.profiles(id),
-  author_name text not null default 'OLReady team',
+  author_name text not null default 'Olready team',
   published_at timestamptz,
   updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()

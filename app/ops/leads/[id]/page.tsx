@@ -14,7 +14,7 @@ export const metadata = { title: 'Verify lead' };
 type P = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[]>> };
 
 const STAGES = [
-  { n: 1, title: 'Reached her', script: 'Introduce OLReady. Confirm her name, that she sent the request, and the wedding date.' },
+  { n: 1, title: 'Reached her', script: 'Introduce Olready. Confirm her name, that she sent the request, and the wedding date.' },
   { n: 2, title: 'Needs confirmed', script: 'Confirm the town, each function with its date, town and venue, and the budget. Go through every category below and ask: "Have you booked this yet?" Add each one she still needs.' },
   { n: 3, title: 'Verified', script: 'She is genuine and still looking. Take her email and save it under Her details, so she can sign in to see chats and quotes. Tell her verified vendors will message or call her, and that an enquiry is not a booking.' },
 ] as const;

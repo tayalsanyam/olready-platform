@@ -132,7 +132,7 @@ describe('iCal feed and Google Calendar import', () => {
     const v = await liveVendor(sql, o.id, 'decorators', 'chandigarh', 'Sync Decor');
     await addCalendarEntries(sql, v.id, { from: ahead(10), slot: 'evening', status: 'booked', note: 'Gill party' }, o.id);
     const feed = buildIcs('Sync Decor', await calendarRange(sql, v.id, ahead(0), ahead(100)));
-    expect(feed).toContain('X-WR-CALNAME:Sync Decor on OLReady');
+    expect(feed).toContain('X-WR-CALNAME:Sync Decor on Olready');
     expect(feed).toContain(`DTSTART;VALUE=DATE:${ahead(10).replace(/-/g, '')}`);
     expect(feed).toContain('SUMMARY:Booked (Evening): Gill party');
     await expect(setImportUrl(sql, v.id, 'http://insecure.example/cal.ics', o.id)).rejects.toThrow(/iCal address/);

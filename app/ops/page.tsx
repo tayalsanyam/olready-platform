@@ -75,7 +75,7 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
     ['Invited reviews to approve', c.reviews_pending, '/ops/reviews'],
     ['Banners to approve', c.banners, '/ops/promotions'],
     ['WhatsApp messages that failed', c.wa_failed, '/ops/whatsapp'],
-    ['Ask OLReady answers to check', c.ai_flagged, '/ops/bride-ai'],
+    ['Ask Olready answers to check', c.ai_flagged, '/ops/bride-ai'],
   ];
   const waiting = queues.reduce((a, [, n]) => a + (n || 0), 0) + contacts.length + calls.length;
   const trend = await sql<{ leads: number; unlocks: number; bookings: number }[]>`

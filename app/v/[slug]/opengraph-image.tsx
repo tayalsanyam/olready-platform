@@ -2,7 +2,7 @@ import { sql } from '@/lib/db';
 import { formatInr } from '@/lib/catalog';
 import { ogCard, OG_SIZE } from '@/lib/og';
 
-export const alt = 'Wedding vendor on OLReady';
+export const alt = 'Wedding vendor on Olready';
 export const size = OG_SIZE;
 export const contentType = 'image/png';
 
@@ -15,11 +15,11 @@ export default async function Image({ params }: { params: Promise<{ slug: string
       (select count(*)::int from mkt.reviews r where r.vendor_id = v.id and r.status = 'published') as n
     from mkt.vendors v join mkt.categories c on c.id = v.category_id join mkt.cities ci on ci.id = v.city_id
     where v.slug = ${slug} and v.status = 'live'`;
-  if (!v) return ogCard({ label: 'OLReady', title: 'Wedding vendors we have checked first' });
+  if (!v) return ogCard({ label: 'Olready', title: 'Wedding vendors we have checked first' });
   return ogCard({
     label: `${v.category} in ${v.city}`,
     title: v.name,
-    badge: v.assured ? 'OLReady Assured' : v.verified ? 'Verified' : undefined,
-    facts: [v.price != null ? `From ${formatInr(v.price)} ${v.unit}` : 'Price on request', v.n ? `★ ${v.rating?.toFixed(1)} from ${v.n} review${v.n === 1 ? '' : 's'}` : 'Get a quote on OLReady'],
+    badge: v.assured ? 'Olready Assured' : v.verified ? 'Verified' : undefined,
+    facts: [v.price != null ? `From ${formatInr(v.price)} ${v.unit}` : 'Price on request', v.n ? `★ ${v.rating?.toFixed(1)} from ${v.n} review${v.n === 1 ? '' : 's'}` : 'Get a quote on Olready'],
   });
 }

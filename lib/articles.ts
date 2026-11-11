@@ -90,7 +90,7 @@ export async function saveArticle(db: Db, id: string | null, input: ArticleInput
   const [clash] = await db`select 1 from mkt.articles where slug = ${slug} and id <> ${id ?? '00000000-0000-0000-0000-000000000000'}`;
   if (clash) throw new DomainError('slug_taken', 'Another article already uses this address');
   const excerpt = input.excerpt.trim().slice(0, 300);
-  const author = input.authorName.trim().slice(0, 80) || 'OLReady team';
+  const author = input.authorName.trim().slice(0, 80) || 'Olready team';
   if (id) {
     const [a] = await db<{ id: string }[]>`
       update mkt.articles set title = ${title}, slug = ${slug}, excerpt = ${excerpt}, body = ${input.body}, section = ${input.section},

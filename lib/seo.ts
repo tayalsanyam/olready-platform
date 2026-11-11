@@ -163,16 +163,16 @@ export function landingFaq(category: Category, city: City, vendors: VendorCard[]
     const median = prices[Math.floor(prices.length / 2)];
     faq.push({
       q: `How much do ${label} in ${city.name} charge?`,
-      a: `On OLReady, ${label} in ${city.name} start from ${formatInr(prices[0])} ${category.price_unit}; the middle of the range is about ${formatInr(median)}.`,
+      a: `On Olready, ${label} in ${city.name} start from ${formatInr(prices[0])} ${category.price_unit}; the middle of the range is about ${formatInr(median)}.`,
     });
   }
   faq.push({
-    q: `How many ${label} in ${city.name} are on OLReady?`,
+    q: `How many ${label} in ${city.name} are on Olready?`,
     a: `${vendors.length} ${vendors.length === 1 ? 'is' : 'are'} listed right now. Verified profiles carry a verified tag.`,
   });
   faq.push({
     q: `How do I get quotes from ${label} in ${city.name}?`,
-    a: `Tell OLReady what you need. Our team confirms your details on a short call, then verified vendors contact you and you compare quotes in one place.`,
+    a: `Tell Olready what you need. Our team confirms your details on a short call, then verified vendors contact you and you compare quotes in one place.`,
   });
   return faq;
 }

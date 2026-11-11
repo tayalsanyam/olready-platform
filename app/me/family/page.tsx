@@ -22,7 +22,7 @@ export default async function Family({ searchParams }: P) {
         {w ? (
           <Card>
             <h2 className="font-semibold">Invite family</h2>
-            <p className="mt-1 text-sm">Ask them to sign in to OLReady and enter this code under Family:</p>
+            <p className="mt-1 text-sm">Ask them to sign in to Olready and enter this code under Family:</p>
             <p className="mt-3 font-mono text-3xl tracking-[0.3em]">{w.join_code}</p>
             <ul className="mt-4 divide-y divide-[var(--color-line)] text-sm">
               {people.map((m) => (

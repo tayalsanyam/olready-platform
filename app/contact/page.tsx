@@ -8,8 +8,8 @@ import { JsonLd } from '@/components/VendorCard';
 import { siteUrl } from '@/lib/seo';
 
 export const metadata = {
-  title: 'Contact OLReady',
-  description: `Talk to the OLReady team in Chandigarh about your wedding, your business listing, a payment or your data. ${OPERATOR.hours}.`,
+  title: 'Contact Olready',
+  description: `Talk to the Olready team in Chandigarh about your wedding, your business listing, a payment or your data. ${OPERATOR.hours}.`,
   alternates: { canonical: '/contact' },
 };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
@@ -24,7 +24,7 @@ export default async function Contact({ searchParams }: P) {
         data={{
           '@context': 'https://schema.org',
           '@type': 'Organization',
-          name: 'OLReady',
+          name: 'Olready',
           legalName: 'Katalyst Infomedia',
           url: siteUrl(),
           email: OPERATOR.email,

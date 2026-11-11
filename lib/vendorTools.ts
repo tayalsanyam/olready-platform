@@ -19,7 +19,7 @@ export type ReviewRequest = {
 };
 
 /**
- * A vendor invites a client who booked them outside OLReady. The review is written by the
+ * A vendor invites a client who booked them outside Olready. The review is written by the
  * person who signs in with that email, and waits for Ops before it shows.
  */
 export async function createReviewRequest(

@@ -1,5 +1,5 @@
 -- Wedding budget: an overall figure, a plan per category, and other costs (outfits, gifts,
--- vendors booked outside OLReady). Quotes and bookings come from the conversations.
+-- vendors booked outside Olready). Quotes and bookings come from the conversations.
 alter table mkt.weddings add column if not exists total_budget_inr bigint check (total_budget_inr is null or total_budget_inr between 0 and 10000000000);
 -- Who in the family sees the numbers: 'owners' = the couple only, 'family' = every member.
 alter table mkt.weddings add column if not exists budget_visibility text not null default 'owners' check (budget_visibility in ('owners','family'));

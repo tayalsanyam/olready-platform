@@ -8,7 +8,7 @@ export const metadata = { title: 'Request received', robots: { index: false } };
 const NEXT = [
   { t: 'We call you', d: 'A person from our team rings to confirm your functions, dates and budget. Usually within one working day.' },
   { t: 'Vendors see it', d: 'Only after that call, and only vendors in the categories and towns you need.' },
-  { t: 'Quotes arrive', d: 'They message and quote on OLReady. Compare them side by side and pick who you like.' },
+  { t: 'Quotes arrive', d: 'They message and quote on Olready. Compare them side by side and pick who you like.' },
 ];
 
 export default async function Thanks() {

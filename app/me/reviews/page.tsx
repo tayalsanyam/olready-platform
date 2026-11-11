@@ -79,7 +79,7 @@ export default async function BrideReviews({ searchParams }: P) {
           ))}
         </div>
       ) : (
-        <Empty art="stars" title="No vendors to review yet">Vendors you talk to through OLReady appear here.</Empty>
+        <Empty art="stars" title="No vendors to review yet">Vendors you talk to through Olready appear here.</Empty>
       )}
     </>
   );

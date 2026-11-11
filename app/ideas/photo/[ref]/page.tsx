@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: P) {
   const by = p.vendor_name ? ` by ${p.vendor_name}` : '';
   return {
     title: `${p.caption || p.topic_name}${by}`,
-    description: `${p.topic_name}${by}${p.city_name ? ` in ${p.city_name}` : ''}. Save this idea or get a quote on OLReady.`,
+    description: `${p.topic_name}${by}${p.city_name ? ` in ${p.city_name}` : ''}. Save this idea or get a quote on Olready.`,
     alternates: { canonical: `/ideas/photo/${p.ref}` },
     openGraph: { images: [p.url] },
   };

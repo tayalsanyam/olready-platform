@@ -28,10 +28,10 @@ describe('gateway signatures', () => {
   it('signs PayU requests and verifies PayU responses', () => {
     const order = { id: 'txn-1', amount_inr: 4999 } as Order;
     const req = payuRequestFields(order, 'Top-up 10', { name: 'Kirti Sharma', email: 'k@demo.in', phone: '98' }, 'https://olready.in');
-    const expected = createHash('sha512').update('payukey|txn-1|4999.00|OLReady Top-up 10|Kirti|k@demo.in|||||||||||payusalt').digest('hex');
+    const expected = createHash('sha512').update('payukey|txn-1|4999.00|Olready Top-up 10|Kirti|k@demo.in|||||||||||payusalt').digest('hex');
     expect(req.fields.hash).toBe(expected);
-    const resp: Record<string, string> = { status: 'success', email: 'k@demo.in', firstname: 'Kirti', productinfo: 'OLReady Top-up 10', amount: '4999.00', txnid: 'txn-1', key: 'payukey' };
-    resp.hash = createHash('sha512').update(['payusalt', 'success', '', '', '', '', '', '', '', '', '', '', 'k@demo.in', 'Kirti', 'OLReady Top-up 10', '4999.00', 'txn-1', 'payukey'].join('|')).digest('hex');
+    const resp: Record<string, string> = { status: 'success', email: 'k@demo.in', firstname: 'Kirti', productinfo: 'Olready Top-up 10', amount: '4999.00', txnid: 'txn-1', key: 'payukey' };
+    resp.hash = createHash('sha512').update(['payusalt', 'success', '', '', '', '', '', '', '', '', '', '', 'k@demo.in', 'Kirti', 'Olready Top-up 10', '4999.00', 'txn-1', 'payukey'].join('|')).digest('hex');
     expect(payuResponseValid(resp)).toBe(true);
     expect(payuResponseValid({ ...resp, amount: '1.00' })).toBe(false);
   });

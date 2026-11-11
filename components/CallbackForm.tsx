@@ -2,7 +2,7 @@ import { CALLBACK_TOPICS } from '@/lib/vendorTools';
 import { requestCallbackAction } from '@/lib/actions/vendorTools';
 import { Card, Field } from './ui';
 
-/** "Ask OLReady to call me" for vendors and brides. Ops see it at the top of their Today page. */
+/** "Ask Olready to call me" for vendors and brides. Ops see it at the top of their Today page. */
 export function CallbackForm({ phone, backPath, topics }: { phone?: string | null; backPath: string; topics: (keyof typeof CALLBACK_TOPICS)[] }) {
   return (
     <Card>

@@ -1,4 +1,4 @@
-// Original starter guides for the blog. Written for OLReady; review and edit before publishing.
+// Original starter guides for the blog. Written for Olready; review and edit before publishing.
 export const starterArticles = [
   {
     slug: 'how-to-choose-a-wedding-venue-in-the-tricity',
@@ -34,7 +34,7 @@ Before you pay an advance, get these in writing: what the advance covers, the pa
 
 > Tip: ask every venue the same questions in the same order and note the answers side by side. It makes the choice obvious.
 
-When you are ready, send one request on OLReady. Our team confirms your details on a call, then verified venues send you quotes you can compare in one place.`,
+When you are ready, send one request on Olready. Our team confirms your details on a call, then verified venues send you quotes you can compare in one place.`,
   },
   {
     slug: 'bridal-makeup-trial-what-to-ask',
@@ -68,7 +68,7 @@ When you are ready, send one request on OLReady. Our team confirms your details 
 
 > If an artist is rushed or vague during the trial, expect the same on the wedding morning.
 
-On OLReady, you can see each artist's trial policy and products before you ask for a quote.`,
+On Olready, you can see each artist's trial policy and products before you ask for a quote.`,
   },
   {
     slug: 'twelve-month-wedding-planning-timeline',
@@ -114,7 +114,7 @@ On OLReady, you can see each artist's trial policy and products before you ask f
 - Hand one trusted person the vendor list and their numbers.
 - Rest. It shows in the photos.
 
-Your OLReady checklist builds this timeline from your wedding date and ticks things off as you go.`,
+Your Olready checklist builds this timeline from your wedding date and ticks things off as you go.`,
   },
   {
     slug: 'questions-to-ask-a-wedding-photographer',
@@ -153,7 +153,7 @@ Share the names of the people who must be photographed and the rituals that matt
 
 > Write everything down in one message and ask them to confirm it in reply. It saves arguments later.
 
-On OLReady, you can compare photographers by style, team size and delivery time before you ask for quotes.`,
+On Olready, you can compare photographers by style, team size and delivery time before you ask for quotes.`,
   },
   {
     slug: 'build-a-wedding-budget-that-holds',
@@ -190,7 +190,7 @@ Note each quote, what you booked, and what you have paid. When every family memb
 
 > The cheapest quote is not always the lowest cost. Check what it leaves out.
 
-On OLReady, every quote vendors send you sits in one place, by category, so you can compare them side by side.`,
+On Olready, every quote vendors send you sits in one place, by category, so you can compare them side by side.`,
   },
   {
     slug: 'mehendi-day-timing-so-the-colour-sets',
@@ -227,6 +227,6 @@ Ask the photographer to come when the design is finished but still on, and again
 
 > Do a small patch test a few days before if you have sensitive skin.
 
-Compare mehendi artists in your city on OLReady, see their designs in Ideas, and ask for quotes in one request.`,
+Compare mehendi artists in your city on Olready, see their designs in Ideas, and ask for quotes in one request.`,
   },
 ];

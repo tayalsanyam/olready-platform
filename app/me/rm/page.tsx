@@ -23,7 +23,7 @@ export default async function RelationshipManager({ searchParams }: P) {
   const usable = gateways.filter((g) => g.enabled && g.configured);
   return (
     <>
-      <PageTitle title="Relationship manager" sub="A person from the OLReady team who plans with you, shortlists vendors and handles the follow-ups." />
+      <PageTitle title="Relationship manager" sub="A person from the Olready team who plans with you, shortlists vendors and handles the follow-ups." />
       <Notice error={q.error} ok={q.ok} />
       {e ? (
         <Card className="max-w-xl">

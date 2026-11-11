@@ -101,7 +101,7 @@ export function AssistantChat(props: { threadId: string | null; initial: Msg[]; 
           <div className="rounded-2xl bg-[var(--color-tint)] p-5">
             <p className="text-lg font-semibold">What can I help you plan?</p>
             <p className="mt-1 text-sm text-[var(--color-muted)]">
-              I know OLReady&apos;s vendors, prices and your own plan. I can shortlist, add tasks and set budgets when you confirm.
+              I know Olready&apos;s vendors, prices and your own plan. I can shortlist, add tasks and set budgets when you confirm.
             </p>
             <ul className="mt-4 grid gap-2 sm:grid-cols-2">
               {props.starters.map((s) => (
@@ -203,7 +203,7 @@ export function AssistantChat(props: { threadId: string | null; initial: Msg[]; 
           </button>
         </div>
         <p className="mt-1.5 text-[11px] text-[var(--color-muted)]">
-          {props.enabled ? `${left} questions left today. ` : ''}Answers come from OLReady&apos;s listings and your plan; check details with the vendor before you book.
+          {props.enabled ? `${left} questions left today. ` : ''}Answers come from Olready&apos;s listings and your plan; check details with the vendor before you book.
         </p>
       </form>
     </div>

@@ -6,12 +6,12 @@ import { ask } from '@/lib/brideAssistant';
 export const maxDuration = 120;
 
 /**
- * Ask OLReady. Streams newline-delimited JSON: {type:'thread'}, {type:'status'} while tools
+ * Ask Olready. Streams newline-delimited JSON: {type:'thread'}, {type:'status'} while tools
  * run, then {type:'done'} with the checked answer, or {type:'error'}.
  */
 export async function POST(req: NextRequest) {
   const p = await currentProfile();
-  if (!p) return Response.json({ type: 'error', message: 'Sign in to use Ask OLReady.' }, { status: 401 });
+  if (!p) return Response.json({ type: 'error', message: 'Sign in to use Ask Olready.' }, { status: 401 });
   const body = (await req.json().catch(() => ({}))) as { threadId?: string; text?: string };
   const enc = new TextEncoder();
   const stream = new ReadableStream({

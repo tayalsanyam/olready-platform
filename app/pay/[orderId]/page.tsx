@@ -27,7 +27,7 @@ export default async function Pay({ params, searchParams }: P) {
   const [vendor] = order.vendor_id
     ? await sql<{ business_name: string; phone: string | null }[]>`select business_name, phone from mkt.vendors where id = ${order.vendor_id}`
     : [];
-  const buyerName = vendor?.business_name ?? profile.full_name ?? 'OLReady customer';
+  const buyerName = vendor?.business_name ?? profile.full_name ?? 'Olready customer';
   let razorpayOrderId = order.gateway_order_id;
   if (order.status === 'created' && order.gateway === 'razorpay' && !razorpayOrderId) {
     razorpayOrderId = (await razorpayCreateOrder(order)).id;

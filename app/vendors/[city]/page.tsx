@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: P) {
   const total = await countVendors(sql, { cityId: city.id });
   return {
     title: `Wedding vendors in ${city.name}`,
-    description: `Verified wedding venues, caterers, bridal makeup artists, photographers, decorators and more in ${city.name}, ${city.state}. Compare prices and get quotes on OLReady.`,
+    description: `Verified wedding venues, caterers, bridal makeup artists, photographers, decorators and more in ${city.name}, ${city.state}. Compare prices and get quotes on Olready.`,
     alternates: { canonical: `/vendors/${city.slug}` },
     robots: total >= 3 ? undefined : { index: false, follow: true },
   };

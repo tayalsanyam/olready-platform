@@ -12,7 +12,7 @@ export function Wordmark({ className = '', height = 22 }: { className?: string; 
   return (
     <Image
       src="/brand/olready-wordmark-trim.png"
-      alt="OLReady"
+      alt="Olready"
       width={Math.round((height * 1977) / 327)}
       height={height}
       priority
@@ -36,7 +36,7 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--color-line)] bg-white">
       <Container className="flex h-16 items-center justify-between gap-4">
-        <Link href="/" className="shrink-0" aria-label="OLReady home">
+        <Link href="/" className="shrink-0" aria-label="Olready home">
           <Wordmark />
         </Link>
         <nav className="hidden items-center gap-6 text-sm md:flex" aria-label="Main">

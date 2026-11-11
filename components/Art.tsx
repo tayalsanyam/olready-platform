@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-/** OLReady's own drawings: the marigold from the toran, rings, sparklines and small scenes for empty screens. */
+/** Olready's own drawings: the marigold from the toran, rings, sparklines and small scenes for empty screens. */
 
 export function Marigold({ size = 40, className = '', spin = false }: { size?: number; className?: string; spin?: boolean }) {
   const petals = Array.from({ length: 12 }, (_, i) => i * 30);

@@ -167,7 +167,7 @@ async function activate(db: Db, subId: string, invoiceUrl: string | null, contra
 }
 
 /**
- * Plans activate only after Ops uploads the signed contract. The invoice is OLReady's own tax
+ * Plans activate only after Ops uploads the signed contract. The invoice is Olready's own tax
  * invoice for the order unless Ops gives another link.
  */
 export async function activateSubscription(sql: Sql, subId: string, invoiceUrl: string, contractUrl: string, actor: string) {
@@ -177,7 +177,7 @@ export async function activateSubscription(sql: Sql, subId: string, invoiceUrl: 
     if (!invoice) {
       const [doc] = await tx<{ id: string }[]>`
         select d.id from mkt.vendor_subscriptions s join mkt.tax_documents d on d.order_id = s.order_id and d.kind = 'invoice' where s.id = ${subId}`;
-      if (!doc) throw new DomainError('missing_docs', 'There is no OLReady invoice for this plan; add the invoice link');
+      if (!doc) throw new DomainError('missing_docs', 'There is no Olready invoice for this plan; add the invoice link');
       invoice = `/invoices/${doc.id}`;
     }
     await activate(tx, subId, invoice, contractUrl.trim(), actor);
@@ -235,7 +235,7 @@ export function payuRequestFields(order: Order, productName: string, buyer: { na
   const key = process.env.PAYU_KEY ?? '';
   const salt = process.env.PAYU_SALT ?? '';
   const amount = order.amount_inr.toFixed(2);
-  const productinfo = `OLReady ${productName}`;
+  const productinfo = `Olready ${productName}`;
   const firstname = buyer.name.split(' ')[0] || 'Vendor';
   const hash = createHash('sha512')
     .update(`${key}|${order.id}|${amount}|${productinfo}|${firstname}|${buyer.email}|||||||||||${salt}`)

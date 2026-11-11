@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* OLReady brand, shared with the sales site (mua.olready.in). */
+/* Olready brand, shared with the sales site (mua.olready.in). */
 @theme {
   /* Brand pink, a shade deeper than the logo's #ed0064 so white text on it and pink text on white both pass 4.5:1. */
   --color-pink: #e2005e;

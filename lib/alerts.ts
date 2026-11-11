@@ -112,7 +112,7 @@ export const alertOrderPaid = (db: Db, orderId: string) =>
       left join mkt.tax_documents d on d.order_id = o.id and d.kind = 'invoice'
       where o.id = ${orderId} and o.status = 'paid'`;
     if (!o) return;
-    const what = o.pack ?? (o.wallet ? `Ads wallet top-up` : (o.service ?? 'OLReady service'));
+    const what = o.pack ?? (o.wallet ? `Ads wallet top-up` : (o.service ?? 'Olready service'));
     const next = o.kind === 'plan'
       ? o.needs_contract
         ? 'Your plan starts as soon as the signed contract is with us. We will tell you the moment it is active.'

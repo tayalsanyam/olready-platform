@@ -40,7 +40,7 @@ export async function queueEventEve(db: Db) {
           name: (r.owner_name || 'there').split(' ')[0],
           events: names,
           details,
-          vendors: vendors.length ? vendors.map((v) => `${v.category}: ${v.vendor_name}${v.vendor_phone ? `, ${v.vendor_phone}` : ''}`).join('\n') : 'None booked through OLReady yet.',
+          vendors: vendors.length ? vendors.map((v) => `${v.category}: ${v.vendor_name}${v.vendor_phone ? `, ${v.vendor_phone}` : ''}`).join('\n') : 'None booked through Olready yet.',
         },
         `eve:${r.wedding_id}:${day}`
       );

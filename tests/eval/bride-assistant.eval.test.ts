@@ -5,7 +5,7 @@ import postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
 import { ask } from '@/lib/brideAssistant';
 
-// Live evaluation of Ask OLReady against the real model and a database with demo or real
+// Live evaluation of Ask Olready against the real model and a database with demo or real
 // vendors. Runs only when asked:
 //   RUN_EVAL=1 ANTHROPIC_API_KEY=... EVAL_DATABASE_URL=postgres://... npx vitest run tests/eval
 // Automatic checks on every answer: no flags (invented vendors, contact details, unsourced
@@ -16,7 +16,7 @@ type Q = { q: string; tools?: string[]; card?: boolean; trap?: string; followUpO
 const QUESTIONS = JSON.parse(readFileSync(path.join(__dirname, 'bride-questions.json'), 'utf8')) as Q[];
 const run = Boolean(process.env.RUN_EVAL && process.env.ANTHROPIC_API_KEY && process.env.EVAL_DATABASE_URL);
 
-describe.skipIf(!run)('Ask OLReady live evaluation', () => {
+describe.skipIf(!run)('Ask Olready live evaluation', () => {
   const db = postgres(process.env.EVAL_DATABASE_URL ?? '', { prepare: false, onnotice: () => {} });
   afterAll(() => db.end());
   const results: unknown[] = [];

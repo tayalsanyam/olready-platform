@@ -104,7 +104,7 @@ export async function budgetSummary(db: Db, weddingId: string): Promise<BudgetSu
     if (booked?.amount != null) [likely, source] = [booked.amount, 'booked'];
     else if (open.length) [likely, source] = [Math.min(...open), 'lowest_quote'];
     else if (planned != null) [likely, source] = [planned, 'planned'];
-    // Costs filed against a category count on top (e.g. extra outfits, or a vendor booked outside OLReady).
+    // Costs filed against a category count on top (e.g. extra outfits, or a vendor booked outside Olready).
     return { category_id: c.id, category_name: c.name, planned, quotes: qs, booked, items, likely: likely + items, source };
   });
   const uncategorised = other.filter((o) => !o.category_id).reduce((a, o) => a + Number(o.amount_inr), 0);

@@ -246,7 +246,7 @@ export async function decideBanner(sql: Sql, bannerId: string, approve: boolean,
   });
 }
 
-/** Ops can place a banner for a vendor or for OLReady itself, free. */
+/** Ops can place a banner for a vendor or for Olready itself, free. */
 export async function teamBanner(db: Db, input: { placement: 'home' | 'city'; cityId: number | null; month: string; headline: string; imageUrl: string; linkUrl: string; vendorId: string | null }, actor: string) {
   const link = input.linkUrl.trim();
   if (!/^\/(?!\/)/.test(link) && !/^https:\/\//.test(link)) throw new DomainError('link', 'Link to a page on this site or an https address');

@@ -5,7 +5,7 @@ import { OPERATOR } from './legal';
 
 export const CONTACT_TOPICS: Record<string, string> = {
   bride: 'Planning my wedding',
-  vendor: 'My business on OLReady',
+  vendor: 'My business on Olready',
   payment: 'A payment, invoice or refund',
   privacy: 'My data and privacy',
   grievance: 'A formal complaint (grievance)',

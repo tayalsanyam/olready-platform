@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: P) {
   if (!g) return { title: 'Not found', robots: { index: false } };
   return {
     title: costTitle(g),
-    description: `${g.category.plural_name} in ${g.city!.name} start from ${formatInr(g.min)} ${g.category.price_unit}; most ${formatInr(g.low)} to ${formatInr(g.high)}. Real prices from ${g.priced} OLReady vendors, updated daily.`,
+    description: `${g.category.plural_name} in ${g.city!.name} start from ${formatInr(g.min)} ${g.category.price_unit}; most ${formatInr(g.low)} to ${formatInr(g.high)}. Real prices from ${g.priced} Olready vendors, updated daily.`,
     alternates: { canonical: costPath(g.category.slug, g.city!.slug) },
     robots: g.indexable ? undefined : { index: false, follow: true },
   };

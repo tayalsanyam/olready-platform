@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: P) {
     title: `${v.business_name}, ${v.category_name.toLowerCase()} in ${v.city_name}`,
     description:
       v.tagline ||
-      `${v.business_name} is a ${v.category_name.toLowerCase()} in ${v.city_name}${v.starting_price_inr != null ? `, from ${formatInr(v.starting_price_inr)} ${v.price_unit}` : ''}. See work, reviews and get a quote on OLReady.`,
+      `${v.business_name} is a ${v.category_name.toLowerCase()} in ${v.city_name}${v.starting_price_inr != null ? `, from ${formatInr(v.starting_price_inr)} ${v.price_unit}` : ''}. See work, reviews and get a quote on Olready.`,
     alternates: { canonical: `/v/${v.slug}` },
     robots: v.status === 'live' ? undefined : { index: false },
     openGraph: v.cover_image_url ? { images: [v.cover_image_url] } : undefined,
@@ -184,7 +184,7 @@ export default async function VendorPage({ params, searchParams }: P) {
                   </span>
                 </Badge>
               ) : null}
-              {v.verified_at ? <Badge tone="ok">Verified by OLReady</Badge> : null}
+              {v.verified_at ? <Badge tone="ok">Verified by Olready</Badge> : null}
             </div>
             <h1 className="mt-2 text-3xl font-semibold leading-tight">{v.business_name}</h1>
             {v.tagline ? <p className="mt-1 text-[var(--color-muted)]">{v.tagline}</p> : null}
@@ -355,7 +355,7 @@ export default async function VendorPage({ params, searchParams }: P) {
                       <li key={r.id} className="py-4">
                         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                           <b>{r.author_name || 'A bride'}</b>
-                          {r.verified_booking ? <Badge tone="ok">Booked via OLReady</Badge> : null}
+                          {r.verified_booking ? <Badge tone="ok">Booked via Olready</Badge> : null}
                         </div>
                         <p className="mt-1 text-sm text-[var(--color-muted)]">
                           Work {r.rating_artist}/5, service {r.rating_service}/5
@@ -383,7 +383,7 @@ export default async function VendorPage({ params, searchParams }: P) {
                   </ul>
                 </>
               ) : (
-                <p className="mt-2 text-sm text-[var(--color-muted)]">No reviews yet. Brides who book through OLReady can leave one.</p>
+                <p className="mt-2 text-sm text-[var(--color-muted)]">No reviews yet. Brides who book through Olready can leave one.</p>
               )}
             </section>
 
@@ -467,11 +467,11 @@ export default async function VendorPage({ params, searchParams }: P) {
                 <ShortlistButton slug={v.slug} on={on} />
               </div>
               <Link href={`/me/assistant?vendor=${v.slug}`} className="mt-3 block text-center text-sm font-semibold text-[var(--color-pink-deep)] underline-offset-4 hover:underline">
-                Ask OLReady about {v.business_name}
+                Ask Olready about {v.business_name}
               </Link>
               <p className="mt-4 flex gap-2 text-sm text-[var(--color-muted)]">
                 <IconPhoneOff size={18} className="mt-0.5 shrink-0" />
-                Your number stays private. {v.business_name} replies through OLReady after our team verifies your request.
+                Your number stays private. {v.business_name} replies through Olready after our team verifies your request.
               </p>
             </div>
           </aside>

@@ -189,7 +189,7 @@ describe('fake leads and bookings', () => {
     ).rejects.toThrow(/unlocked/);
   });
 
-  it('lets the bride close a category booked outside OLReady', async () => {
+  it('lets the bride close a category booked outside Olready', async () => {
     const { needs, bride } = await verifiedLead([{ slug: 'djs-dhol' }]);
     await closeNeedByBride(sql, needs[0].id, bride.id, { vendorName: 'DJ Local', reason: 'cheaper' });
     const [n] = await sql`select status, booked_outside from mkt.lead_needs where id = ${needs[0].id}`;

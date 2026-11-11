@@ -48,7 +48,7 @@ export async function landingMetadata(citySlug: string, categorySlug: string, fi
   const path = landingPath(r.city, r.category, r.filter ?? r.area);
   return {
     title: `${r.total >= 3 ? `Best ${title.charAt(0).toLowerCase()}${title.slice(1)}` : title} with prices, photos and reviews${page > 1 ? ` (page ${page})` : ''}`,
-    description: `Compare ${r.total} ${title.toLowerCase()} on OLReady. See starting prices, verified profiles and reviews, then get quotes from verified vendors.`,
+    description: `Compare ${r.total} ${title.toLowerCase()} on Olready. See starting prices, verified profiles and reviews, then get quotes from verified vendors.`,
     alternates: { canonical: page > 1 ? `${path}?page=${page}` : path },
     robots: index ? undefined : { index: false, follow: true },
   };

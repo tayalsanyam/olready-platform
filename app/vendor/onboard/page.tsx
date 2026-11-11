@@ -23,7 +23,7 @@ export default async function Onboard({ searchParams }: P) {
   const fields = chosen ? await fieldsFor(sql, chosen.id) : [];
   return (
     <div className="mx-auto max-w-2xl">
-      <PageTitle title="List your business on OLReady" sub="Free to list. You pay only for verified leads you choose to unlock." />
+      <PageTitle title="List your business on Olready" sub="Free to list. You pay only for verified leads you choose to unlock." />
       <Notice error={q.error} />
       {!chosen ? (
         <Card>

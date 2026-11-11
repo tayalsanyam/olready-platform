@@ -54,7 +54,7 @@ export function ThreadView(props: {
                   <li key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-[var(--color-ink)] text-white' : 'bg-[var(--color-tint)]'}`}>
                       {hidden ? (
-                        <p className="italic opacity-70">This message was removed by OLReady.</p>
+                        <p className="italic opacity-70">This message was removed by Olready.</p>
                       ) : (
                         <>
                           {m.body ? <p className="whitespace-pre-wrap break-words">{m.body}</p> : null}
@@ -119,7 +119,7 @@ export function ThreadView(props: {
               Attach a photo or PDF (up to 4 MB), e.g. a brochure, menu or reference look
               <input type="file" name="attachment" accept="image/jpeg,image/png,image/webp,application/pdf" className="mt-1 block w-full text-xs" />
             </label>
-            <p className="text-xs text-[var(--color-muted)]">Never share OTPs or card details. Pay only through OLReady or after you have met the vendor.</p>
+            <p className="text-xs text-[var(--color-muted)]">Never share OTPs or card details. Pay only through Olready or after you have met the vendor.</p>
           </form>
         ) : null}
       </div>

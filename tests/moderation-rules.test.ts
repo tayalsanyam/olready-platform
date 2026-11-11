@@ -13,7 +13,7 @@ describe('automatic chat flags', () => {
     expect(flagsFor('IFSC HDFC0001234 account 50100012345678')).toContain('card');
     expect(flagsFor('Share the OTP you got')).toContain('otp');
     expect(flagsFor('Please pay the advance directly to my GPay')).toContain('off_platform');
-    expect(flagsFor('Book outside OLReady and save')).toContain('off_platform');
+    expect(flagsFor('Book outside Olready and save')).toContain('off_platform');
     expect(flagsFor('See https://bit.ly/abc')).toContain('link');
     expect(flagsFor('you idiot')).toContain('abuse');
   });

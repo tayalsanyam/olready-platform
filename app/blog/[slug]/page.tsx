@@ -67,7 +67,7 @@ export default async function ArticlePage({ params, searchParams }: P) {
             datePublished: a.published_at?.toISOString(),
             dateModified: a.updated_at.toISOString(),
             author: { '@type': 'Organization', name: a.author_name },
-            publisher: { '@type': 'Organization', name: 'OLReady', logo: { '@type': 'ImageObject', url: `${siteUrl()}/icon.png` } },
+            publisher: { '@type': 'Organization', name: 'Olready', logo: { '@type': 'ImageObject', url: `${siteUrl()}/icon.png` } },
             mainEntityOfPage: `${siteUrl()}${self}`,
           },
           breadcrumbLd([

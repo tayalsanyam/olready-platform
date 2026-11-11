@@ -271,7 +271,7 @@ await step('bride reviews the artist and the service separately', async () => {
   await submit(card.getByRole('button', { name: 'Save review' }));
   await see('Thank you for your review');
   await go('/v/glow-by-kirti-demo');
-  await see('Booked via OLReady');
+  await see('Booked via Olready');
   await see('Work 5/5, service 3/5');
 });
 
@@ -279,7 +279,7 @@ await step('bride shares a real wedding for review', async () => {
   await go('/me/real-wedding');
   await page.getByLabel('Couple names *').fill('Simran & Arjun');
   await page.getByLabel('Title *').fill('A February wedding');
-  await page.getByLabel('Vendors (OLReady profile links)').fill('/v/glow-by-kirti-demo');
+  await page.getByLabel('Vendors (Olready profile links)').fill('/v/glow-by-kirti-demo');
   await page.getByRole('checkbox').check();
   await submit(page.getByRole('button', { name: 'Submit for review' }));
   await see('reviews every story');
@@ -478,7 +478,7 @@ await step('bride compares quotes with the AI reading and sets a budget', async 
   await shot('budget');
 });
 
-await step('bride asks OLReady and confirms a shortlist card', async () => {
+await step('bride asks Olready and confirms a shortlist card', async () => {
   await go('/me/assistant');
   await shot('assistant-start');
   await page.getByLabel('Your question').fill('Find a venue for 300 guests');
@@ -536,7 +536,7 @@ await step('vendor opens the GST invoice for a purchase', async () => {
   if (body.subarray(0, 5).toString() !== '%PDF-') throw new Error('invoice is not a PDF');
 });
 
-await step('ops uses Data, Ask the data, WhatsApp and the Ask OLReady review', async () => {
+await step('ops uses Data, Ask the data, WhatsApp and the Ask Olready review', async () => {
   await signInAs('Rohit (ops)');
   await go('/ops/data/leads?status=verified');
   await see('Simran Kaur');
@@ -588,7 +588,7 @@ await step('visitor reads the policies, a price guide and the directory, and wri
     if (await b.count()) await submit(b);
   };
   await signOut();
-  for (const [path, text] of [['/terms', 'Terms of use'], ['/privacy', 'Privacy policy'], ['/refunds', 'Refunds'], ['/about', 'OLReady']]) {
+  for (const [path, text] of [['/terms', 'Terms of use'], ['/privacy', 'Privacy policy'], ['/refunds', 'Refunds'], ['/about', 'Olready']]) {
     await go(path);
     await see(text);
   }

@@ -83,7 +83,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
             items: [
               { href: '/ops/data', label: 'Data' },
               { href: '/ops/assistant', label: 'Ask the data' },
-              { href: '/ops/bride-ai', label: 'Ask OLReady' },
+              { href: '/ops/bride-ai', label: 'Ask Olready' },
             ],
           },
           {

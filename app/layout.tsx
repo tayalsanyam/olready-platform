@@ -8,11 +8,11 @@ import { siteUrl } from '@/lib/seo';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: { default: 'OLReady: verified wedding vendors', template: '%s | OLReady' },
+  title: { default: 'Olready: verified wedding vendors', template: '%s | Olready' },
   description:
     'Find verified wedding venues, caterers, makeup artists, photographers, decorators, mehendi artists and more in towns across India. Every request is checked on a call; compare quotes in one place.',
-  applicationName: 'OLReady',
-  openGraph: { siteName: 'OLReady', type: 'website', locale: 'en_IN' },
+  applicationName: 'Olready',
+  openGraph: { siteName: 'Olready', type: 'website', locale: 'en_IN' },
   twitter: { card: 'summary_large_image' },
   formatDetection: { telephone: false },
   // Search Console and Bing Webmaster ownership tags, set per deployment.

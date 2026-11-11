@@ -12,7 +12,7 @@ import { siteUrl } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
-  title: 'List your wedding business on OLReady',
+  title: 'List your wedding business on Olready',
   description:
     'Get wedding enquiries from brides in your town, anywhere in India. Every request is verified on a call before you see it. List free; pay only for the leads you choose.',
   alternates: { canonical: '/for-vendors' },
@@ -33,7 +33,7 @@ const FAQ = [
   },
   {
     q: 'Do I get the bride’s phone number?',
-    a: 'You chat and quote on OLReady first. Her number appears when you unlock, and she chooses when to share more. Your own contact details are never shown publicly.',
+    a: 'You chat and quote on Olready first. Her number appears when you unlock, and she chooses when to share more. Your own contact details are never shown publicly.',
   },
   {
     q: 'What do plans include?',
@@ -138,7 +138,7 @@ export default async function ForVendors() {
             { t: 'List free', d: 'Add your prices, photos and details. Our team checks your profile, then it goes live on your city and category pages.' },
             { t: 'Brides are verified', d: 'Every request is confirmed on a call: real person, real date, real budget. Wrong numbers never reach you.' },
             { t: 'Unlock what fits', d: 'See the date, place, guests and budget first. Spend credits only on the weddings you want.' },
-            { t: 'Chat, quote, get booked', d: 'Message and send quotes on OLReady. Report the booking and get a bonus credit back.' },
+            { t: 'Chat, quote, get booked', d: 'Message and send quotes on Olready. Report the booking and get a bonus credit back.' },
           ].map((s, i) => (
             <li key={s.t}>
               <span className="figure text-3xl text-[var(--color-pink)]">{i + 1}</span>
@@ -178,7 +178,7 @@ export default async function ForVendors() {
           {[
             { icon: <IconShield size={24} />, t: 'Leads you can trust', d: 'Verified by a person, capped per category, and refunded if they turn out fake.' },
             { icon: <IconChat size={24} />, t: 'Tools that win bookings', d: 'Quotes brides compare side by side, review requests, a website reviews widget and weekly insights.' },
-            { icon: <IconPhoneOff size={24} />, t: 'Your details stay yours', d: 'Your phone and email are never shown publicly. Brides reach you through OLReady first.' },
+            { icon: <IconPhoneOff size={24} />, t: 'Your details stay yours', d: 'Your phone and email are never shown publicly. Brides reach you through Olready first.' },
           ].map((x) => (
             <div key={x.t}>
               <span className="text-[var(--color-pink)]">{x.icon}</span>
@@ -240,7 +240,7 @@ export default async function ForVendors() {
       <Container className="mt-14">
         <div className="flex flex-col items-start justify-between gap-4 rounded-[22px] bg-[var(--color-pink-soft)] p-6 sm:flex-row sm:items-center">
           <div>
-            <h2 className="text-xl font-semibold">{mine ? 'Your business is on OLReady' : 'Ready when you are'}</h2>
+            <h2 className="text-xl font-semibold">{mine ? 'Your business is on Olready' : 'Ready when you are'}</h2>
             <p className="mt-1 text-sm text-[var(--color-muted)]">
               {mine ? 'See your leads, conversations and insights.' : `${cats.length} categories, every town in India, one dashboard.`}
             </p>

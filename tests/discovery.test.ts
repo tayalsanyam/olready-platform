@@ -33,7 +33,7 @@ describe('articles', () => {
     const editor = await profile(sql, 'content', 'Meera');
     const id = await saveArticle(sql, null, { title: 'Choosing a decorator', excerpt: '', body: 'Too short', section: 'vendors', categoryId: null, cityId: null, authorName: '' }, editor.id);
     expect(await articleBySlug(sql, 'choosing-a-decorator')).toBeNull();
-    expect((await articleBySlug(sql, 'choosing-a-decorator', { includeDrafts: true }))?.author_name).toBe('OLReady team');
+    expect((await articleBySlug(sql, 'choosing-a-decorator', { includeDrafts: true }))?.author_name).toBe('Olready team');
     await expect(setArticleStatus(sql, id, 'published', editor.id)).rejects.toThrow(/few paragraphs/);
     await saveArticle(sql, id, { title: 'Choosing a decorator', excerpt: 'What to ask', body: 'Decor words. '.repeat(40), section: 'vendors', categoryId: null, cityId: null, authorName: 'Meera' }, editor.id);
     await setArticleStatus(sql, id, 'published', editor.id);

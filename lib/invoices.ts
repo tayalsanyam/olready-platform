@@ -3,7 +3,7 @@ import { DomainError, audit } from './db';
 import { OPERATOR } from './legal';
 import { financialYear, gstinState, splitInclusive, stateCode, STATE_CODES } from './gst';
 
-// OLReady issues its own GST tax invoices when an order is paid, and a credit note for each
+// Olready issues its own GST tax invoices when an order is paid, and a credit note for each
 // refund. Numbers run without gaps per financial year; every figure is frozen at issue.
 
 export type Party = { name: string; address: string; gstin: string | null; state: string; state_code: string };
@@ -66,7 +66,7 @@ export async function ensureInvoice(db: Db, orderId: string, actor: string | nul
     city_state_code: string | null; billing_state_code: string | null; billing_pincode: string | null;
   }[]>`
     select o.status, o.amount_inr, o.list_price_inr, o.discount_inr, coalesce(o.buyer_gstin, v.gstin) as buyer_gstin, o.paid_at,
-      coalesce('OLReady ' || p.name, s.name, case when o.wallet_topup_inr is not null then 'OLReady ads wallet top-up' end, 'OLReady service') as product,
+      coalesce('Olready ' || p.name, s.name, case when o.wallet_topup_inr is not null then 'Olready ads wallet top-up' end, 'Olready service') as product,
       case when p.id is not null then 'pack' when o.service_code is not null then 'service' else 'wallet' end as kind,
       o.vendor_id, coalesce(v.legal_name, v.business_name, pr.full_name) as buyer_name, v.billing_address as vendor_address,
       ci.state as city_state, ci.state_code as city_state_code, v.billing_state_code, v.billing_pincode, ci.name as city

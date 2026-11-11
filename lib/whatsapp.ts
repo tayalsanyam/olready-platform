@@ -17,7 +17,7 @@ export const WA_EVENTS: Record<WaEvent, { who: 'bride' | 'vendor' | 'team'; labe
     who: 'bride',
     label: 'Request verified',
     params: ['first name', 'categories'],
-    sample: 'Hi {{1}}, your OLReady request for {{2}} is verified. Vendors can now send you quotes; replies arrive in your OLReady inbox.',
+    sample: 'Hi {{1}}, your Olready request for {{2}} is verified. Vendors can now send you quotes; replies arrive in your Olready inbox.',
   },
   quote_received: {
     who: 'bride',
@@ -29,7 +29,7 @@ export const WA_EVENTS: Record<WaEvent, { who: 'bride' | 'vendor' | 'team'; labe
     who: 'bride',
     label: 'New message for a bride',
     params: ['first name', 'vendor', 'link'],
-    sample: 'Hi {{1}}, {{2}} replied to you on OLReady: {{3}}',
+    sample: 'Hi {{1}}, {{2}} replied to you on Olready: {{3}}',
   },
   vendor_new_lead: {
     who: 'vendor',
@@ -41,7 +41,7 @@ export const WA_EVENTS: Record<WaEvent, { who: 'bride' | 'vendor' | 'team'; labe
     who: 'vendor',
     label: 'New message for a vendor',
     params: ['business', 'bride first name', 'link'],
-    sample: '{{2}} replied to {{1}} on OLReady: {{3}}',
+    sample: '{{2}} replied to {{1}} on Olready: {{3}}',
   },
   quote_accepted: {
     who: 'vendor',
@@ -53,19 +53,19 @@ export const WA_EVENTS: Record<WaEvent, { who: 'bride' | 'vendor' | 'team'; labe
     who: 'bride',
     label: 'Request received',
     params: ['first name', 'categories'],
-    sample: 'Hi {{1}}, OLReady has your request for {{2}}. Our team will call you to confirm the details before vendors see it.',
+    sample: 'Hi {{1}}, Olready has your request for {{2}}. Our team will call you to confirm the details before vendors see it.',
   },
   booking_recorded_bride: {
     who: 'bride',
     label: 'Booking recorded (bride)',
     params: ['first name', 'vendor', 'category'],
-    sample: 'Hi {{1}}, your {{3}} booking with {{2}} is on record with OLReady.',
+    sample: 'Hi {{1}}, your {{3}} booking with {{2}} is on record with Olready.',
   },
   vendor_profile_live: {
     who: 'vendor',
     label: 'Profile live',
     params: ['business', 'link'],
-    sample: '{{1}}, your OLReady profile is approved and live: {{2}}',
+    sample: '{{1}}, your Olready profile is approved and live: {{2}}',
   },
   payment_received: {
     who: 'vendor',
@@ -83,7 +83,7 @@ export const WA_EVENTS: Record<WaEvent, { who: 'bride' | 'vendor' | 'team'; labe
     who: 'vendor',
     label: 'Few enquiries left',
     params: ['business', 'left', 'link'],
-    sample: '{{1}}, you have {{2}} enquiries left on OLReady. Top up so you do not miss the next request: {{3}}',
+    sample: '{{1}}, you have {{2}} enquiries left on Olready. Top up so you do not miss the next request: {{3}}',
   },
   plan_usage_low: {
     who: 'vendor',
@@ -95,19 +95,19 @@ export const WA_EVENTS: Record<WaEvent, { who: 'bride' | 'vendor' | 'team'; labe
     who: 'vendor',
     label: 'Booking recorded (vendor)',
     params: ['business', 'bride first name', 'date'],
-    sample: '{{1}}, your booking with {{2}} for {{3}} is recorded and marked on your OLReady calendar.',
+    sample: '{{1}}, your booking with {{2}} for {{3}} is recorded and marked on your Olready calendar.',
   },
   review_received: {
     who: 'vendor',
     label: 'New review',
     params: ['business', 'bride first name', 'stars', 'link'],
-    sample: '{{1}}, {{2}} reviewed you on OLReady: {{3}} out of 5. Read and reply: {{4}}',
+    sample: '{{1}}, {{2}} reviewed you on Olready: {{3}} out of 5. Read and reply: {{4}}',
   },
   staff_alert: {
     who: 'team',
     label: 'Team alert',
     params: ['what', 'detail', 'link'],
-    sample: 'OLReady: {{1}}. {{2}} {{3}}',
+    sample: 'Olready: {{1}}. {{2}} {{3}}',
   },
 };
 

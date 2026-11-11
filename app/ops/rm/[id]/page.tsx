@@ -106,7 +106,7 @@ export default async function RmBride({ params, searchParams }: P) {
         </Card>
         <Card className="lg:col-span-2">
           <h2 className="font-semibold">Notes</h2>
-          <p className="hint">Internal to the OLReady team.</p>
+          <p className="hint">Internal to the Olready team.</p>
           {e.status === 'active' ? (
             <form action={rmAddNote} className="mt-2 flex gap-2">
               <input type="hidden" name="id" value={e.id} />

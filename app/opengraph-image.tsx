@@ -1,6 +1,6 @@
 import { ogCard, OG_SIZE } from '@/lib/og';
 
-export const alt = 'OLReady: wedding vendors we have checked first';
+export const alt = 'Olready: wedding vendors we have checked first';
 export const size = OG_SIZE;
 export const contentType = 'image/png';
 

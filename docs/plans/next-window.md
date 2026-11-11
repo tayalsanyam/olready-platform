@@ -1,6 +1,6 @@
 # Next window: bride AI helper, then full testing
 
-**Status (3 Nov 2026): done.** Ask OLReady is built (defaults taken: name "Ask OLReady", signed-in only, sponsored vendors never influence answers, family members included). Testing results: `docs/test-matrix.md` (10 categories × 14 flows, all pass), `docs/load-test.md` (every query under 300 ms), `tests/e2e/sweep.mjs` (all public pages, no contact leaks, 7-role access matrix), `tests/e2e/walkthrough.mjs` (37/37). Still open: the live 50-question evaluation and real payments, both needing production keys, and the real-vendor pilot (H).
+**Status (3 Nov 2026): done.** Ask Olready is built (defaults taken: name "Ask Olready", signed-in only, sponsored vendors never influence answers, family members included). Testing results: `docs/test-matrix.md` (10 categories × 14 flows, all pass), `docs/load-test.md` (every query under 300 ms), `tests/e2e/sweep.mjs` (all public pages, no contact leaks, 7-role access matrix), `tests/e2e/walkthrough.mjs` (37/37). Still open: the live 50-question evaluation and real payments, both needing production keys, and the real-vendor pilot (H).
 
 Order of work: **1. validation pass on what exists** (so we build on solid ground), **2. bride AI helper**, **3. full test matrix including every vendor category**, **4. real-vendor pilot**. Mobile apps come after the web is complete.
 
@@ -9,7 +9,7 @@ Order of work: **1. validation pass on what exists** (so we build on solid groun
 ## 1. Bride AI planning helper
 
 ### What it is
-A chat helper for brides and their family inside OLReady, at `/me/assistant`, with an "Ask OLReady" entry on My wedding, listing pages and vendor profiles. It answers from OLReady's own data and the bride's own wedding, and can do things for her with her confirmation.
+A chat helper for brides and their family inside Olready, at `/me/assistant`, with an "Ask Olready" entry on My wedding, listing pages and vendor profiles. It answers from Olready's own data and the bride's own wedding, and can do things for her with her confirmation.
 
 ### What it can do (Claude tool use; each tool is a server function over our data)
 | Tool | Reads or writes | Notes |
@@ -53,7 +53,7 @@ A chat helper for brides and their family inside OLReady, at `/me/assistant`, wi
 - Run against the seeded demo data and against a copy with real vendors.
 
 ### Decisions needed from Sanyam
-1. Name ("Ask OLReady" as a placeholder).
+1. Name ("Ask Olready" as a placeholder).
 2. Logged-out visitors: none, or a small limit (e.g. 5 questions) before sign-in.
 3. Sponsored vendors in AI answers: excluded from ranking (proposal) or shown in a labelled separate line.
 4. Family members: same helper with the same data access they already have (proposal: yes).
@@ -107,7 +107,7 @@ Seed 5,000 vendors, 50,000 leads, 200,000 messages. Listing, profile and Ops dat
 Real artists CSV and plans CSV from Laravel through the dry runs, then into a staging copy; spot-check 20 artists and every running plan.
 
 ### H. Real-vendor pilot (after A–G)
-- Two to three vendors per category: existing OLReady artists for beauty, new sign-ups for the others. Ten to fifteen real brides through the full flow with Ops verifying.
+- Two to three vendors per category: existing Olready artists for beauty, new sign-ups for the others. Ten to fifteen real brides through the full flow with Ops verifying.
 - Script per vendor, a short feedback form, and a 30-minute call at the end of week 1.
 - Success: every vendor unlocks and quotes at least once; no contact-detail leaks; brides rate the request-to-quote flow 4/5 or better; zero payment or invoice errors.
 

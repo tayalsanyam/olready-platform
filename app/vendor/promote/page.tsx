@@ -25,7 +25,7 @@ export const metadata = { title: 'Promote', robots: { index: false } };
 type P = { searchParams: Promise<Record<string, string | string[]>> };
 
 const gatewayLabel: Record<string, string> = { razorpay: 'Razorpay (UPI, cards)', payu: 'PayU', manual: 'Bank transfer', test: 'Test payment (dev only)' };
-const REASON: Record<string, string> = { topup: 'Top-up', boost_visit: 'Boost visits', banner: 'Banner', banner_refund: 'Banner refund', adjustment: 'Adjustment by OLReady' };
+const REASON: Record<string, string> = { topup: 'Top-up', boost_visit: 'Boost visits', banner: 'Banner', banner_refund: 'Banner refund', adjustment: 'Adjustment by Olready' };
 const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 const fmt = (d: Date) => new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }).format(d);
 
@@ -156,7 +156,7 @@ export default async function Promote({ searchParams }: P) {
                 <li key={b.id} className="rounded-[12px] border border-[var(--color-line)] p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-semibold">{b.placements.map((p) => PLACEMENTS[p]?.split(',')[0]).join(' · ')}</span>
-                    <Badge tone={b.status === 'active' ? 'ok' : b.status === 'paused' ? 'warn' : 'plain'}>{b.paused_by_ops ? 'paused by OLReady' : b.status}</Badge>
+                    <Badge tone={b.status === 'active' ? 'ok' : b.status === 'paused' ? 'warn' : 'plain'}>{b.paused_by_ops ? 'paused by Olready' : b.status}</Badge>
                   </div>
                   <p className="mt-1 text-[var(--color-muted)]">
                     {inr(b.daily_budget_inr)} a day · from {fmtDate(b.starts_on)}

@@ -151,7 +151,7 @@ export default async function Budget({ searchParams }: P) {
 
       <Card className="mt-6">
         <h2 className="font-semibold">Other costs</h2>
-        <p className="hint">Outfits, jewellery, gifts, travel, or a vendor you booked outside OLReady.</p>
+        <p className="hint">Outfits, jewellery, gifts, travel, or a vendor you booked outside Olready.</p>
         {b.other.length ? (
           <ul className="mt-3 divide-y divide-[var(--color-line)] text-sm">
             {b.other.map((o) => (

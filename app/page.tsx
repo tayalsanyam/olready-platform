@@ -66,11 +66,11 @@ export default async function Home() {
           {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
-            name: 'OLReady',
+            name: 'Olready',
             url: siteUrl(),
             potentialAction: { '@type': 'SearchAction', target: `${siteUrl()}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
           },
-          { '@context': 'https://schema.org', '@type': 'Organization', name: 'OLReady', url: siteUrl(), logo: `${siteUrl()}/icon.png` },
+          { '@context': 'https://schema.org', '@type': 'Organization', name: 'Olready', url: siteUrl(), logo: `${siteUrl()}/icon.png` },
         ]}
       />
       <section className="-mt-6 bg-[var(--color-tint)]">
@@ -221,7 +221,7 @@ export default async function Home() {
             {[
               { icon: <IconChat size={22} />, t: 'Tell us once', d: 'Tick every vendor you still need: venue, caterer, makeup, photos, decor. One form, not ten.' },
               { icon: <IconShield size={22} />, t: 'We call to check', d: 'A real person from our team confirms your date, city and budget. Only then do vendors see your request.' },
-              { icon: <IconPhoneOff size={22} />, t: 'Compare and choose', d: 'Verified vendors message and quote you on OLReady. Your number stays private until you share it.' },
+              { icon: <IconPhoneOff size={22} />, t: 'Compare and choose', d: 'Verified vendors message and quote you on Olready. Your number stays private until you share it.' },
             ].map((x, i) => (
               <li key={x.t} className="relative border-t border-white/20 pt-5">
                 <span className="figure absolute -top-[0.9rem] left-0 bg-[var(--color-ink)] pr-3 text-2xl text-[var(--color-pink)]">{i + 1}</span>
@@ -241,7 +241,7 @@ export default async function Home() {
 
       <Container className="reveal mt-14">
         <h2 className="text-xl font-semibold">Plan the rest of it here too</h2>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">Free with your OLReady account.</p>
+        <p className="mt-1 text-sm text-[var(--color-muted)]">Free with your Olready account.</p>
         <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1.15fr] md:grid-rows-2">
           {invite ? (
             <Link href="/invitations" className="group relative overflow-hidden rounded-[22px] bg-[var(--color-pink-soft)] p-5 md:row-span-2">
@@ -253,12 +253,12 @@ export default async function Home() {
             </Link>
           ) : null}
           <Link href="/me/assistant" className="group rounded-[22px] border border-[var(--color-line)] p-5 hover:border-[var(--color-pink)]">
-            <p className="font-semibold group-hover:text-[var(--color-pink-deep)]">Ask OLReady, in your own words</p>
+            <p className="font-semibold group-hover:text-[var(--color-pink-deep)]">Ask Olready, in your own words</p>
             <div className="mt-4 space-y-2 text-sm">
               <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-[var(--color-pink-soft)] px-3 py-2">Venue in Zirakpur for 400 guests, under ₹1,500 a plate?</p>
               <p className="w-fit max-w-[90%] rounded-2xl rounded-bl-md bg-[var(--color-tint)] px-3 py-2">I found three that fit. Want me to shortlist them and ask for quotes?</p>
             </div>
-            <p className="mt-3 text-xs text-[var(--color-muted)]">Answers come from real OLReady listings. English, Hindi or Hinglish.</p>
+            <p className="mt-3 text-xs text-[var(--color-muted)]">Answers come from real Olready listings. English, Hindi or Hinglish.</p>
           </Link>
           <Link href="/ideas" className="group grid grid-cols-[1fr_auto] items-center gap-4 rounded-[22px] border border-[var(--color-line)] p-5 hover:border-[var(--color-pink)]">
             <div>

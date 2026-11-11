@@ -1,5 +1,5 @@
 -- Chat safety: messages are flagged automatically (OTPs, card details, abuse, paying outside
--- OLReady, unfamiliar links) or reported by the other side; Ops hide them or clear them.
+-- Olready, unfamiliar links) or reported by the other side; Ops hide them or clear them.
 alter table mkt.messages add column if not exists flags text[] not null default '{}';
 alter table mkt.messages add column if not exists review_status text not null default 'none'
   check (review_status in ('none','flagged','cleared','hidden'));

@@ -88,7 +88,7 @@ export default async function ProfilePage({ searchParams }: P) {
           <AttributeInputs fields={fields} values={vendor.attributes} />
         </Card>
         <Card className="grid gap-4 sm:grid-cols-2">
-          <p className="hint sm:col-span-2">Private to OLReady staff. Brides never see these on your page.</p>
+          <p className="hint sm:col-span-2">Private to Olready staff. Brides never see these on your page.</p>
           <Field label="Phone">
             <input name="phone" className="input" defaultValue={vendor.phone ?? ''} />
           </Field>

@@ -1,5 +1,5 @@
 -- Vendor date availability. Vendors mark days booked or closed (whole day, day or evening; per hall
--- for venues); OLReady bookings fill dates in on their own; a Google Calendar can be imported.
+-- for venues); Olready bookings fill dates in on their own; a Google Calendar can be imported.
 -- Capacity is in half-days: a full-day booking uses 2, a day or evening booking 1.
 
 alter table mkt.vendors

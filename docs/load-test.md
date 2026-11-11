@@ -31,7 +31,7 @@ Run on 2026-11-03 against a local Postgres 16 with 5,000 vendors, 50,000 leads, 
 | Ops data | Conversations, searched and filtered | 79.3 | 50 |
 | Ops data | Reviews, page 1 | 34.9 | 50 |
 | Ops data | Reviews, searched and filtered | 137.6 | 50 |
-| Ask OLReady | search_vendors tool | 3.2 | 1 |
-| Ask OLReady | price_guide tool | 61.2 | 1 |
+| Ask Olready | search_vendors tool | 3.2 | 1 |
+| Ask Olready | price_guide tool | 61.2 | 1 |
 
 Every query is under target.

@@ -71,8 +71,8 @@ describe.skipIf(!run)('load', () => {
       await time('Ops data', `${d.label}, searched and filtered`, () => runDataset(db, d, { q: 'Bride 4', city: 'mohali', from: '2026-01-01' }));
     }
     const ctx = { db, profile: { id: bride.id, role: 'bride', full_name: 'Bride' }, wedding: null, threadId: '', slugs: new Set<string>(), actions: [] as string[] };
-    await time('Ask OLReady', 'search_vendors tool', () => runTool(ctx, 'search_vendors', { category: 'venues', city: 'mohali', guests: 400, max_price: 2000 }));
-    await time('Ask OLReady', 'price_guide tool', () => runTool(ctx, 'price_guide', { category: 'venues', city: 'mohali' }));
+    await time('Ask Olready', 'search_vendors tool', () => runTool(ctx, 'search_vendors', { category: 'venues', city: 'mohali', guests: 400, max_price: 2000 }));
+    await time('Ask Olready', 'price_guide tool', () => runTool(ctx, 'price_guide', { category: 'venues', city: 'mohali' }));
 
     const [counts] = await db`select (select count(*) from mkt.vendors)::int v, (select count(*) from mkt.leads)::int l, (select count(*) from mkt.lead_needs)::int n,
       (select count(*) from mkt.unlocks)::int u, (select count(*) from mkt.messages)::int m, (select count(*) from mkt.reviews)::int r`;

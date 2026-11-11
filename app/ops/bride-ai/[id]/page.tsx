@@ -5,7 +5,7 @@ import { requireRole } from '@/lib/auth';
 import { Badge, Card, PageTitle } from '@/components/ui';
 import { fmtDate, fmtDateTime, fmtDay, fmtLongDate } from '@/lib/dates';
 
-export const metadata = { title: 'Ask OLReady chat' };
+export const metadata = { title: 'Ask Olready chat' };
 type P = { params: Promise<{ id: string }> };
 
 type Row = { id: string; role: 'user' | 'assistant'; text: string; content: unknown; tools_used: string[]; flags: string[]; created_at: Date };
@@ -24,7 +24,7 @@ export default async function BrideAiThread({ params }: P) {
     <>
       <p className="mb-2 text-sm">
         <Link href="/ops/bride-ai" className="text-[var(--color-muted)]">
-          Ask OLReady
+          Ask Olready
         </Link>
       </p>
       <PageTitle title={t.title} sub={`${t.bride.split(' ')[0]} · started ${fmtDate(t.created_at)}`} />

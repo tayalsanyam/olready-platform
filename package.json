@@ -2,7 +2,7 @@
   "name": "olready-platform",
   "version": "0.1.0",
   "private": true,
-  "description": "OLReady multi-category wedding vendor marketplace with verified leads",
+  "description": "Olready multi-category wedding vendor marketplace with verified leads",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
