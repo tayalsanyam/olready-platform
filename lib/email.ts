@@ -36,7 +36,8 @@ export type EmailTemplate =
   | 'plan_usage_low'
   | 'review_received'
   | 'dispute_update'
-  | 'staff_alert';
+  | 'staff_alert'
+  | 'login_code';
 
 const site = () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
@@ -54,7 +55,7 @@ export async function queueEmail(
     on conflict (dedupe_key) do nothing`;
 }
 
-function render(template: EmailTemplate, p: Record<string, string>) {
+export function render(template: EmailTemplate, p: Record<string, string>) {
   switch (template) {
     case 'post_event_feedback':
       return {
@@ -233,6 +234,11 @@ function render(template: EmailTemplate, p: Record<string, string>) {
                 ? 'We looked at your proof and the review stays published. You can still reply to it publicly.'
                 : 'The time to send proof has passed, so the review stays published.'
         }\n\n${site()}/vendor/reviews\n\nOlready`,
+      };
+    case 'login_code':
+      return {
+        subject: `${p.code} is your Olready code`,
+        text: `Your Olready sign-in code is\n\n${p.code}\n\nEnter it on the page where you asked for it, or open this link on the same device:\n${p.link}\n\nIt works once and expires in an hour. If you did not ask for it, ignore this email; nobody can sign in without it.\n\nOlready`,
       };
     case 'staff_alert':
       return { subject: `Olready: ${p.what}`, text: `${p.what}\n${p.detail}\n\n${p.link}` };

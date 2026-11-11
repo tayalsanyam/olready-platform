@@ -19,8 +19,10 @@ try {
     console.log('Demo data already present; run db:reset to start over');
     process.exit(0);
   }
+  // Demo people have a mobile on file, as real accounts must after their first sign-in.
+  let demoPhone = 9800000000;
   const person = (email, full_name, role) =>
-    id(sql`insert into mkt.profiles (email, full_name, role) values (${email}, ${full_name}, ${role}) returning id`);
+    id(sql`insert into mkt.profiles (email, full_name, role, phone) values (${email}, ${full_name}, ${role}, ${`+91${++demoPhone}`}) returning id`);
   const admin = await person('admin@demo.olready.in', 'Asha (admin)', 'admin');
   await person('ops@demo.olready.in', 'Rohit (ops)', 'ops');
   await person('content@demo.olready.in', 'Meera (content)', 'content');

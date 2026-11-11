@@ -16,7 +16,7 @@ type Props = { signedIn: boolean; role: string | null; whatsapp: string; ai: boo
 type Turn = { role: 'user' | 'assistant'; text: string };
 type Saved = { slug: string; name: string };
 
-const QUIET = /^\/(ops|vendor|me|mfa|pay|receipt|login|enquire|claim|review|rsvp|i|w|invite|dev-login|widget)(\/|$)/;
+const QUIET = /^\/(ops|vendor|me|mfa|welcome|pay|receipt|login|enquire|claim|review|rsvp|i|w|invite|dev-login|widget)(\/|$)/;
 const DAY = 864e5;
 
 const store = {
@@ -203,6 +203,29 @@ export function Capture(p: Props) {
     document.addEventListener('submit', onSubmit, true);
     return () => document.removeEventListener('submit', onSubmit, true);
   }, [visitor, paintHearts]);
+
+  // "Ask Olready" and "Help me choose" links lead to the signed-in helper. A visitor gets the chat here instead of a sign-in wall.
+  const askRef = useRef(ask);
+  askRef.current = ask;
+  useEffect(() => {
+    if (!visitor || !p.ai) return;
+    const words = (slug: string | null) => (slug ?? '').replace(/-demo$/, '').replace(/-/g, ' ').trim();
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
+      const a = (e.target as Element | null)?.closest?.('a[href^="/me/assistant"]') as HTMLAnchorElement | null;
+      if (!a) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const u = new URL(a.href, location.href);
+      const [cat, city, vendor] = [words(u.searchParams.get('category')), words(u.searchParams.get('city')), words(u.searchParams.get('vendor'))];
+      setSlip('hidden');
+      setPanel('chat');
+      if (cat && city) void askRef.current(`Help me choose ${cat} in ${city}. What should I look at?`);
+      else if (vendor) void askRef.current(`Tell me about ${vendor}. Are they a good fit, and who else is similar?`);
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, [visitor, p.ai]);
 
   useEffect(() => {
     if (!toast || toast.ask) return;

@@ -169,3 +169,13 @@ Everything ends in a mobile number in **Ops > Numbers to call** (`mkt.captures`)
 - **Saving before sign-in**: a heart is kept in her browser and she is asked for her number to keep the list. After she signs in and sets up her wedding, the saved vendors join her shortlist (`MergeSaved`).
 - **Manners**: one prompt per visit; the card not again for 7 days, the leaving prompt for 14; nothing for 30 days after she leaves a number or sends a request; nothing on dashboards, sign-in, the request form, or guests' invite and RSVP pages; all switchable in Settings.
 - **Cookies**: `olr_v` (a random code for the chat limit) joins the sign-in cookies and `olr_town`. No advertising or analytics cookies. The privacy page says so.
+
+## Signing in (November 2026)
+
+- **One door for everyone:** `/login`. Brides and vendors pick a tab; staff use the same page (footer link *Team sign-in*). What an account can do comes from its role, not from the door.
+- **The code email is ours.** With `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` set, Supabase only makes the code (`auth.admin.generateLink`) and the site sends it through Resend from `EMAIL_FROM`: a six-digit code plus a link to `NEXT_PUBLIC_SITE_URL/auth/confirm`. If Resend refuses (for example the sending domain is not verified), Supabase's built-in email is used instead and the reason appears in Ops > Errors. `lib/signin.ts`.
+- **Supabase dashboard, still worth setting** so the fallback email is right too: Authentication > URL Configuration > Site URL = the live address (not localhost), and add `<live address>/auth/confirm` to Redirect URLs; in the Magic Link and Confirm signup templates show `{{ .Token }}`.
+- **After every sign-in** the visitor passes `/welcome`: staff go to Ops; a bride or vendor with no mobile number on file is asked for it once (a bride with no request yet also lands in Numbers to call as *Signed up*). `/me` and `/vendor` send anyone without a number back there.
+- **Admins:** emails in `ADMIN_EMAILS` become admin when they sign in. An admin adds teammates in Ops > Staff > *Add someone* (email and role); that person then signs in at `/login` with the same email.
+- **Authenticator:** Ops > My authenticator (or `/mfa`) shows a QR code for Google Authenticator, Authy or Microsoft Authenticator. Admins can make it compulsory in Settings and reset someone's in Ops > Staff.
+- **Before an account:** every *Ask Olready* and *Help me choose* link opens the visitor chat for someone not signed in. She gets `visitor_ai_free` answers (3) before her number is asked for.

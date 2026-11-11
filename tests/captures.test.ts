@@ -58,6 +58,7 @@ describe('a visitor leaves a number', () => {
 describe('the chat helper for visitors', () => {
   it('answers two questions, then asks for her number, and keeps to its limits', async () => {
     process.env.ANTHROPIC_API_KEY = 'test';
+    await sql`update mkt.settings set value = '2' where key = 'visitor_ai_free'`;
     const bodies: { tools: { name: string }[]; system: { text: string }[]; messages: unknown[] }[] = [];
     vi.stubGlobal('fetch', async (_url: string, init: { body: string }) => {
       bodies.push(JSON.parse(init.body));

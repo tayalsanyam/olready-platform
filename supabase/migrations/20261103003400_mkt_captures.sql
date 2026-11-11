@@ -40,7 +40,7 @@ alter table mkt.visitor_chats enable row level security;
 
 insert into mkt.settings (key, value) values
   ('visitor_ai_on', '1'),
-  ('visitor_ai_free', '2'),
+  ('visitor_ai_free', '3'),
   ('visitor_ai_per_day', '8'),
   ('visitor_ai_site_day', '1500'),
   ('capture_prompts_on', '1'),

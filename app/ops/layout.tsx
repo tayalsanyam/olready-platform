@@ -96,6 +96,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
             items: [
               ...(admin ? [{ href: '/ops/catalog', label: 'Categories' }] : []),
               { href: '/ops/places', label: 'Places' },
+              { href: '/mfa?next=/ops', label: 'My authenticator' },
               ...(admin || p.role === 'ops' ? [{ href: '/ops/errors', label: 'Errors', count: errors }] : []),
               ...(admin
                 ? [

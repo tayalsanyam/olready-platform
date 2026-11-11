@@ -7,7 +7,7 @@ import { createEnquiry, normalisePhone } from './leads';
  * to call until someone rings and turns it into a request, or closes it.
  */
 
-export const CAPTURE_SOURCES = { slip: 'Call-me card', exit: 'Leaving prompt', chat: 'Chat helper', shortlist: 'Saved vendors', dock: 'Call button' } as const;
+export const CAPTURE_SOURCES = { slip: 'Call-me card', exit: 'Leaving prompt', chat: 'Chat helper', shortlist: 'Saved vendors', dock: 'Call button', signup: 'Signed up' } as const;
 export type CaptureSource = keyof typeof CAPTURE_SOURCES;
 
 export type CaptureInput = {
@@ -137,7 +137,7 @@ export async function convertCapture(sql: Sql, id: string, input: { name: string
 export async function captureConfig(db: Db) {
   const [on, seconds, views, ai, free] = await Promise.all([
     getSetting<number>(db, 'capture_prompts_on', 1), getSetting<number>(db, 'capture_prompt_seconds', 45), getSetting<number>(db, 'capture_prompt_views', 3),
-    getSetting<number>(db, 'visitor_ai_on', 1), getSetting<number>(db, 'visitor_ai_free', 2),
+    getSetting<number>(db, 'visitor_ai_on', 1), getSetting<number>(db, 'visitor_ai_free', 3),
   ]);
   return { prompts: Boolean(on), seconds: Math.max(10, seconds), views: Math.max(1, views), ai: Boolean(ai) && Boolean(process.env.ANTHROPIC_API_KEY), free };
 }

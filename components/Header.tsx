@@ -196,6 +196,7 @@ export async function Footer() {
             <Link href="/terms">Terms</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/refunds">Refunds</Link>
+            <Link href="/login?next=/ops">Team sign-in</Link>
           </nav>
         </div>
       </Container>

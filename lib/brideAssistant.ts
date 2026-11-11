@@ -673,7 +673,7 @@ type StoredTurn = { role: 'user' | 'assistant'; text: string };
 /** How many questions this visitor may still ask today, and whether a number is needed first. */
 export async function visitorAllowance(db: Db, visitor: string, ipKey: string | null) {
   const [on, free, perDay, siteDay] = await Promise.all([
-    getSetting<number>(db, 'visitor_ai_on', 1), getSetting<number>(db, 'visitor_ai_free', 2),
+    getSetting<number>(db, 'visitor_ai_on', 1), getSetting<number>(db, 'visitor_ai_free', 3),
     getSetting<number>(db, 'visitor_ai_per_day', 8), getSetting<number>(db, 'visitor_ai_site_day', 1500),
   ]);
   const [u] = await db<{ mine: number; ip: number; all: number; known: boolean }[]>`
