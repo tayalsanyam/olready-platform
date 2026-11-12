@@ -1,3 +1,4 @@
+import { offersFor, priceLine } from '@/lib/offers';
 import Link from 'next/link';
 import { after } from 'next/server';
 import { recordView, visitorKey } from '@/lib/analytics';
@@ -69,6 +70,7 @@ export default async function VendorPage({ params, searchParams }: P) {
   }
   // Contact details never reach the bride's browser.
   const v = publicVendor(raw);
+  const offers = await offersFor(sql, raw.id);
   const [fields, media, allReviews, weddings, hearts, spaces, similar, demand] = await Promise.all([
     fieldsFor(sql, v.category_id),
     vendorMedia(sql, v.id),
@@ -92,10 +94,21 @@ export default async function VendorPage({ params, searchParams }: P) {
   const faq = vendorFaq(raw, fields);
   const avg = (k: 'rating_artist' | 'rating_service') =>
     allReviews.length ? allReviews.reduce((a, r) => a + r[k], 0) / allReviews.length : null;
+  // What this vendor says about their own work, under the same headings as their form. A "No" is left out: silence reads better than a list of what is missing.
+  // The form speaks to the vendor ("Brands in your kit"); the page speaks to the bride about them.
+  const theirs = (t: string) =>
+    t === 'What she gets' ? 'What you get' : t.replace(/^Your\b/, 'Their').replace(/\byour (kit|team)\b/, 'their $1').replace(/\byou\b/g, 'they');
   const facts = fields
-    .map((f) => ({ label: f.label, shown: displayValue(f, v.attributes[f.key]) }))
-    .filter((f): f is { label: string; shown: string } => f.shown != null);
-  if (v.years_experience) facts.push({ label: 'Experience', shown: `${v.years_experience} years` });
+    .map((f) => {
+      const val = v.attributes[f.key];
+      if (val === undefined || val === null || val === '' || val === false || (Array.isArray(val) && !val.length)) return null;
+      const chips = f.type === 'multiselect' ? (val as string[]).map((x) => f.options.find((o) => o.value === x)?.label ?? x) : null;
+      const pct = /, %$/.test(f.label);
+      return { label: theirs(f.label.replace(/, %$/, '')), section: theirs(f.section ?? 'About their work'), yes: f.type === 'bool', chips, shown: `${displayValue(f, val) ?? ''}${pct ? '%' : ''}` };
+    })
+    .filter((f): f is NonNullable<typeof f> => f != null);
+  if (v.years_experience) facts.push({ label: 'Experience', section: facts[0]?.section ?? 'About their work', yes: false, chips: null, shown: `${v.years_experience} years` });
+  const sections = [...new Set(facts.map((f) => f.section))];
   // Gallery: cover first, then up to four portfolio photos.
   const side = media.filter((m) => m.url !== v.cover_image_url).slice(0, 4);
   const quoteHref = `/enquire?vendor=${v.slug}`;
@@ -228,16 +241,71 @@ export default async function VendorPage({ params, searchParams }: P) {
               <DateCheckBox action={`/v/${v.slug}`} date={asked} checks={checks} id="date-main" />
             </div>
 
-            {facts.length ? (
-              <dl className="mt-6 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
-                {facts.map((f) => (
-                  <div key={f.label} className="rounded-[12px] bg-[var(--color-tint)] p-3">
-                    <dt className="text-[var(--color-muted)]">{f.label}</dt>
-                    <dd className="mt-0.5 font-semibold">{f.shown}</dd>
-                  </div>
-                ))}
-              </dl>
+            {offers.length ? (
+              <section className="mt-8" aria-labelledby="prices">
+                <h2 id="prices" className="text-xl font-semibold">
+                  Price list
+                </h2>
+                <ul className="mt-3 divide-y divide-[var(--color-line)] rounded-2xl border border-[var(--color-line)]">
+                  {offers.map((o) => (
+                    <li key={o.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 px-4 py-3">
+                      <span className="min-w-0">
+                        <span className="font-medium">{o.name}</span>
+                        {o.details ? <span className="hint block">{o.details}</span> : null}
+                      </span>
+                      <span className="figure whitespace-nowrap text-[var(--color-pink-deep)]">{priceLine(o)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="hint mt-2">Prices are the vendor&apos;s own and can change with the date, the travel and what you add. Your quote is the final word.</p>
+              </section>
             ) : null}
+
+            {sections.map((sec) => {
+              const mine = facts.filter((f) => f.section === sec);
+              const ticks = mine.filter((f) => f.yes);
+              const rest = mine.filter((f) => !f.yes && !f.chips);
+              return (
+                <section key={sec} className="mt-8">
+                  <h2 className="text-xl font-semibold">{sec}</h2>
+                  {mine.filter((f) => f.chips).map((f) => (
+                    <div key={f.label} className="mt-3">
+                      <h3 className="text-sm text-[var(--color-muted)]">{f.label}</h3>
+                      <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                        {f.chips!.map((c) => (
+                          <li key={c} className="rounded-full bg-[var(--color-pink-soft)] px-3 py-1 text-sm font-medium text-[var(--color-pink-deep)]">
+                            {c}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                  {ticks.length ? (
+                    <ul className="mt-3 grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-2">
+                      {ticks.map((f) => (
+                        <li key={f.label} className="flex items-start gap-2">
+                          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden className="mt-px shrink-0 text-[var(--color-ok)]">
+                            <circle cx="10" cy="10" r="9" fill="currentColor" opacity=".15" />
+                            <path d="M6 10.4l2.7 2.7L14.2 7.6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          {f.label}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {rest.length ? (
+                    <dl className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
+                      {rest.map((f) => (
+                        <div key={f.label} className="rounded-[12px] bg-[var(--color-tint)] p-3">
+                          <dt className="text-[var(--color-muted)]">{f.label}</dt>
+                          <dd className="mt-0.5 font-semibold">{f.shown}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
+                </section>
+              );
+            })}
 
             {spaces.length ? (
               <section className="mt-8">

@@ -84,6 +84,41 @@ try {
       await sql`insert into mkt.credit_ledger (vendor_id, credit_kind, delta, reason, note) values (${v}, 'topup', 10, 'adjustment', 'demo credits')`;
     }
   }
+  // Plans in every state the Ops vendor book groups by, on vendors the walkthrough never touches.
+  const plan = async (name, code, status, startDays, endDays, used) => {
+    const [pk] = await sql`select id, credits from mkt.packs where code = ${code}`;
+    await sql`insert into mkt.vendor_subscriptions (vendor_id, pack_id, status, starts_at, ends_at)
+      select id, ${pk.id}, ${status}, ${status === 'pending_contract' ? null : sql`now() + ${startDays} * interval '1 day'`},
+        ${status === 'pending_contract' ? null : sql`now() + ${endDays} * interval '1 day'`} from mkt.vendors where slug = ${slugs[name]}`;
+    if (status === 'active') {
+      await sql`insert into mkt.credit_ledger (vendor_id, credit_kind, delta, reason, note)
+        select id, 'plan', ${pk.credits - used}, 'adjustment', 'demo plan' from mkt.vendors where slug = ${slugs[name]}`;
+    }
+  };
+  await plan('Shubh Vivah Planners', 'phoenix', 'active', -40, 140, 26); // on a plan, on pace
+  await plan('Zari Lane Couture', 'pro', 'active', -78, 12, 9); // ending soon and behind
+  await plan('Sangeet Sound Co', 'pro', 'active', -45, 45, 4); // behind on usage
+  await plan('Kundan Kothi Jewellers', 'pro', 'expired', -120, -30, 0); // lapsed
+  await sql`update mkt.vendors set created_at = now() - interval '200 days', verified_at = case when verified_at is null then null else now() - interval '190 days' end
+    where slug = any(${['Shubh Vivah Planners', 'Zari Lane Couture', 'Kundan Kothi Jewellers', 'Rosewood Banquets', 'Tandoor Tales Catering', 'Frames & Phere'].map((n) => slugs[n])})`;
+
+  // What each trade sells, in its own words: a price list and the details brides ask about.
+  const detail = {
+    'Glow by Kirti': [{ specialities: ['bridal', 'engagement_or_roka'], looks: ['soft_glam', 'traditional_bridal'], brands: ['mac', 'huda_beauty', 'charlotte_tilbury'], skin_prep: true, lashes: true, draping: true, touch_ups: false, team_size: 3, advance_percent: 30 },
+      [['Bridal makeup, HD', 18000, 'event', false, 'Skin prep, lashes, hairstyling and draping'], ['Bridal makeup, airbrush', 25000, 'event', false, 'Everything in HD plus an airbrush base'], ['Engagement or roka look', 12000, 'event', false, ''], ['Family and guests', 3500, 'person', true, 'Makeup and a simple hairstyle']]],
+    'Frames & Phere': [{}, [['Wedding day, photo and film', 85000, 'day', false, 'Two photographers, one cinematographer'], ['Pre-wedding shoot', 35000, 'event', true, 'Half day, one location in the Tricity'], ['Album, 40 sheets', 18000, 'piece', false, '']]],
+    'Marigold Decor Co': [{}, [['Mandap with fresh flowers', 120000, 'event', true, ''], ['Haldi or mehendi setup', 45000, 'event', true, 'Seating, backdrop and marigold strings']]],
+    'Tandoor Tales Catering': [{}, [['Vegetarian menu', 850, 'plate', true, 'Six starters, eight mains, three desserts'], ['Non-vegetarian menu', 1050, 'plate', true, ''], ['Live chaat and tandoor counters', 150, 'plate', false, 'Added to either menu']]],
+  };
+  for (const [name, [attrs, lines]] of Object.entries(detail)) {
+    if (!slugs[name]) continue;
+    await sql`update mkt.vendors set attributes = attributes || ${sql.json(attrs)} where slug = ${slugs[name]}`;
+    for (const [n, [item, price, unit, onwards, details]] of lines.entries()) {
+      await sql`insert into mkt.vendor_offers (vendor_id, name, price_inr, unit, onwards, details, sort)
+        select id, ${item}, ${price}, ${unit}, ${onwards}, ${details}, ${n} from mkt.vendors where slug = ${slugs[name]}`;
+    }
+  }
+
   // Work photos (original abstract placeholders) for every demo vendor except Glow by Kirti,
   // whose owner uploads photos during the walkthrough. Tags put them into the ideas gallery.
   const demoTags = {

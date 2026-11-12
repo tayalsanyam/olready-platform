@@ -160,7 +160,7 @@ No outside service. Every crash is stored in `mkt.error_events`, grouped by what
 
 ## Reaching visitors who are not signed in (November 2026)
 
-Everything ends in a mobile number in **Ops > Numbers to call** (`mkt.captures`), with the page she was on, the town and service it suggests, vendors she saved and her chat. The team alert list hears. After the call, *Start request* turns it into a normal request with her saved vendors as her picks; the lead's campaign records which prompt it came from.
+Everything ends in a mobile number in **Ops > Leads > Numbers to call** (`mkt.captures`), with the page she was on, the town and service it suggests, vendors she saved and her chat. The team alert list hears. After the call, *Start request* turns it into a normal request with her saved vendors as her picks; the lead's campaign records which prompt it came from.
 
 - **Chat helper** (`components/Capture.tsx`, `/api/public/ask`, `askVisitor`): Ask Olready with read-only lookups for anyone. After `visitor_ai_free` questions it asks for her number, then continues. Limits: `visitor_ai_per_day` per visitor, four times that per network, `visitor_ai_site_day` across the site. Chats are kept 30 days unless a number was left.
 - **WhatsApp button**: opens a chat with the team's number, with the page she is on in the message.
@@ -179,3 +179,10 @@ Everything ends in a mobile number in **Ops > Numbers to call** (`mkt.captures`)
 - **Admins:** emails in `ADMIN_EMAILS` become admin when they sign in. An admin adds teammates in Ops > Staff > *Add someone* (email and role); that person then signs in at `/login` with the same email.
 - **Authenticator:** Ops > My authenticator (or `/mfa`) shows a QR code for Google Authenticator, Authy or Microsoft Authenticator. Admins can make it compulsory in Settings and reset someone's in Ops > Staff.
 - **Before an account:** every *Ask Olready* and *Help me choose* link opens the visitor chat for someone not signed in. She gets `visitor_ai_free` answers (3) before her number is asked for.
+
+## One place for leads, one for vendors, and trade-specific profiles (November 2026)
+
+- **Ops > Leads** holds every lead by stage: numbers to call (visitor captures), to verify, with vendors, no vendor yet (verified two days ago, nobody opened it), full and waiting for a decision, booked, closed, all. Search by name, phone, town or campaign; filter by source. The old Numbers to call, Capped leads and Plan usage pages redirect here or to Vendors.
+- **Ops > Vendors** holds every vendor by where they stand: to review (with claims), new this month, on a plan, ending in 30 days, behind on usage, waiting for contract, plan expired, top-ups only, never paid, not finished, paused, all. Each row shows the plan with usage and end date, enquiries left, last activity, what they have paid, and a number to dial. One definition per group in `lib/opsBooks.ts` feeds both the list and the counts; Today links to the same groups.
+- **Each trade has its own profile form** (`supabase/seed/category-specifics.sql`, loaded on every migrate; adds what is missing and never overwrites an admin's edit). 151 fields across the 18 categories, grouped under headings: a makeup artist picks brands in her kit, looks and what is included; a caterer cuisines, counters and minimum plates; a venue spaces, rooms and rules. Edit them in Ops > Catalog, including the section heading.
+- **Price list** (`mkt.vendor_offers`, `lib/offers.ts`): up to 12 lines with a price, a unit (per function, day, hour, plate, person, piece, hand, set) and "onwards". Each category suggests its usual lines. Phone numbers and links are refused. The public profile shows the price list first, then the details under the same headings, reworded for the bride; a "No" is left out.

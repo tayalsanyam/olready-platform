@@ -698,7 +698,37 @@ await step('vendor adds their area and street address, shown on their page', asy
   await see('Open in Maps');
 });
 
+await step('makeup artist fills in her brands and price list; Ops finds every vendor by plan', async () => {
+  await go('/vendor/profile');
+  await see('Products you use');
+  await page.getByLabel('NARS', { exact: true }).check();
+  await submit(page.getByRole('button', { name: 'Save profile' }));
+  await ok();
+  await go('/vendor/profile');
+  await page.getByRole('button', { name: '+ Trial session' }).click();
+  await page.locator('input[name="offer_price_4"]').fill('2500');
+  await submit(page.getByRole('button', { name: 'Save price list' }));
+  await ok();
+  await go('/v/glow-by-kirti-demo');
+  await see('Price list');
+  await see('Trial session');
+  await see('₹2,500 per function');
+  await see('Brands in their kit');
+  await see('NARS');
+  await signInAs('Rohit (ops)');
+  await go('/ops/vendors?tab=ending');
+  await see('Zari Lane Couture');
+  await see('12 days left');
+  await go('/ops/vendors?tab=lapsed');
+  await see('Kundan Kothi Jewellers');
+  await go('/ops/usage');
+  await see('Behind on usage');
+  await go('/ops/leads?tab=all');
+  await see('Simran Kaur');
+});
+
 await step('vendor marks a date booked; brides see it on the profile and in listings', async () => {
+  await signInAs('Glow by Kirti owner');
   await go('/vendor/calendar');
   await see('My calendar is up to date');
   const form = page.locator('form', { has: page.getByRole('button', { name: 'Mark on calendar' }) });

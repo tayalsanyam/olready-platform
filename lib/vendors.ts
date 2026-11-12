@@ -92,6 +92,7 @@ export type FilterDef = {
 const PRICE_FIELD: CategoryField = {
   id: 0, category_id: 0, key: '__price', label: 'Starting price', type: 'money', options: [], required: false,
   filterable: true, on_card: false, faq_question: null, seo_slug: null, sort: 0,
+  section: null,
 };
 
 export function filtersFor(fields: CategoryField[], priceBands: { seo: string; label: string; min?: number; max?: number }[] = []): FilterDef[] {

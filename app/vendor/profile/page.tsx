@@ -1,3 +1,6 @@
+import { OfferRows } from '@/components/OfferRows';
+import { MAX_OFFERS, UNITS, offersFor } from '@/lib/offers';
+import { saveOffersAction } from '@/lib/actions/vendor';
 import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { requireVendor } from '@/lib/vendorSession';
@@ -33,7 +36,8 @@ export default async function ProfilePage({ searchParams }: P) {
   const q = await searchParams;
   const { profile, vendor } = await requireVendor('/vendor/profile');
   const [{ notify_email: notify }] = await sql<{ notify_email: boolean }[]>`select notify_email from mkt.profiles where id = ${profile.id}`;
-  const [fields, media] = await Promise.all([fieldsFor(sql, vendor.category_id), vendorMedia(sql, vendor.id)]);
+  const [fields, media, offers] = await Promise.all([fieldsFor(sql, vendor.category_id), vendorMedia(sql, vendor.id), offersFor(sql, vendor.id)]);
+  const [{ presets }] = await sql<{ presets: { name: string; unit: string }[] }[]>`select offer_presets as presets from mkt.categories where id = ${vendor.category_id}`;
   const [topic] = await sql<{ id: number; slug: string; name: string }[]>`
     select id, slug, name from mkt.idea_topics where category_id = ${vendor.category_id}`;
   const tags = topic ? await topicTags(sql, topic.id) : [];
@@ -84,7 +88,8 @@ export default async function ProfilePage({ searchParams }: P) {
           <input type="hidden" name="cover_image_url" value={vendor.cover_image_url ?? ''} />
         </Card>
         <Card>
-          <h2 className="mb-3 font-semibold">Details brides filter by</h2>
+          <h2 className="font-semibold">Your work, in detail</h2>
+          <p className="hint mb-4">These are specific to {vendor.category_name.toLowerCase()}. Brides filter by them and see them on your page, so fill in everything that is true for you.</p>
           <AttributeInputs fields={fields} values={vendor.attributes} />
         </Card>
         <Card className="grid gap-4 sm:grid-cols-2">
@@ -112,6 +117,15 @@ export default async function ProfilePage({ searchParams }: P) {
         </label>
         <button className="btn btn-pink">Save profile</button>
       </form>
+
+      <Card className="mt-6 scroll-mt-24" id="prices">
+        <h2 className="font-semibold">Price list</h2>
+        <p className="hint mb-3">What you offer and what it costs. Brides trust a profile with real prices; a starting price is fine. No phone numbers or links here.</p>
+        <form action={saveOffersAction}>
+          <OfferRows initial={offers} presets={presets} units={UNITS} max={MAX_OFFERS} />
+          <button className="btn btn-sm mt-4">Save price list</button>
+        </form>
+      </Card>
 
       <div className="scroll-mt-24" id="where" />
       <Card className="mt-6">

@@ -169,7 +169,7 @@ export async function opsMarkFake(fd: FormData) {
 }
 
 export async function opsReopen(fd: FormData) {
-  await attempt(back(fd, '/ops/needs'), async () => {
+  await attempt(back(fd, '/ops/leads?tab=capped'), async () => {
     const p = await requireRole(OPS);
     await reopenNeed(sql, str(fd, 'need_id'), p.id);
     const [n] = await sql<{ lead_id: string }[]>`select lead_id from mkt.lead_needs where id = ${str(fd, 'need_id')}`;
@@ -350,12 +350,12 @@ export async function opsSaveField(fd: FormData) {
     if (['select', 'multiselect'].includes(type) && !options.length) throw new DomainError('no_options', 'Add at least one option');
     const flag = (k: string) => fd.get(k) === 'on';
     await sql`
-      insert into mkt.category_fields (category_id, key, label, type, options, required, filterable, on_card, faq_question, seo_slug, sort)
+      insert into mkt.category_fields (category_id, key, label, type, options, required, filterable, on_card, faq_question, seo_slug, sort, section)
       values (${categoryId}, ${key}, ${str(fd, 'label') || key}, ${type}, ${sql.json(options)}, ${flag('required')}, ${flag('filterable')},
-        ${flag('on_card')}, ${str(fd, 'faq_question') || null}, ${str(fd, 'seo_slug') ? slugify(str(fd, 'seo_slug')) : null}, ${num(fd, 'sort') ?? 0})
+        ${flag('on_card')}, ${str(fd, 'faq_question') || null}, ${str(fd, 'seo_slug') ? slugify(str(fd, 'seo_slug')) : null}, ${num(fd, 'sort') ?? 0}, ${str(fd, 'section').slice(0, 60) || null})
       on conflict (category_id, key) do update set label = excluded.label, type = excluded.type, options = excluded.options,
         required = excluded.required, filterable = excluded.filterable, on_card = excluded.on_card,
-        faq_question = excluded.faq_question, seo_slug = excluded.seo_slug, sort = excluded.sort`;
+        faq_question = excluded.faq_question, seo_slug = excluded.seo_slug, sort = excluded.sort, section = excluded.section`;
     await audit(sql, p.id, 'field.save', 'category', String(categoryId), { key });
     return { ok: `Field ${key} saved` };
   });
@@ -470,7 +470,7 @@ export async function opsTagVendor(fd: FormData) {
 
 // ---------------------------------------------------------------- settings
 export async function opsConvertCapture(fd: FormData) {
-  await attempt('/ops/captures', async () => {
+  await attempt('/ops/leads?tab=call', async () => {
     const p = await requireRole([...OPS, 'rm']);
     const { convertCapture } = await import('../captures');
     const lead = await convertCapture(sql, str(fd, 'id'), { name: str(fd, 'name'), cityId: num(fd, 'city_id') ?? 0, categoryIds: fd.getAll('category_id').map(Number).filter(Boolean) }, p.id);
@@ -479,7 +479,7 @@ export async function opsConvertCapture(fd: FormData) {
 }
 
 export async function opsCloseCapture(fd: FormData) {
-  await attempt('/ops/captures', async () => {
+  await attempt('/ops/leads?tab=call', async () => {
     const p = await requireRole([...OPS, 'rm']);
     await (await import('../captures')).closeCapture(sql, str(fd, 'id'), str(fd, 'outcome'), p.id);
     return { ok: 'Closed' };

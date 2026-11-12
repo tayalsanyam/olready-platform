@@ -80,6 +80,11 @@ export default async function CategoryEditor({ params, searchParams }: P) {
           Filterable fields become landing pages (a yes/no field needs an SEO slug; options need one in the third column). FAQ text uses
           {' {name} '}for the business name. Options: one per line, <code>value | label | seo-slug</code>.
         </p>
+        <datalist id="field-sections">
+          {[...new Set(fields.map((f) => f.section).filter(Boolean))].map((x) => (
+            <option key={x} value={x as string} />
+          ))}
+        </datalist>
         <div className="mt-3 space-y-4">
           {[...fields, null].map((f, i) => (
             <form key={f?.id ?? `new-${i}`} action={opsSaveField} className="grid gap-2 rounded-lg border border-[var(--color-line)] p-3 sm:grid-cols-4">
@@ -92,6 +97,7 @@ export default async function CategoryEditor({ params, searchParams }: P) {
                 ))}
               </select>
               <input name="sort" className="input py-1" defaultValue={f?.sort ?? 0} aria-label="Sort" />
+              <input name="section" className="input py-1" defaultValue={f?.section ?? ''} placeholder="Section heading" aria-label="Section heading" list="field-sections" />
               <textarea
                 name="options"
                 rows={2}

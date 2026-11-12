@@ -4,101 +4,158 @@ import { requireRole } from '@/lib/auth';
 import { listCategories, citiesInUse } from '@/lib/catalog';
 import { opsCreateLead, opsImportLeads } from '@/lib/actions/ops';
 import { metaLeadsConfigured, sourceSummary } from '@/lib/leadIntake';
-import { Badge, Card, Notice, PageTitle, sp } from '@/components/ui';
-import { fmtDate, fmtDateTime, fmtDay, fmtLongDate, plural } from '@/lib/dates';
+import { LEAD_TABS, leadBook, leadBookCounts, type LeadTab } from '@/lib/opsBooks';
+import { fmtDate, fmtDateTime } from '@/lib/dates';
+import { Badge, Card, Empty, Notice, PageTitle } from '@/components/ui';
+import { CapturesList } from './CapturesList';
+import { CappedNeeds } from './CappedNeeds';
 
+export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Leads' };
-type P = { searchParams: Promise<Record<string, string | string[]>> };
 
-const STATUSES = ['new', 'verifying', 'verified', 'rejected', 'fake'] as const;
 const SOURCES: Record<string, string> = { website: 'Website', instagram: 'Instagram ad', direct_request: 'Direct request', shortlist: 'Shortlist', ops: 'Phone or walk-in', legacy: 'Old site' };
+const sp = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+const NEED_TONE: Record<string, 'ok' | 'warn' | 'gold' | 'plain'> = { open: 'plain', capped: 'warn', closed_booked: 'ok', closed_by_bride: 'plain' };
 
-export default async function OpsLeads({ searchParams }: P) {
-  const q = await searchParams;
+export default async function OpsLeads({ searchParams }: { searchParams: Promise<Record<string, string | string[]>> }) {
   await requireRole(['ops', 'admin']);
-  const status = STATUSES.find((s) => s === sp(q.status)) ?? null;
+  const q = await searchParams;
+  // Old links used ?status=; they still land on the right tab.
+  const legacy = { new: 'verify', verifying: 'verify', verified: 'live', rejected: 'closed', fake: 'closed' }[sp(q.status) ?? ''];
+  const tab = ((sp(q.tab) ?? legacy ?? 'verify') in LEAD_TABS ? (sp(q.tab) ?? legacy ?? 'verify') : 'verify') as LeadTab;
+  const find = (sp(q.q) ?? '').slice(0, 80);
   const source = Object.keys(SOURCES).find((x) => x === sp(q.source)) ?? null;
-  const rows = await sql<{ id: string; bride_name: string; has_email: boolean; campaign: string | null; city: string; event_date: string | null; source: string; status: string; stage: number; cats: string; created_at: Date }[]>`
-    select l.id, l.bride_name, ci.name as city, to_char(l.event_date, 'YYYY-MM-DD') as event_date, l.source, l.status, l.campaign, (l.email is not null) as has_email,
-      l.verification_stage as stage, l.created_at,
-      coalesce((select string_agg(c.name, ', ' order by c.sort) from mkt.lead_needs ln join mkt.categories c on c.id = ln.category_id
-        where ln.lead_id = l.id and ln.status <> 'removed'), '') as cats
-    from mkt.leads l join mkt.cities ci on ci.id = l.city_id
-    where ${status ? sql`l.status = ${status}` : sql`l.status in ('new','verifying')`}
-      ${source ? sql`and l.source = ${source}` : sql``}
-    order by l.created_at ${status ? sql`desc` : sql`asc`} limit 200`;
-  const [cats, cities, summary] = await Promise.all([listCategories(sql, { activeOnly: true }), citiesInUse(sql), sourceSummary(sql)]);
-  const here = (o: { status?: string | null; source?: string | null }) => {
+  const [counts, cats, cities, summary] = await Promise.all([leadBookCounts(sql), listCategories(sql, { activeOnly: true }), citiesInUse(sql), sourceSummary(sql)]);
+  const rows = tab === 'call' ? [] : await leadBook(sql, { tab, q: find, source });
+  const here = (o: { tab?: LeadTab; source?: string | null }) => {
     const u = new URLSearchParams();
-    const st = o.status === undefined ? status : o.status;
+    u.set('tab', o.tab ?? tab);
     const so = o.source === undefined ? source : o.source;
-    if (st) u.set('status', st);
     if (so) u.set('source', so);
-    const qs = u.toString();
-    return `/ops/leads${qs ? `?${qs}` : ''}`;
+    if (find && !o.tab) u.set('q', find);
+    return `/ops/leads?${u}`;
   };
+  // The tabs that mean "someone should act" are tinted when they hold anything.
+  const urgent: LeadTab[] = ['call', 'verify', 'quiet', 'capped'];
   return (
     <>
-      <PageTitle title="Leads" sub={status ? `Status: ${status}` : 'Waiting for verification, oldest first'} />
+      <PageTitle title="Leads" sub="Every lead in one place, from a number left on the site to a booking." />
       <Notice error={q.error} ok={q.ok} />
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Link href={here({ status: null })} className={`btn btn-sm ${status ? 'btn-ghost' : ''}`}>
-          To verify
-        </Link>
-        {STATUSES.slice(2).map((s) => (
-          <Link key={s} href={here({ status: s })} className={`btn btn-sm ${status === s ? '' : 'btn-ghost'}`}>
-            {s}
-          </Link>
-        ))}
-        <span className="mx-1 self-center text-[var(--color-muted)]">from</span>
-        <Link href={here({ source: null })} className={`btn btn-sm ${source ? 'btn-ghost' : ''}`}>
-          Anywhere
-        </Link>
-        {['instagram', 'website', 'ops'].map((s) => (
-          <Link key={s} href={here({ source: s })} className={`btn btn-sm ${source === s ? '' : 'btn-ghost'}`}>
-            {SOURCES[s]}
-          </Link>
-        ))}
-      </div>
-      <Card className="overflow-x-auto" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
-        <table className="data stack">
-          <thead>
-            <tr>
-              <th>Received</th>
-              <th>Bride</th>
-              <th>City</th>
-              <th>Wedding</th>
-              <th>Needs</th>
-              <th>Source</th>
-              <th>Stage</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td className="whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
-                <td>
-                  <Link className="font-semibold underline-offset-4 hover:underline" href={`/ops/leads/${r.id}`}>
-                    {r.bride_name}
-                  </Link>
-                  {!r.has_email ? <span className="hint block">no email yet</span> : null}
-                </td>
-                <td>{r.city}</td>
-                <td className="whitespace-nowrap">{fmtDate(r.event_date, '–')}</td>
-                <td>{r.cats || '–'}</td>
-                <td>
-                  {SOURCES[r.source] ?? r.source}
-                  {r.campaign ? <span className="hint block">{r.campaign}</span> : null}
-                </td>
-                <td>
-                  <Badge tone={r.status === 'verified' ? 'ok' : r.status === 'new' ? 'warn' : 'plain'}>{r.status === 'verifying' ? `${r.stage}/3` : r.status}</Badge>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!rows.length ? <p className="p-4 text-sm text-[var(--color-muted)]">Nothing here.</p> : null}
-      </Card>
+      <nav aria-label="Lead stages" className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
+        {(Object.keys(LEAD_TABS) as LeadTab[]).map((t) => {
+          const on = t === tab;
+          const hot = urgent.includes(t) && counts[t] > 0;
+          return (
+            <Link
+              key={t}
+              href={here({ tab: t })}
+              aria-current={on ? 'page' : undefined}
+              className={`rounded-xl border p-2.5 transition-colors ${on ? 'border-[var(--color-ink)] bg-[var(--color-ink)] text-white' : hot ? 'border-[#f3c7d9] bg-[var(--color-pink-soft)] hover:border-[var(--color-pink)]' : 'border-[var(--color-line)] bg-white hover:border-[var(--color-ink)]'}`}
+            >
+              <span className="figure block text-2xl leading-none">{counts[t]}</span>
+              <span className={`mt-1 block text-[13px] leading-tight ${on ? 'text-white/85' : 'text-[var(--color-muted)]'}`}>{LEAD_TABS[t].label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+      <p className="hint mb-3">{LEAD_TABS[tab].hint}</p>
+
+      {tab === 'call' ? (
+        <CapturesList view={sp(q.view) === 'done' ? 'done' : 'open'} />
+      ) : (
+        <>
+          <form className="mb-3 flex flex-wrap items-center gap-2" role="search">
+            <input type="hidden" name="tab" value={tab} />
+            <input name="q" defaultValue={find} className="input max-w-xs py-1.5" placeholder="Name, phone, town or campaign" aria-label="Find a lead" />
+            <select name="source" defaultValue={source ?? ''} className="input w-auto py-1.5" aria-label="Where it came from">
+              <option value="">From anywhere</option>
+              {Object.entries(SOURCES).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+            <button className="btn btn-sm" data-quiet="">
+              Find
+            </button>
+            {find || source ? (
+              <Link href={`/ops/leads?tab=${tab}`} className="text-sm underline">
+                Clear
+              </Link>
+            ) : null}
+          </form>
+          {tab === 'capped' ? (
+            <div className="mb-5">
+              <CappedNeeds />
+            </div>
+          ) : null}
+          {rows.length ? (
+            <Card className="overflow-x-auto p-0" tabIndex={0} role="region" aria-label="Table, scrolls sideways">
+              <table className="data stack">
+                <thead>
+                  <tr>
+                    <th>Bride</th>
+                    <th>Town</th>
+                    <th>Wedding</th>
+                    <th>Needs, and how vendors responded</th>
+                    <th>From</th>
+                    <th>Stage</th>
+                    <th>Received</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.id}>
+                      <td>
+                        <Link href={`/ops/leads/${r.id}`} className="font-semibold underline">
+                          {r.bride_name}
+                        </Link>
+                        <a href={`tel:${r.phone}`} className="hint block">
+                          {r.phone}
+                        </a>
+                        {!r.has_email ? <span className="hint block">no email yet</span> : null}
+                      </td>
+                      <td>{r.city}</td>
+                      <td>{fmtDate(r.event_date, 'not fixed')}</td>
+                      <td>
+                        <ul className="flex flex-wrap gap-1.5">
+                          {r.needs.map((n) => (
+                            <li key={n.category}>
+                              <Badge tone={NEED_TONE[n.status] ?? 'plain'}>
+                                {n.category}
+                                {r.status === 'verified' ? ` · ${n.status === 'closed_booked' ? 'booked' : n.status === 'closed_by_bride' ? 'closed' : `${n.unlocks}/${n.cap} opened${n.quotes ? `, ${n.quotes} quoted` : ''}`}` : ''}
+                              </Badge>
+                            </li>
+                          ))}
+                        </ul>
+                      </td>
+                      <td>
+                        {SOURCES[r.source] ?? r.source}
+                        {r.campaign ? <span className="hint block">{r.campaign}</span> : null}
+                      </td>
+                      <td>
+                        {r.status === 'verified' ? (
+                          <Badge tone="ok">Verified</Badge>
+                        ) : r.status === 'rejected' || r.status === 'fake' ? (
+                          <Badge tone="bad">{r.status === 'fake' ? 'Fake' : 'Rejected'}</Badge>
+                        ) : (
+                          <Badge tone="warn">Call step {Math.min(3, r.verification_stage + 1)} of 3</Badge>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          ) : (
+            <Empty art="letters" title={find || source ? 'No lead matches that' : 'Nothing here right now'}>
+              {tab === 'verify' ? 'New requests from the site, ads and the team appear here for their call.' : null}
+            </Empty>
+          )}
+        </>
+      )}
+
       <details className="card mt-6 p-4">
         <summary className="cursor-pointer font-semibold">Bring in leads from an Instagram or Facebook ad</summary>
         <p className="hint mt-2">

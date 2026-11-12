@@ -38,13 +38,10 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
         { href: '/ops', label: 'Today' },
         ...(ops
           ? [
-              { href: '/ops/leads', label: 'Leads', count: c?.leads },
-              { href: '/ops/needs', label: 'Capped leads', count: c?.capped },
+              { href: '/ops/leads', label: 'Leads', count: (c?.leads ?? 0) + (c?.capped ?? 0) + captures },
               { href: '/ops/vendors', label: 'Vendors', count: c?.vendors },
               { href: '/ops/reviews', label: 'Reviews', count: c?.reviews },
               { href: '/ops/moderation', label: 'Moderation', count: c?.flagged },
-              { href: '/ops/captures', label: 'Numbers to call', count: captures },
-              { href: '/ops/usage', label: 'Plan usage' },
             ]
           : []),
         ...(rm ? [{ href: '/ops/rm', label: p.role === 'rm' ? 'My brides' : 'Relationship managers', count: c?.rm }] : []),

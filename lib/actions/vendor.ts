@@ -69,6 +69,16 @@ export async function saveVendorPlaceAction(fd: FormData) {
   });
 }
 
+export async function saveOffersAction(fd: FormData) {
+  await attempt('/vendor/profile#prices', async () => {
+    const { profile, vendor } = await requireVendor();
+    const { offersFromForm, saveOffers } = await import('../offers');
+    const offers = offersFromForm(fd);
+    await saveOffers(sql, vendor.id, offers, profile.id);
+    return { ok: offers.length ? 'Price list saved' : 'Price list cleared' };
+  });
+}
+
 export async function saveVendorProfile(fd: FormData) {
   await attempt('/vendor/profile', async () => {
     const { profile, vendor } = await requireVendor();

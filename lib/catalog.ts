@@ -15,6 +15,8 @@ export type CategoryField = {
   on_card: boolean;
   faq_question: string | null;
   seo_slug: string | null;
+  /** The heading this detail sits under on the vendor's form and profile. */
+  section: string | null;
   sort: number;
 };
 export type PriceBand = { seo: string; label: string; min?: number; max?: number };
@@ -31,6 +33,8 @@ export type Category = {
   unlock_cap: number;
   price_unit: string;
   price_bands?: PriceBand[];
+  /** Suggested lines for a vendor's price list in this category. */
+  offer_presets?: { name: string; unit: string }[];
 };
 export type City = {
   id: number; slug: string; name: string; state: string; state_code: string; district: string; active: boolean; launched: boolean;

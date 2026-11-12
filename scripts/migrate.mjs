@@ -46,6 +46,8 @@ try {
     console.log('Applied', f);
   }
   await sql.unsafe(await readFile(path.join(root, 'supabase', 'seed', 'reference.sql'), 'utf8'));
+  // Details that fit each kind of vendor, and the price-list suggestions for each category.
+  await sql.unsafe(await readFile(path.join(root, 'supabase', 'seed', 'category-specifics.sql'), 'utf8'));
   console.log('Reference data loaded');
   await loadPlaces();
 } finally {

@@ -12,6 +12,7 @@ import { CALLBACK_TOPICS, openCallbacks } from '@/lib/vendorTools';
 import { opsCloseCallback } from '@/lib/actions/vendorTools';
 import { opsCloseContact } from '@/lib/actions/ops';
 import { CONTACT_TOPICS, openContacts } from '@/lib/contact';
+import { leadBookCounts, vendorBookCounts } from '@/lib/opsBooks';
 
 export const metadata = { title: 'Today' };
 
@@ -22,6 +23,7 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
   const behind = (await plansBehind(sql)).length;
   const errors = await openErrorCount(sql);
   const captures = await openCaptureCount(sql);
+  const [vb, lb] = await Promise.all([vendorBookCounts(sql), leadBookCounts(sql)]);
   const [c] = await sql<Record<string, number>[]>`
     select
       (select count(*) from mkt.leads where status in ('new','verifying'))::int as to_verify,
@@ -64,13 +66,16 @@ export default async function OpsHome({ searchParams }: { searchParams: Promise<
         )[0]
       : null;
   const queues: [string, number, string, string?][] = [
-    ['Leads to verify', c.to_verify, '/ops/leads'],
-    ['Capped leads to decide', c.capped, '/ops/needs'],
-    ['Profiles to review', c.vendors_pending, '/ops/vendors?status=pending_review'],
-    ['Claims to approve', c.claims, '/ops/vendors'],
+    ['Leads to verify', c.to_verify, '/ops/leads?tab=verify'],
+    ['Requests no vendor has opened', lb.quiet, '/ops/leads?tab=quiet'],
+    ['Capped leads to decide', c.capped, '/ops/leads?tab=capped'],
+    ['Profiles to review', c.vendors_pending, '/ops/vendors?tab=review'],
+    ['Claims to approve', c.claims, '/ops/vendors?tab=review'],
     ['Plans waiting for contract', c.contracts, '/ops/payments'],
-    ['Plans behind on usage', behind, '/ops/usage'],
-    ['Numbers to call', captures, '/ops/captures'],
+    ['Plans ending in 30 days', vb.ending, '/ops/vendors?tab=ending'],
+    ['Plans expired, to renew', vb.lapsed, '/ops/vendors?tab=lapsed'],
+    ['Plans behind on usage', behind, '/ops/vendors?tab=behind'],
+    ['Numbers to call', captures, '/ops/leads?tab=call'],
     ['Errors to look at', errors, '/ops/errors'],
     ['Bank transfers to confirm', c.transfers, '/ops/payments'],
     ['Disputes to contact', c.disputes_contact, '/ops/reviews', c.disputes_overdue ? `${c.disputes_overdue} past 48 hours` : undefined],
