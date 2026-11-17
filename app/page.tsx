@@ -150,7 +150,7 @@ export default async function Home() {
                 Every enquiry verified on a call
               </span>
               <span className="text-[var(--color-muted)]">
-                before any of our {reach.vendors} checked vendors in {reach.towns} towns sees it
+                {reach.vendors >= 10 ? `before any of our ${reach.vendors} checked vendors in ${reach.towns} ${reach.towns === 1 ? 'town' : 'towns'} sees it` : 'before any vendor sees it'}
               </span>
             </div>
           </div>

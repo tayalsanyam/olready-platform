@@ -197,6 +197,11 @@ export async function Footer() {
             <Link href="/privacy">Privacy</Link>
             <Link href="/refunds">Refunds</Link>
             <Link href="/login?next=/ops">Team sign-in</Link>
+            {process.env.META_PIXEL_ID ? (
+              <button type="button" data-cookie-choices className="text-left hover:underline">
+                Cookie choices
+              </button>
+            ) : null}
           </nav>
         </div>
       </Container>

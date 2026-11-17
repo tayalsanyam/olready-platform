@@ -1,4 +1,5 @@
 import { Capture } from '@/components/Capture';
+import { Consent } from '@/components/Consent';
 import { captureConfig } from '@/lib/captures';
 import { currentProfile } from '@/lib/auth';
 import { sql } from '@/lib/db';
@@ -36,6 +37,8 @@ export const dynamic = 'force-dynamic';
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Who is looking decides which prompts she sees. A failure here must never take the page down.
   const [viewer, cap] = await Promise.all([currentProfile().catch(() => null), captureConfig(sql).catch(() => ({ prompts: false, seconds: 45, views: 3, ai: false, free: 2 }))]);
+  // Meta Pixel is off until META_PIXEL_ID is set, and then loads only for visitors who allow it.
+  const pixelId = /^\d{8,20}$/.test(process.env.META_PIXEL_ID ?? '') ? process.env.META_PIXEL_ID! : null;
   return (
     <html lang="en-IN">
       <head>
@@ -55,6 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Suspense fallback={null}>
           <Feel />
           <Capture signedIn={Boolean(viewer)} role={viewer?.role ?? null} whatsapp={OPERATOR.whatsapp} ai={cap.ai} prompts={cap.prompts} seconds={cap.seconds} views={cap.views} />
+          {pixelId ? <Consent pixelId={pixelId} /> : null}
         </Suspense>
       </body>
     </html>

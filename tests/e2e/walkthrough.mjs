@@ -567,6 +567,7 @@ await step('admin turns on a sign-in code and needs it to get back into Ops', as
   await submit(page.getByRole('button', { name: 'Start setup' }));
   const key = (await page.getByText('Or type this key:').innerText()).replace('Or type this key:', '').trim();
   await shot('mfa-setup');
+  globalThis.adminKey = key;
   await page.getByLabel('6-digit code').fill(totp(key));
   await submit(page.getByRole('button', { name: 'Turn on and continue' }));
   await page.waitForURL((u) => u.pathname.startsWith('/ops'));
@@ -768,6 +769,43 @@ await step('cron endpoint needs its secret', async () => {
   if (no.status() !== 401) throw new Error('cron open without secret');
   const yes = await page.request.get(BASE + '/api/cron/daily', { headers: { authorization: 'Bearer local-cron' } });
   if (yes.status() !== 200) throw new Error('cron failed with secret');
+});
+
+await step('admin edits price-list suggestions, exports price lists, then takes the demo data off the site', async () => {
+  await signInAs('Asha (admin)');
+  await go('/ops/catalog');
+  if (new URL(page.url()).pathname === '/mfa') {
+    await page.waitForTimeout(31000 - (Date.now() % 30000));
+    await page.getByLabel('6-digit code').fill(totp(globalThis.adminKey));
+    await submit(page.getByRole('button', { name: 'Continue' }));
+    await page.waitForURL((u) => u.pathname.startsWith('/ops'));
+    await go('/ops/catalog');
+  }
+  await page.getByRole('link', { name: 'Mehendi artists' }).click();
+  await page.waitForURL(/\/ops\/catalog\/\d+/);
+  await page.getByLabel('Price-list suggestions').fill('Bridal mehendi, both hands | hand\nGuest mehendi | person\nSider mehendi | wrong');
+  await submit(page.getByRole('button', { name: 'Save suggestions' }));
+  await see('is not a unit');
+  await page.getByLabel('Price-list suggestions').fill('Bridal mehendi, both hands | hand\nGuest mehendi | person');
+  await submit(page.getByRole('button', { name: 'Save suggestions' }));
+  await see('2 price-list suggestions saved');
+  await go('/ops/data/price-lists');
+  await see('Tandoor Tales Catering');
+  await go('/ops/data');
+  await see('Demo data is on this site');
+  await submit(page.getByRole('button', { name: 'Remove demo data' }));
+  await see('Type REMOVE DEMO to confirm');
+  await page.getByLabel('Type REMOVE DEMO to confirm').fill('remove demo');
+  await submit(page.getByRole('button', { name: 'Remove demo data' }));
+  await see('Removed 29 demo vendors');
+  await go('/ops/data');
+  if (await page.getByText('Demo data is on this site').count()) throw new Error('demo card still shown');
+  await go('/ops/vendors?tab=all');
+  if (await page.getByText('Glow by Kirti').count()) throw new Error('a demo vendor survived');
+  const gone = await page.request.get(BASE + '/v/glow-by-kirti-demo');
+  if (gone.status() !== 404) throw new Error('demo profile still public');
+  await go('/');
+  await shot('home-without-demo');
 });
 
 await browser.close();

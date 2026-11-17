@@ -70,6 +70,7 @@ function NumberForm({ source, cta, onDone, extra, autoFocus }: { source: string;
     setBusy(true);
     setError('');
     const r = await post<{ ok?: boolean }>('/api/public/capture', { phone: fd.get('phone'), name: fd.get('name'), company: fd.get('company'), source, page: location.pathname, ...extra });
+    if (!r.error) window.dispatchEvent(new Event('olr:lead'));
     setBusy(false);
     if (r.error) return setError(r.error);
     store.set('olr_cap', Date.now());

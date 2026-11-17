@@ -190,3 +190,17 @@ Everything ends in a mobile number in **Ops > Leads > Numbers to call** (`mkt.ca
 ## Where the site runs (November 2026)
 
 `vercel.json` runs the functions in Sydney (`syd1`) because the Supabase database is in Sydney (ap-southeast-2). From Mumbai every query took about 150 ms and pages make 15 to 35 of them one after another, so pages took 3 to 6 seconds. Keep the functions in the same region as the database: if the database moves to Mumbai (ap-south-1), change this back to `bom1`.
+
+## Launch tools (November 2026)
+
+Full notes in `docs/operations.md`.
+
+- **Remove demo data:** Ops > Data shows a card while any demo vendor, person or request exists; an admin types REMOVE DEMO to clear them (`lib/demoData.ts`). Real rows that pointed at a demo vendor keep everything else. The test payment gateway is switched off.
+- **Meta Pixel with consent:** set `META_PIXEL_ID`. Nothing from Meta loads until the visitor presses Allow (`components/Consent.tsx`); "Cookie choices" in the footer reopens the question. Sends PageView, Lead (request sent or number left) and CompleteRegistration.
+- **Price-list suggestions** per category are edited in Ops > Catalog; a migrate no longer overwrites them.
+- **Data lists** gained Numbers left by visitors and Price lists, both downloadable.
+- **Backups:** `npm run db:backup` (needs the direct connection and `pg_dump`); restore tested.
+- **Checks on every push:** `.github/workflows/checks.yml` runs types, a vulnerability check, tests and a build.
+- **Add to home screen:** `app/manifest.ts`.
+- **Next.js 16.4.6:** 16.4.4 had a known security vulnerability and its build now stops with a warning.
+- **Not built:** Hindi and Punjabi, Play Store and App Store apps, self-makeup classes.

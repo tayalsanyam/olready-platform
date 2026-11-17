@@ -2,7 +2,8 @@ import { notFound } from 'next/navigation';
 import { sql } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { type Category, fieldsFor, tiersFor } from '@/lib/catalog';
-import { opsDeleteField, opsSaveCategory, opsSaveField, opsSaveTier } from '@/lib/actions/ops';
+import { opsDeleteField, opsSavePresets, opsSaveCategory, opsSaveField, opsSaveTier } from '@/lib/actions/ops';
+import { UNITS } from '@/lib/offers';
 import { Card, Field, Notice, PageTitle } from '@/components/ui';
 
 export const metadata = { title: 'Category' };
@@ -130,6 +131,24 @@ export default async function CategoryEditor({ params, searchParams }: P) {
             ))}
           </div>
         ) : null}
+      </Card>
+
+      <Card className="mt-5">
+        <h2 className="font-semibold">Price-list suggestions</h2>
+        <p className="mt-1 text-sm text-[var(--color-muted)]">
+          Vendors in this category see these as one-tap lines when they build their price list. One per line, as “Name | unit”. Units: {Object.keys(UNITS).join(', ')}.
+        </p>
+        <form action={opsSavePresets} className="mt-3">
+          <input type="hidden" name="category_id" value={c.id} />
+          <textarea
+            name="presets"
+            rows={8}
+            className="input font-mono text-sm"
+            aria-label="Price-list suggestions"
+            defaultValue={(c.offer_presets ?? []).map((x) => `${x.name} | ${x.unit}`).join('\n')}
+          />
+          <button className="btn btn-sm mt-2">Save suggestions</button>
+        </form>
       </Card>
     </>
   );

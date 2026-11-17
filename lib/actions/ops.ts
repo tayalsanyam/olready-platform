@@ -27,6 +27,8 @@ import { opsSaveLocality, opsSetPincodeTown, opsSetTownLaunch } from '../locatio
 import { addRmNote, approveEngagement, reassign, rejectEngagement } from '../rm';
 import { attempt, attrsFromForm, back, num, str } from './run';
 import { importLeads, parseLeadSheet, setLeadContact } from '../leadIntake';
+import { removeDemoData } from '../demoData';
+import { UNITS } from '../offers';
 
 const OPS: Role[] = ['ops', 'admin'];
 const CONTENT: Role[] = ['content', 'ops', 'admin'];
@@ -608,5 +610,36 @@ export async function opsRemoveFunctionAction(fd: FormData) {
     const { opsRemoveFunction } = await import('../functions');
     await opsRemoveFunction(sql, leadId, str(fd, 'event_id'), p.id);
     return { ok: 'Function removed' };
+  });
+}
+
+/** Price-list suggestions for a category: one per line, "Name | unit". */
+export async function opsSavePresets(fd: FormData) {
+  const categoryId = num(fd, 'category_id') ?? 0;
+  await attempt(`/ops/catalog/${categoryId}`, async () => {
+    const p = await requireRole(ADMIN);
+    const presets = str(fd, 'presets')
+      .split('\n')
+      .map((line) => {
+        const [name, unit = 'event'] = line.split('|').map((x) => x.trim());
+        return { name: (name ?? '').replace(/\s+/g, ' ').slice(0, 80), unit: unit.toLowerCase() };
+      })
+      .filter((x) => x.name.length > 1);
+    const bad = presets.find((x) => !(x.unit in UNITS));
+    if (bad) throw new DomainError('bad_unit', `"${bad.unit}" is not a unit. Use one of: ${Object.keys(UNITS).join(', ')}`);
+    if (presets.length > 12) throw new DomainError('too_many', 'Keep it to 12 suggestions');
+    await sql`update mkt.categories set offer_presets = ${sql.json(presets)} where id = ${categoryId}`;
+    await audit(sql, p.id, 'category.presets', 'category', String(categoryId), { count: presets.length });
+    return { ok: `${presets.length} price-list suggestions saved` };
+  });
+}
+
+/** Admin only, and only after typing the words: takes the walkthrough vendors and people off the site. */
+export async function opsRemoveDemo(fd: FormData) {
+  await attempt('/ops/data', async () => {
+    const p = await requireRole(['admin']);
+    if (str(fd, 'confirm').trim().toUpperCase() !== 'REMOVE DEMO') throw new DomainError('confirm', 'Type REMOVE DEMO to confirm');
+    const gone = await removeDemoData(sql, p.id);
+    return { ok: `Removed ${gone.vendors} demo vendors, ${gone.people} demo people, ${gone.leads} demo requests and ${gone.weddings} demo wedding stories` };
   });
 }
