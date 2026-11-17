@@ -25,6 +25,7 @@ export type EmailTemplate =
   | 'calendar_reminder'
   | 'request_received'
   | 'booking_recorded_vendor'
+  | 'class_signup'
   | 'vendor_profile_live'
   | 'vendor_profile_back'
   | 'vendor_profile_paused'
@@ -171,6 +172,11 @@ export function render(template: EmailTemplate, p: Record<string, string>) {
       return {
         subject: `Booking recorded: ${p.bride}`,
         text: `Hi ${p.business},\n\nYour ${p.category} booking with ${p.bride} (${p.when}) is recorded. The dates are marked booked on your calendar, so check it is right: ${site()}/vendor/calendar\n\nOlready`,
+      };
+    case 'class_signup':
+      return {
+        subject: `${p.name} asked for a seat: ${p.title}`,
+        text: `Hi ${p.business},\n\n${p.name} asked for a seat in "${p.title}". That is ${p.taken} of ${p.seats} seats requested.\n\nSee the name and number, and confirm the seat: ${site()}/vendor/classes\n\nOlready`,
       };
     case 'vendor_profile_live':
       return {

@@ -1,3 +1,6 @@
+import { LangSwitch } from '@/components/Translate';
+import { isLang } from '@/lib/i18n';
+import { cookies } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { sql } from '@/lib/db';
@@ -23,6 +26,8 @@ import { ideaPhotos } from '@/lib/ideas';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
+  const chosenLang = (await cookies()).get('olr_lang')?.value;
+  const lang = isLang(chosenLang) ? chosenLang : 'en';
   const [cats, cities, weddings, viewer] = await Promise.all([
     listCategories(sql, { activeOnly: true }),
     listCities(sql),
@@ -132,6 +137,10 @@ export default async function Home() {
               <Link href="/look" className="font-semibold text-[var(--color-pink-deep)] underline underline-offset-4">
                 search with a photo of a look you love
               </Link>
+            </p>
+            <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-[var(--color-muted)]" data-no-translate>
+              <span aria-hidden="true">Read in</span>
+              <LangSwitch lang={lang} />
             </p>
           </div>
           <div className="relative hidden md:block">

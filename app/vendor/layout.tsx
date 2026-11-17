@@ -3,6 +3,7 @@ import { Container } from '@/components/ui';
 import { sql } from '@/lib/db';
 import { currentProfile } from '@/lib/auth';
 import { unreadCount } from '@/lib/threads';
+import { canTeach } from '@/lib/classes';
 import { VendorTabs } from './tabs';
 
 export default async function VendorLayout({ children }: { children: React.ReactNode }) {
@@ -10,9 +11,10 @@ export default async function VendorLayout({ children }: { children: React.React
   if (p && !p.phone && (p.role === 'bride' || p.role === 'vendor')) redirect('/welcome?next=/vendor');
   const [v] = p ? await sql<{ id: string }[]>`select id from mkt.vendors where owner_profile_id = ${p.id} limit 1` : [];
   const unread = v ? await unreadCount(sql, { vendorId: v.id }) : 0;
+  const teaches = v ? await canTeach(sql, v.id).catch(() => false) : false;
   return (
     <Container>
-      <VendorTabs unread={unread} />
+      <VendorTabs unread={unread} teaches={teaches} />
       {children}
     </Container>
   );

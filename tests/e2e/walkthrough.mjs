@@ -771,6 +771,59 @@ await step('cron endpoint needs its secret', async () => {
   if (yes.status() !== 200) throw new Error('cron failed with secret');
 });
 
+await step('artist lists a self-makeup class; a visitor asks for a seat in Hindi; artist and team both see her', async () => {
+  await signInAs('Glow by Kirti owner');
+  await go('/vendor/classes');
+  await see('No classes yet');
+  await page.getByLabel('Name of the class').fill('Self-makeup for wedding guests');
+  await page.getByLabel('What she will learn').fill('Base that lasts, eyes for day and night.');
+  await page.getByLabel('Date').fill(new Date(Date.now() + 12 * 864e5).toISOString().slice(0, 10));
+  await page.getByLabel('Seats').fill('6');
+  await page.getByLabel('Fee per seat').fill('2500');
+  await submit(page.getByRole('button', { name: 'List class' }));
+  await see('Class listed');
+  await see('0 of 6 seats asked for');
+  await shot('vendor-classes');
+  // A visitor, not signed in, reading in Hindi.
+  await go('/dev-login');
+  await submit(page.getByRole('button', { name: /^Sign out/ }));
+  await page.waitForURL((u) => u.pathname === '/');
+  await page.getByRole('button', { name: 'हिन्दी' }).first().click();
+  await page.waitForLoadState('load');
+  await see('अपनी शादी उन वेंडर के साथ प्लान करें जिन्हें हमने पहले जाँचा है।');
+  await go('/classes');
+  await see('उन आर्टिस्ट से सीखें जिन्हें दुल्हनें बुक करती हैं');
+  await page.getByRole('link', { name: /Self-makeup for wedding guests/ }).click();
+  await page.waitForURL(/\/classes\/[0-9a-f-]{36}/);
+  await see('₹2,500');
+  await page.locator('input[name="name"]').fill('Ritu Sharma');
+  await page.locator('input[name="phone"]').fill('98111 22334');
+  await shot('class-page-hindi');
+  await submit(page.getByRole('button', { name: 'सीट माँगें' }));
+  await see('Seat requested. Glow by Kirti will call you');
+  await go('/v/glow-by-kirti-demo');
+  await see('Self-makeup for wedding guests');
+  await page.getByRole('button', { name: 'English' }).first().click();
+  await page.waitForLoadState('load');
+  await signInAs('Glow by Kirti owner');
+  await go('/vendor/classes');
+  await see('1 of 6 seats asked for');
+  await see('Ritu Sharma');
+  await see('+919811122334');
+  await submit(page.getByRole('button', { name: 'Confirm seat' }));
+  await see('Seat confirmed');
+  await signInAs('Rohit (ops)');
+  await go('/ops/leads?tab=call');
+  await see('Ritu Sharma');
+  await see('Class seat');
+  await go('/ops/classes');
+  await see('Self-makeup for wedding guests');
+  await submit(page.getByRole('button', { name: 'Hide' }));
+  await see('Class hidden from the site');
+  const hidden = await page.request.get(page.url().replace(/\/ops\/classes.*/, '/classes'));
+  if ((await hidden.text()).includes('Self-makeup for wedding guests')) throw new Error('hidden class still listed');
+});
+
 await step('admin edits price-list suggestions, exports price lists, then takes the demo data off the site', async () => {
   await signInAs('Asha (admin)');
   await go('/ops/catalog');

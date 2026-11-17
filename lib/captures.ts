@@ -7,7 +7,7 @@ import { createEnquiry, normalisePhone } from './leads';
  * to call until someone rings and turns it into a request, or closes it.
  */
 
-export const CAPTURE_SOURCES = { slip: 'Call-me card', exit: 'Leaving prompt', chat: 'Chat helper', shortlist: 'Saved vendors', dock: 'Call button', signup: 'Signed up' } as const;
+export const CAPTURE_SOURCES = { slip: 'Call-me card', exit: 'Leaving prompt', chat: 'Chat helper', shortlist: 'Saved vendors', dock: 'Call button', signup: 'Signed up', class: 'Class seat' } as const;
 export type CaptureSource = keyof typeof CAPTURE_SOURCES;
 
 export type CaptureInput = {

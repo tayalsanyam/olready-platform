@@ -190,6 +190,7 @@ export const PRIVACY: Policy = {
         'Vendors: business and owner name, contact details, category, city and service towns, prices and details, photos and videos, billing name, address and GSTIN, plans, credits, unlocks, conversations, quotes, promotion settings and payments.',
         'Everyone: sign-in records, settings, support and callback requests, and the records needed for payments, invoices and refunds. Payment card, UPI and bank credentials are handled by the payment provider; we never ask for your card security code, UPI PIN or OTP.',
         'Visitors who are not signed in: the mobile number and name you leave when you ask for a call, the page you were on, vendors you saved, and the questions you ask the chat helper. We use these to call you once about your wedding and to start your request if you ask us to.',
+        'Classes: when you ask for a seat in a class, your name, mobile number and note go to the artist who runs that class so they can call you, confirm the seat and take the fee. Our team also receives them. The fee is paid to the artist, not to Olready.',
         'Provide only what is needed. If you add information about another person, such as a guest list, you must have their permission or another lawful basis to share it with us.',
       ],
     },

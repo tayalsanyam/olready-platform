@@ -1,5 +1,6 @@
 import { offersFor, priceLine } from '@/lib/offers';
 import Link from 'next/link';
+import { classFee, classWhen, upcomingClasses } from '@/lib/classes';
 import { after } from 'next/server';
 import { recordView, visitorKey } from '@/lib/analytics';
 import { notFound } from 'next/navigation';
@@ -71,6 +72,7 @@ export default async function VendorPage({ params, searchParams }: P) {
   // Contact details never reach the bride's browser.
   const v = publicVendor(raw);
   const offers = await offersFor(sql, raw.id);
+  const classes = await upcomingClasses(sql, { vendorId: raw.id, limit: 6 }).catch(() => []);
   const [fields, media, allReviews, weddings, hearts, spaces, similar, demand] = await Promise.all([
     fieldsFor(sql, v.category_id),
     vendorMedia(sql, v.id),
@@ -241,6 +243,26 @@ export default async function VendorPage({ params, searchParams }: P) {
               <DateCheckBox action={`/v/${v.slug}`} date={asked} checks={checks} id="date-main" />
             </div>
 
+            {classes.length ? (
+              <section className="mt-8" aria-labelledby="classes">
+                <h2 id="classes" className="text-xl font-semibold">
+                  Classes
+                </h2>
+                <ul className="mt-3 divide-y divide-[var(--color-line)] rounded-2xl border border-[var(--color-line)]">
+                  {classes.map((c) => (
+                    <li key={c.id}>
+                      <Link href={`/classes/${c.id}`} className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 hover:bg-[var(--color-tint)]">
+                        <span>
+                          <span className="font-medium">{c.title}</span>
+                          <span className="block text-sm text-[var(--color-muted)]">{classWhen(c.starts_at)}</span>
+                        </span>
+                        <span className="font-semibold">{classFee(c.fee_inr)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
             {offers.length ? (
               <section className="mt-8" aria-labelledby="prices">
                 <h2 id="prices" className="text-xl font-semibold">

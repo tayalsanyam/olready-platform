@@ -74,6 +74,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
               { href: '/ops/content', label: 'Real weddings', count: c?.weddings },
               { href: '/ops/articles', label: 'Articles' },
               { href: '/ops/collections', label: 'Collections' },
+              { href: '/ops/classes', label: 'Classes' },
             ],
           },
         ]

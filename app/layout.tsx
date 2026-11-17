@@ -1,5 +1,8 @@
 import { Capture } from '@/components/Capture';
 import { Consent } from '@/components/Consent';
+import { Translate } from '@/components/Translate';
+import { DICT, isLang } from '@/lib/i18n';
+import { cookies } from 'next/headers';
 import { captureConfig } from '@/lib/captures';
 import { currentProfile } from '@/lib/auth';
 import { sql } from '@/lib/db';
@@ -37,10 +40,13 @@ export const dynamic = 'force-dynamic';
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Who is looking decides which prompts she sees. A failure here must never take the page down.
   const [viewer, cap] = await Promise.all([currentProfile().catch(() => null), captureConfig(sql).catch(() => ({ prompts: false, seconds: 45, views: 3, ai: false, free: 2 }))]);
+  // Hindi or Punjabi if she chose it. Team and vendor screens stay in English.
+  const chosen = (await cookies()).get('olr_lang')?.value;
+  const lang = isLang(chosen) && chosen !== 'en' && (!viewer || viewer.role === 'bride') ? chosen : null;
   // Meta Pixel is off until META_PIXEL_ID is set, and then loads only for visitors who allow it.
   const pixelId = /^\d{8,20}$/.test(process.env.META_PIXEL_ID ?? '') ? process.env.META_PIXEL_ID! : null;
   return (
-    <html lang="en-IN">
+    <html lang={lang ?? 'en-IN'}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
@@ -59,6 +65,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Feel />
           <Capture signedIn={Boolean(viewer)} role={viewer?.role ?? null} whatsapp={OPERATOR.whatsapp} ai={cap.ai} prompts={cap.prompts} seconds={cap.seconds} views={cap.views} />
           {pixelId ? <Consent pixelId={pixelId} /> : null}
+          {lang ? <Translate dict={DICT[lang]} /> : null}
         </Suspense>
       </body>
     </html>

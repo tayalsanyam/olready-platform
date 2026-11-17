@@ -203,4 +203,6 @@ Full notes in `docs/operations.md`.
 - **Checks on every push:** `.github/workflows/checks.yml` runs types, a vulnerability check, tests and a build.
 - **Add to home screen:** `app/manifest.ts`.
 - **Next.js 16.4.6:** 16.4.4 had a known security vulnerability and its build now stops with a warning.
-- **Not built:** Hindi and Punjabi, Play Store and App Store apps, self-makeup classes.
+- **Classes** (`lib/classes.ts`, `/classes`, `/vendor/classes`, Ops > Classes): makeup and mehendi artists list self-makeup or mehendi classes; visitors ask for a seat with a name and number; the artist confirms and takes the fee. Seat requests also reach Leads > Numbers to call.
+- **Hindi and Punjabi** (`lib/i18n.ts`, `components/Translate.tsx`): the menu, home, request form, what happens next, listings, vendor pages, classes and the bride's space. Choice on the home page and in the footer. Needs a native speaker's read before ads.
+- **Store apps:** the site installs from the browser today; `/.well-known/assetlinks.json` is ready for a Play Store app built with PWABuilder. Steps in `docs/operations.md`.

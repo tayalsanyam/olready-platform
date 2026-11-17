@@ -1,3 +1,6 @@
+import { LangSwitch } from './Translate';
+import { isLang } from '@/lib/i18n';
+import { cookies } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { currentProfile, STAFF_ROLES } from '@/lib/auth';
@@ -116,6 +119,8 @@ export async function Header() {
 export async function Footer() {
   const [cats, cities] = await Promise.all([listCategories(sql, { activeOnly: true }), listCities(sql)]);
   const col = 'mt-2 space-y-1.5 text-sm text-[var(--color-muted)]';
+  const chosen = (await cookies()).get('olr_lang')?.value;
+  const lang = isLang(chosen) ? chosen : 'en';
   return (
     <footer className="mt-16 bg-[var(--color-tint)]">
       <Container className="py-10">
@@ -173,6 +178,7 @@ export async function Footer() {
                 ['/ideas', 'Ideas'],
                 ['/blog', 'Guides'],
                 ['/real-weddings', 'Real weddings'],
+                ['/classes', 'Makeup classes'],
                 ['/invitations', 'E-invites'],
                 ['/look', 'Search by photo'],
               ].map(([href, label]) => (
@@ -188,11 +194,13 @@ export async function Footer() {
         </OutsideAreas>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] pt-5 text-xs text-[var(--color-muted)]">
           <p>An enquiry is a chance to connect with a vendor, not a confirmed booking. Support Monday to Saturday, 10:00 to 18:30 IST.</p>
+          <LangSwitch lang={lang} />
           <nav aria-label="More" className="flex flex-wrap gap-x-4 gap-y-2">
             <Link href="/about">About</Link>
             <Link href="/contact">Contact</Link>
             <Link href="/directory">All wedding vendor pages</Link>
             <Link href="/for-vendors">For vendors</Link>
+            <Link href="/classes">Classes</Link>
             <Link href="/terms">Terms</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/refunds">Refunds</Link>

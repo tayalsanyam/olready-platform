@@ -50,3 +50,20 @@ Set `META_PIXEL_ID` in Vercel to the pixel's number and redeploy. Visitors then 
 ## Add to home screen
 
 The site ships a web app manifest, so on Android (Chrome > Add to Home screen) and iPhone (Share > Add to Home Screen) it opens full screen with the Olready icon, with shortcuts to My wedding, the vendor dashboard and Get quotes. This is not a Play Store or App Store app.
+
+## Hindi and Punjabi
+
+A visitor picks English, हिन्दी or ਪੰਜਾਬੀ on the home page or in the footer; the choice is one cookie (`olr_lang`). `lib/i18n.ts` holds every translated line as `[English, Hindi, Punjabi]`, keyed by the English text exactly as the page shows it; `components/Translate.tsx` swaps the text after the page loads. To translate more of the site, add rows. Lines with no row stay in English: vendor names and descriptions, prices, long guides, the legal pages, emails and WhatsApp messages. Team and vendor screens are always English. The translations were written without a native reviewer: have one read `lib/i18n.ts` before running ads in either language. Google sees the English page.
+
+## Classes
+
+Makeup and mehendi artists with a live profile list classes under **Classes** in their dashboard (`/vendor/classes`): name, date, length, seats, fee, in person or online. Classes appear at `/classes`, on the artist's profile and in the sitemap at once. A visitor asks for a seat with a name and mobile number, no account. The artist is emailed (first name only), sees the name and number in her dashboard, calls, confirms the seat and takes the fee herself; Olready does not collect class fees. The same number lands in Ops > Leads > Numbers to call marked "Class seat". Ops > Classes hides a class that should not be on the site. To let another category teach, add its slug to `TEACHING` in `lib/classes.ts`.
+
+## Play Store and App Store
+
+The site is installable as it is (Add to home screen). A store listing needs accounts only you can open:
+
+- **Android (Play Store):** a Google Play developer account (one-time fee, identity check). Go to pwabuilder.com, enter the site address, choose Android, and download the package it builds. Upload it in Play Console. Play Console then shows the app's signing certificate SHA-256 fingerprint: set `ANDROID_APP_PACKAGE` (for example `in.olready.app`) and `ANDROID_APP_SHA256` in Vercel and redeploy. `/.well-known/assetlinks.json` then confirms the app belongs to the site, and it opens full screen with no browser bar.
+- **iPhone (App Store):** an Apple Developer account (yearly fee) and a Mac with Xcode. PWABuilder also produces an iOS project that wraps the site. Apple often rejects apps that are only a website, so expect to add something native (push notifications are the usual one) before it is accepted.
+
+Neither app needs changes to this codebase beyond the two variables above.
